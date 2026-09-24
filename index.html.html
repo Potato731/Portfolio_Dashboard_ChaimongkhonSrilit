@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Master Portfolio & Creative Scorecard</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- ใช้งาน Chart.js สำหรับกราฟทั้งหมด -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    
+    /* ---- Theme Variables ---- */
+    :root {
+        color-scheme: dark;
+        --ink: #0a0b10; --panel: rgba(255, 255, 255, 0.03); --panel-solid: #121521; --panel-2: #1b1e2f;
+        --line: rgba(255, 255, 255, 0.08); --primary: #a78bfa; --primary-2: #38bdf8; 
+        --artwork: #f472b6; --video: #fde047; --photo: #5eead4; 
+        --success: #34d399; --danger: #fb7185; --text: #f8fafc; --muted: #94a3b8;
+    }
+    [data-theme="light"] {
+        color-scheme: light;
+        --ink: #f0ebf8; --panel: rgba(255, 255, 255, 0.8); --panel-solid: #ffffff; --panel-2: #f8f9fa;
+        --line: #dadce0; --primary: #673ab7; --primary-2: #4285f4; 
+        --artwork: #e91e63; --video: #f59e0b; --photo: #0d9488; 
+        --success: #0f9d58; --danger: #d93025; --text: #202124; --muted: #5f6368;
+    }
+    [data-theme="colorblind"] {
+        color-scheme: dark;
+        --ink: #111111; --panel: rgba(255, 255, 255, 0.06); --panel-solid: #222222; --panel-2: #333333;
+        --line: rgba(255, 255, 255, 0.2); --primary: #ffb000; --primary-2: #785ef0; 
+        --artwork: #dc267f; --video: #fe6100; --photo: #648fff; 
+        --success: #648fff; --danger: #fe6100; --text: #ffffff; --muted: #d0d0d0;
+    }
+
+    body { 
+        font-family: 'Kanit', sans-serif; margin: 0; padding: 2vh 2vw; 
+        color: var(--text); background-color: var(--ink); 
+        background-image: 
+            radial-gradient(circle at 10% 20%, rgba(167, 139, 250, 0.12) 0%, transparent 40%),
+            radial-gradient(circle at 90% 40%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+            radial-gradient(circle at 50% 90%, rgba(244, 114, 182, 0.08) 0%, transparent 50%);
+        background-attachment: fixed; min-height: 100vh; position: relative; overflow-x: hidden; 
+        transition: background-color 0.3s, color 0.3s; 
+    }
+
+    .container { width: 100%; max-width: 100%; margin: 0 auto; position: relative; }
+    .reveal { opacity: 0; transform: translateY(14px); animation: revealUp 0.7s cubic-bezier(.16,.84,.44,1) forwards; }
+    @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
+
+    .glass { background: linear-gradient(155deg, var(--panel-2), var(--panel-solid)); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); transition: background 0.3s, border-color 0.3s; }
+    [data-theme="light"] .glass { box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5); }
+
+    .theme-switcher { display: flex; gap: 8px; background: var(--panel-solid); border: 1px solid var(--line); padding: 4px; border-radius: 12px; }
+    .theme-btn { border: none; background: transparent; cursor: pointer; border-radius: 8px; padding: 6px 10px; color: var(--muted); transition: all 0.2s; font-size: 1.1rem; }
+    .theme-btn:hover { color: var(--text); background: var(--panel-2); }
+    .theme-btn.active { color: var(--text); background: var(--line); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+
+    .view-switcher { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 15px; }
+    .nav-tabs { display: inline-flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 5px; gap: 4px; flex-wrap: wrap; }
+    .nav-tab { border: none; background: transparent; color: var(--muted); font-family: 'Kanit', sans-serif; font-size: 0.96rem; font-weight: 600; padding: 10px 22px; border-radius: 10px; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; box-shadow: 0 4px 20px rgba(167, 139, 250, 0.4); }
+
+    .view-section { display: none; }
+    .view-section.active-view { display: block; animation: viewFadeIn 0.45s cubic-bezier(.16,.84,.44,1); }
+    @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ---- header ---- */
+    .header { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 34px 44px; border-radius: 22px; margin-bottom: 22px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--primary-2); font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .eyebrow .line { width: 30px; height: 2px; background: var(--primary-2); border-radius: 2px;}
+    .header h1 { margin: 0; font-size: 2.5rem; font-weight: 800; position: relative; color: var(--text); letter-spacing: -0.02em;}
+    .header p { margin: 10px 0 0 0; color: var(--muted); font-size: 1.1rem; position: relative; line-height: 1.6; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; position: relative; }
+    .badge { background: rgba(56,189,248,0.15); color: var(--primary-2); padding: 10px 22px 10px 18px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(56,189,248,0.35); display: inline-flex; align-items: center; gap: 10px; }
+
+    /* ---- KPI & Charts ---- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-bottom: 18px; }
+    .kpi-card { position: relative; padding: 24px; border-radius: 18px; text-align: center; overflow: hidden; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
+    .kpi-card::before { content:""; position:absolute; left:0; right:0; top:0; height:4px; background: var(--accent, var(--primary)); box-shadow: 0 0 20px var(--accent, var(--primary)); }
+    .kpi-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    [data-theme="light"] .kpi-card:hover { box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+    .kpi-total { --accent: var(--primary-2); } .kpi-art { --accent: var(--artwork); } .kpi-vid { --accent: var(--video); } .kpi-photo { --accent: var(--photo); } .kpi-prog { --accent: var(--success); }
+    .kpi-overdue { --accent: var(--danger); }
+    .kpi-overdue .kpi-value { color: var(--danger); }
+    .kpi-overdue.has-overdue { animation: kpiWarnGlow 2s ease-in-out infinite; }
+    @keyframes kpiWarnGlow { 0%,100% { box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); } 50% { box-shadow: 0 0 0 3px rgba(251,113,133,0.35), 0 10px 40px -10px rgba(0,0,0,0.5); } }
+    .kpi-title { font-size: 1rem; color: var(--muted); margin-bottom: 10px; font-weight: 600; letter-spacing: 0.5px;}
+    .kpi-value { font-size: 3rem; font-weight: 800; color: var(--text); margin: 0; font-variant-numeric: tabular-nums; text-shadow: 0 0 20px rgba(255,255,255,0.1);}
+
+    .rate-box { padding: 22px 28px; border-radius: 18px; margin-bottom: 22px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .rate-box .rate-label { font-size: 1.05rem; font-weight: 600; color: var(--muted); min-width: 180px; }
+    .rate-box .rate-value { font-size: 1.8rem; font-weight: 800; color: var(--success); min-width: 70px; font-variant-numeric: tabular-nums; text-shadow: 0 0 15px rgba(52, 211, 153, 0.4);}
+    .rate-track { flex: 1; min-width: 200px; height: 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+    .rate-fill { height: 100%; border-radius: 10px; width: 0%; background: linear-gradient(90deg, var(--success), var(--primary-2)); transition: width 1.2s cubic-bezier(.16,.84,.44,1); box-shadow: 0 0 20px var(--success); }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 22px; margin-bottom: 22px; }
+    @media (max-width: 1400px) { .charts-grid { grid-template-columns: 1fr 1fr; } .monthly-chart-box { grid-column: 1 / -1; } }
+    
+    .chart-box { padding: 28px; border-radius: 20px; }
+    .chart-box h3 { margin-top: 0; color: var(--text); border-bottom: 1px solid var(--line); padding-bottom: 15px; font-size: 1.25rem; font-weight: 600; }
+    .chart-container { position: relative; height: 320px; width: 100%; }
+    .chart-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+    .chart-center .num { font-size: 2.2rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .chart-center .lbl { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+
+    /* ---- MODERN CSS GANTT CHART ---- */
+    .gantt-wrapper { overflow-x: auto; overflow-y: hidden; padding-bottom: 15px; margin-top: 20px;}
+    .gantt-container { min-width: 800px; display: flex; flex-direction: column; gap: 10px; position: relative;}
+    .gantt-header { display: flex; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 10px; color: var(--muted); font-size: 0.9rem; font-weight: 600; text-transform: uppercase;}
+    .gantt-header-label { width: 250px; flex-shrink: 0; padding-right: 15px; }
+    .gantt-header-timeline { flex-grow: 1; display: flex; justify-content: space-between; position: relative;}
+    .gantt-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.03); transition: background 0.2s; border-radius: 8px;}
+    .gantt-row:hover { background: var(--panel); }
+    .gantt-label { width: 250px; flex-shrink: 0; padding-right: 15px; font-size: 0.95rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px;}
+    .gantt-track { flex-grow: 1; position: relative; height: 32px; background: var(--panel); border-radius: 16px; border: 1px solid var(--line);}
+    .gantt-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 14px; display: flex; align-items: center; padding: 0 12px; font-size: 0.8rem; font-weight: 600; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); white-space: nowrap; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;}
+    .gantt-bar:hover { transform: scaleY(1.1) translateY(-2px); z-index: 10; box-shadow: 0 8px 20px rgba(0,0,0,0.4);}
+    .gb-artwork { background: linear-gradient(90deg, var(--artwork), #d946ef); }
+    .gb-video { background: linear-gradient(90deg, var(--video), #f59e0b); }
+    .gb-photo { background: linear-gradient(90deg, var(--photo), #14b8a6); }
+
+    /* ---- BALANCED FILTER BAR ---- */
+    .filter-bar { display: flex; width: 100%; gap: 12px; margin-top: 15px; margin-bottom: 5px; flex-wrap: wrap; align-items: center; }
+    .filter-search { flex: 2; min-width: 250px; }
+    .filter-select { flex: 1; min-width: 120px; }
+    
+    .table-box { padding: 32px; border-radius: 20px; }
+    .table-header { display: flex; flex-direction: column; margin-bottom: 22px; }
+    .table-header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px; }
+    .table-header h3 { margin: 0; color: var(--text); font-size: 1.4rem; font-weight: 600; }
+    
+    .search-input { padding: 12px 18px; border-radius: 12px; border: 1px solid var(--line); font-family: 'Kanit', sans-serif; font-size: 0.95rem; width: 100%; outline: none; background: var(--panel); color: var(--text); transition: box-shadow 0.2s, border-color 0.2s, background 0.2s; }
+    .search-input:focus { border-color: var(--primary-2); background: var(--panel-2); box-shadow: 0 0 0 4px rgba(56,189,248,0.15); }
+    select.search-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23aab6cc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 10px auto; padding-right: 35px; }
+    
+    .btn { font-family: 'Kanit', sans-serif; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 12px; padding: 12px 22px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, background 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn:hover { transform: translateY(-3px); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #000; box-shadow: 0 8px 25px rgba(167, 139, 250, 0.35); }
+    .btn-success { background: linear-gradient(135deg, var(--success), #10b981); color: #000; box-shadow: 0 8px 25px rgba(52, 211, 153, 0.35); }
+    .btn-ghost { background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+    .btn-ghost:hover { background: var(--panel-2); border-color: var(--primary-2); }
+    .btn-danger { background: rgba(251, 113, 133, 0.15); color: var(--danger); border: 1px solid rgba(251, 113, 133, 0.4); }
+
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th, td { padding: 18px 16px; text-align: left; border-bottom: 1px solid var(--line); font-size: 0.96rem; line-height: 1.5; }
+    th { background-color: var(--panel); color: var(--muted); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;}
+    th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; white-space: nowrap; }
+    th.sortable:hover { color: var(--primary-2); }
+    th.sortable .sort-arrow { display: inline-block; margin-left: 5px; opacity: 0.35; font-size: 0.75em; transition: opacity 0.2s; }
+    th.sortable.sort-active .sort-arrow { opacity: 1; color: var(--primary-2); }
+    thead th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; } 
+    thead th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    tbody tr { transition: background-color 0.2s; }
+    tbody tr:hover { background-color: var(--panel); }
+    .row-in { animation: rowIn 0.4s ease both; }
+    @keyframes rowIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    .status-done { background: rgba(52,211,153,0.15); color: var(--success); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(52,211,153,0.3); }
+    .status-prog { background: rgba(253,224,71,0.15); color: var(--video); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(253,224,71,0.3); }
+    .status-pend { background: rgba(167,139,250,0.15); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(167,139,250,0.3); }
+    .status-danger { background: rgba(251,113,133,0.15); color: var(--danger); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(251,113,133,0.3); }
+    .status-overdue { background: rgba(251,113,133,0.18); color: var(--danger); padding: 6px 14px; border-radius: 20px; font-weight: 700; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(251,113,133,0.45); animation: overduePulse 1.8s ease-in-out infinite; }
+    @keyframes overduePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(251,113,133,0.35); } 50% { box-shadow: 0 0 0 6px rgba(251,113,133,0); } }
+
+    .tag-artwork { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--artwork), #d946ef); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(244, 114, 182, 0.3); border: none; }
+    .tag-video { color: #000; font-weight: 700; background: linear-gradient(135deg, var(--video), #f59e0b); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(253, 224, 71, 0.3); border: none; }
+    .tag-photo { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--photo), #14b8a6); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(94, 234, 212, 0.3); border: none; }
+
+    /* ---- PRO FEATURES CSS ---- */
+    .tag-campaign { background: rgba(167, 139, 250, 0.15); color: var(--primary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 4px;}
+    .tool-badge { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; margin-right: 4px; display: inline-block; margin-top: 4px;}
+    .spec-box { background: var(--panel); border: 1px dashed var(--line); padding: 12px; border-radius: 10px; margin-bottom: 15px;}
+    .spec-title { font-size: 0.85rem; color: var(--primary-2); font-weight: 600; margin-bottom: 6px; text-transform: uppercase;}
+
+    .admin-col { display: none; }
+    .admin-inline { display: none !important; }
+    .guest-inline { display: inline-flex !important; }
+    
+    body.admin-on .admin-col { display: table-cell; }
+    body.admin-on .admin-inline { display: inline-flex !important; }
+    body.admin-on .admin-block { display: block !important; }
+    body.admin-on .guest-inline { display: none !important; }
+    body.admin-on .guest-block { display: none !important; }
+    
+    .icon-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .icon-btn:hover { color: var(--text); border-color: var(--primary-2); background: var(--panel-2); transform: scale(1.05);}
+
+    /* ---- PAGE 2: MOTION SHOWCASE GALLERY ---- */
+    .showcase-hero { padding: 40px; border-radius: 24px; margin-bottom: 28px; background: linear-gradient(135deg, rgba(167, 139, 250, 0.08), rgba(56, 189, 248, 0.08)); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden;}
+    .showcase-hero::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%); opacity: 0.5; pointer-events: none; }
+    .showcase-hero-top { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap:wrap; gap: 10px; z-index: 1;}
+    .showcase-hero h2 { margin: 0 0 8px 0; font-size: 2.2rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em;}
+    .showcase-hero p { margin: 0; color: var(--muted); font-size: 1.1rem; }
+
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 26px; }
+    .portfolio-card { border-radius: 20px; overflow: hidden; position: relative; background: var(--panel-solid); border: 1px solid var(--line); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease; display: flex; flex-direction: column; cursor: pointer; }
+    .portfolio-card:hover { transform: translateY(-10px); box-shadow: 0 25px 50px rgba(0,0,0,0.4); border-color: var(--primary); }
+    [data-theme="light"] .portfolio-card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .portfolio-media { width: 100%; height: 240px; background: #000; position: relative; overflow: hidden; }
+    .portfolio-media img, .portfolio-media iframe, .portfolio-media video { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s ease; pointer-events: none; opacity: 0.9; }
+    .portfolio-card:hover .portfolio-media img { transform: scale(1.08); opacity: 1; }
+    .portfolio-media-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel-2); color: var(--muted); font-size: 3rem; gap: 8px; }
+    .portfolio-badge { position: absolute; top: 16px; left: 16px; z-index: 2; padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; backdrop-filter: blur(10px); background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; letter-spacing: 0.5px;}
+    .portfolio-content { padding: 26px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .portfolio-title { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 10px 0; line-height: 1.4; }
+    .portfolio-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--muted); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+    /* ---- PAGE 3: EVALUATION FORM ---- */
+    .gform-container { max-width: 770px; margin: 0 auto; padding-top: 10px;}
+    .gform-card { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 10px; padding: 26px 32px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: box-shadow 0.3s;}
+    .gform-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: var(--primary);}
+    .gform-header-card { border-top: 10px solid var(--primary); border-radius: 10px 10px 10px 10px; }
+    .gform-title { font-size: 2rem; font-weight: 700; margin: 0 0 12px 0; color: var(--text); line-height: 1.3;}
+    .gform-desc { font-size: 1.05rem; color: var(--text); margin-bottom: 15px; line-height: 1.6;}
+    .gform-req { color: var(--danger); font-size: 0.95rem; font-weight: 500;}
+    .gform-question { font-size: 1.15rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .gform-q-desc { font-size: 0.95rem; color: var(--muted); margin-bottom: 16px; display: block;}
+    .gform-input { width: 100%; border: none; border-bottom: 1px solid var(--line); background: transparent; padding: 10px 0; font-family: 'Kanit'; font-size: 1.05rem; color: var(--text); outline: none; transition: border-bottom-color 0.3s;}
+    .gform-input:focus { border-bottom: 2px solid var(--primary); padding-bottom: 9px; }
+    .gform-select { width: 100%; max-width: 400px; padding: 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-family: 'Kanit'; font-size: 1rem; outline: none; cursor: pointer; transition: border-color 0.3s;}
+    .gform-select:focus { border-color: var(--primary); }
+    .gform-radio-group { display: flex; flex-direction: column; gap: 14px; margin-top: 10px;}
+    .gform-radio-label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1.05rem; color: var(--text); }
+    .gform-radio-label input[type="radio"] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; margin: 0;}
+    .gform-submit-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px;}
+    .admin-dashboard-eval { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 20px; padding: 30px; margin-top: 30px;}
+
+    /* ---- LIGHTBOX MODAL ---- */
+    .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
+    .lightbox-overlay.open { display: flex; }
+    .lightbox-box { width: 100%; max-width: 1100px; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8); animation: modalIn 0.35s cubic-bezier(.16,.84,.44,1); display: grid; grid-template-columns: 1.5fr 1fr; position: relative; }
+    .lightbox-media-wrap { background: #000; display: flex; align-items: center; justify-content: center; min-height: 450px; position: relative; overflow:hidden;}
+    .lightbox-media-wrap img, .lightbox-media-wrap iframe, .lightbox-media-wrap video { width: 100%; height: 100%; max-height: 700px; object-fit: contain; }
+    .lightbox-details { padding: 36px; display: flex; flex-direction: column; justify-content: space-between; background: var(--panel-2); overflow-y: auto; max-height: 90vh; }
+    .lightbox-close { position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: background 0.2s;}
+    .lightbox-close:hover { background: var(--danger); }
+    .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight:bold; transition: background 0.2s, transform 0.2s; padding-bottom:4px; }
+    .carousel-btn:hover { background: var(--primary-2); color: #000; transform: translateY(-50%) scale(1.1); }
+    .carousel-prev { left: 16px; } .carousel-next { right: 16px; }
+    .carousel-counter { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #fff; z-index: 5; font-weight: 500; letter-spacing: 1px;}
+
+    /* ---- GLOBAL MODALS ---- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { width: 100%; max-width: 440px; border-radius: 24px; padding: 36px; background: var(--panel-solid); border: 1px solid var(--line); position: relative; box-shadow: 0 25px 60px rgba(0,0,0,0.7); }
+    .modal-box.wide { max-width: 700px; max-height: 90vh; overflow-y: auto; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(15px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-box h2 { margin: 0 0 8px 0; color: var(--text); font-size: 1.6rem; font-weight: 700;}
+    .modal-box .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 26px; }
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 0.9rem; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-family: 'Kanit'; font-size: 1rem; outline: none; transition: border-color 0.2s, background 0.2s; }
+    .field input[type="date"] { color-scheme: dark; }
+    [data-theme="light"] .field input[type="date"] { color-scheme: light; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary-2); background: var(--panel-2); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 28px; }
+    .modal-actions .btn { flex: 1; justify-content: center; padding: 14px; font-size: 1.05rem;}
+    .error-msg { color: var(--danger); font-size: 0.9rem; margin-top: -10px; margin-bottom: 16px; min-height: 1em; font-weight: 500;}
+    .modal-close { position: absolute; top: 20px; right: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.2rem; cursor: pointer; transition: all 0.2s;}
+    .modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger);}
+    .thumb-manager { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .thumb-item { position: relative; width: 80px; height: 80px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-del { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+
+    /* ---- PROGRESS BARS FOR KPI ---- */
+    .kpi-progress-wrap { margin-bottom: 20px; transition: opacity 0.3s ease; }
+    .kpi-progress-header { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .kpi-progress-bg { width: 100%; height: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .kpi-progress-fill { height: 100%; border-radius: 10px; transition: width 1s cubic-bezier(.16,.84,.44,1); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    
+    /* ---- GRADE CIRCLE ---- */
+    .grade-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 800; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 0 auto 15px auto; transition: background 0.3s; }
+
+    /* ---- SMART UPLOAD BUTTON & REVISION BADGE ---- */
+    .revision-badge {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--video);
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        font-weight: 500;
+        font-size: 0.75rem;
+        animation: pulseBadge 2s infinite;
+    }
+    @keyframes pulseBadge { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+
+    .smart-upload-btn {
+        position: relative; display: inline-flex; align-items: center; gap: 10px;
+        padding: 10px 20px; background: var(--panel); border: 1px dashed var(--primary-2);
+        border-radius: 12px; cursor: pointer; overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--text); font-size: 0.9rem; font-weight: 500;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .smart-upload-btn:hover {
+        background: var(--panel-2); transform: translateY(-2px);
+        border-style: solid; box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
+        color: #fff;
+    }
+    .smart-upload-btn .upload-glow {
+        position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 60%);
+        opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .smart-upload-btn:hover .upload-glow { opacity: 1; animation: rotateGlow 3s linear infinite; }
+    @keyframes rotateGlow { 100% { transform: rotate(360deg); } }
+    
+    .evidence-chip {
+        background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(56, 189, 248, 0.15));
+        border: 1px solid var(--primary-2); color: var(--text); padding: 6px 12px;
+        border-radius: 20px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 8px;
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .evidence-chip:hover { border-color: var(--danger); }
+    @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ---- PRINT STYLES ---- */
+    @media print {
+        body { background: #fff !important; color: #000 !important; font-size: 12pt; margin: 0; padding: 0; }
+        .view-switcher, .theme-switcher, .btn, .icon-btn, .header-right select, .filter-bar, .smart-upload-btn, .evidence-chip { display: none !important; }
+        .glass { background: #fff !important; border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; }
+        .chart-box { box-shadow: none !important; border: 1px solid #ddd !important; margin-bottom: 20px; }
+        .kpi-grid, .charts-grid { display: block !important; }
+        .kpi-card, .chart-box { width: 100%; display: block; margin-bottom: 15px; }
+        .header { padding: 15px !important; border-bottom: 2px solid #000; border-radius: 0; margin-bottom: 20px; }
+        h1, h2, h3, h4 { color: #000 !important; }
+        .kpi-progress-bg { border: 1px solid #000; background: #eee; }
+        .kpi-progress-fill { border-radius: 0; }
+        table { border: 1px solid #ccc; width: 100%; }
+        th, td { border-bottom: 1px solid #eee; padding: 8px; font-size: 10pt; color: #000 !important; }
+        th { background-color: #f5f5f5 !important; color: #000 !important; }
+        canvas { max-height: 250px !important; }
+        .tag-artwork, .tag-video, .tag-photo { color: #000 !important; background: transparent !important; border: 1px solid #000; box-shadow: none; font-weight: normal; }
+    }
+
+    @media (max-width: 1024px) { 
+        .charts-grid { grid-template-columns: 1fr 1fr; }
+        .monthly-chart-box { grid-column: 1 / -1; }
+        .lightbox-box { grid-template-columns: 1fr; max-width: 600px; max-height:90vh; overflow-y:auto; } 
+        .lightbox-media-wrap { min-height: 350px; } 
+    }
+    @media (max-width: 768px) { 
+        body { padding: 15px; }
+        .kpi-grid { grid-template-columns: 1fr 1fr; } 
+        .kpi-total, .kpi-overdue { grid-column: 1 / -1; }
+        .charts-grid { grid-template-columns: 1fr; } 
+        .header { flex-direction: column; text-align: center; padding: 24px 20px;} 
+        .header-right { align-items: center; margin-top:1rem;} 
+        .filter-bar > * { min-width: 100%; } 
+        .field-row { grid-template-columns: 1fr; } 
+        .view-switcher { flex-direction: column; align-items: stretch; } 
+        .gform-card { padding: 20px 20px;}
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Navigation View Switcher & Theme & Admin Actions -->
+        <div class="view-switcher reveal" style="animation-delay:0s">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchView('dashboard')">📊 รายงานภาพรวม</button>
+                <button class="nav-tab" onclick="switchView('showcase')">🎬 แกลเลอรีผลงาน</button>
+                <button class="nav-tab" onclick="switchView('evaluation')">📝 แบบประเมิน (HRD)</button>
+                <button class="nav-tab" onclick="switchView('monthlySummary')">📅 สรุปรายเดือน</button>
+                <button class="nav-tab" onclick="switchView('personalKPI')">⭐ ประเมิน KPI ส่วนตัว</button>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <div class="theme-switcher">
+                    <button class="theme-btn" onclick="setTheme('light')" title="Light Mode">☀️</button>
+                    <button class="theme-btn active" onclick="setTheme('dark')" title="Dark Mode (Cyber-Pastel)">🌌</button>
+                    <button class="theme-btn" onclick="setTheme('colorblind')" title="IBM Colorblind Safe">👁️</button>
+                </div>
+                <button class="btn btn-ghost" onclick="exportBackup()" title="สำรองข้อมูลทั้งหมดเป็นไฟล์ JSON">💾 Backup DB</button>
+                <button class="btn btn-ghost" onclick="triggerImportBackup()" title="นำเข้าไฟล์ JSON ที่เคยสำรองไว้">📂 นำเข้าข้อมูล</button>
+                <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)">
+                <button class="btn btn-ghost guest-inline" onclick="openLogin()">🔒 Admin Login</button>
+                <button class="btn btn-primary admin-inline" onclick="openAddModal()">＋ เพิ่มโปรเจกต์</button>
+                <button class="btn btn-danger admin-inline" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 1: DASHBOARD REPORT ================= -->
+        <div id="viewDashboard" class="view-section active-view">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>CREATIVE OPERATIONS · FY2026–2027</div>
+                    <h1>Report All Project For Dashboard</h1>
+                    <p>ระบบเว็บสรุปผลงานวิชาชีพทั้งหมด (ArtWork, Video, Photography)</p>
+                </div>
+                <div class="header-right">
+                    <div class="badge"><span class="dot"></span><span id="totalBadge">รวมทั้งหมด 0 โปรเจกต์</span></div>
+                    <div class="timestamp" id="timestamp"></div>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-total glass reveal" style="animation-delay:0.10s">
+                    <div class="kpi-title">โปรเจกต์ทั้งหมด</div>
+                    <div class="kpi-value" data-kpi="total">0</div>
+                </div>
+                <div class="kpi-card kpi-art glass reveal" style="animation-delay:0.15s">
+                    <div class="kpi-title">🎨 ArtWork</div>
+                    <div class="kpi-value" data-kpi="ArtWork">0</div>
+                </div>
+                <div class="kpi-card kpi-vid glass reveal" style="animation-delay:0.20s">
+                    <div class="kpi-title">🎬 Video</div>
+                    <div class="kpi-value" data-kpi="Video">0</div>
+                </div>
+                <div class="kpi-card kpi-photo glass reveal" style="animation-delay:0.25s">
+                    <div class="kpi-title">📸 Photography</div>
+                    <div class="kpi-value" data-kpi="Photography">0</div>
+                </div>
+                <div class="kpi-card kpi-prog glass reveal" style="animation-delay:0.30s">
+                    <div class="kpi-title">กำลัง/รอดำเนินการ</div>
+                    <div class="kpi-value" data-kpi="active">0</div>
+                </div>
+                <div class="kpi-card kpi-overdue glass reveal" id="kpiOverdueCard" style="animation-delay:0.33s">
+                    <div class="kpi-title">⚠️ เลยกำหนดส่ง</div>
+                    <div class="kpi-value" data-kpi="overdue">0</div>
+                </div>
+            </div>
+
+            <div class="rate-box glass reveal" style="animation-delay:0.35s">
+                <div class="rate-label">อัตราความสำเร็จโดยรวม</div>
+                <div class="rate-track"><div class="rate-fill" id="rateFill"></div></div>
+                <div class="rate-value" id="rateValue">0%</div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box glass reveal" style="animation-delay:0.40s">
+                    <h3>สัดส่วนประเภทงานหลัก (Category Breakdown)</h3>
+                    <div class="chart-container"><canvas id="typeChart"></canvas>
+                        <div class="chart-center"><div class="num" id="typeCenterNum">0</div><div class="lbl">โปรเจกต์</div></div>
+                    </div>
+                </div>
+                <div class="chart-box glass reveal" style="animation-delay:0.45s">
+                    <h3>สถานะการดำเนินงาน (Project Status)</h3>
+                    <div class="chart-container"><canvas id="statusChart"></canvas>
+                        <div class="chart-center"><div class="num" id="statusCenterNum">0</div><div class="lbl">เสร็จสิ้น</div></div>
+                    </div>
+                </div>
+                <div class="chart-box glass reveal monthly-chart-box" style="animation-delay:0.47s">
+                    <h3>📈 ปริมาณงานที่แล้วเสร็จรายเดือน (Monthly Output)</h3>
+                    <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-box glass reveal" style="animation-delay:0.48s; margin-bottom: 22px;">
+                <h3>🗓️ กราฟระยะเวลาการทำงาน (Modern Project Timeline)</h3>
+                <div class="gantt-wrapper"><div class="gantt-container" id="cssGanttChart"></div></div>
+            </div>
+
+            <div class="table-box glass reveal" style="animation-delay:0.50s">
+                <div class="table-header">
+                    <div class="table-header-top"><h3>ตารางรายการชิ้นงานทั้งหมด (Master Work Log)</h3></div>
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" class="search-input filter-search" placeholder="🔍 ค้นหาชื่อโปรเจกต์, ผู้มอบหมาย หรือ แคมเปญ..." onkeyup="filterTable()">
+                        <select id="filterDay" class="search-input filter-select" onchange="filterTable()"></select>
+                        <select id="filterMonth" class="search-input filter-select" onchange="filterTable()"></select>
+                        <select id="filterYear" class="search-input filter-select" onchange="filterTable()"></select>
+                        <select id="categoryFilter" class="search-input filter-select" onchange="filterTable()">
+                            <option value="all">📁 ทุกประเภท</option><option value="ArtWork">ArtWork</option><option value="Video">Video</option><option value="Photography">Photography</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="5%" class="sortable" data-key="ลำดับ" onclick="sortTableBy('ลำดับ')">ลำดับ<span class="sort-arrow">▲▼</span></th>
+                                <th width="10%" class="sortable" data-key="ประเภทหลัก" onclick="sortTableBy('ประเภทหลัก')">ประเภท<span class="sort-arrow">▲▼</span></th>
+                                <th width="12%" class="sortable" data-key="ประเภทย่อย" onclick="sortTableBy('ประเภทย่อย')">หมวดหมู่ย่อย<span class="sort-arrow">▲▼</span></th>
+                                <th width="24%" class="sortable" data-key="ชื่อชิ้นงาน / โปรเจกต์" onclick="sortTableBy('ชื่อชิ้นงาน / โปรเจกต์')">ชื่อชิ้นงาน / โปรเจกต์<span class="sort-arrow">▲▼</span></th>
+                                <th width="12%" class="sortable" data-key="ผู้มอบหมาย" onclick="sortTableBy('ผู้มอบหมาย')">ผู้มอบหมายงาน<span class="sort-arrow">▲▼</span></th>
+                                <th width="15%" class="sortable" data-key="dateEnd" onclick="sortTableBy('dateEnd')">ระยะเวลา (เริ่ม - เสร็จ)<span class="sort-arrow">▲▼</span></th>
+                                <th width="10%">หมายเหตุ</th>
+                                <th width="7%" class="sortable" data-key="สถานะ" onclick="sortTableBy('สถานะ')">สถานะ<span class="sort-arrow">▲▼</span></th>
+                                <th width="5%" class="admin-col">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 2: MOTION SHOWCASE GALLERY ================= -->
+        <div id="viewShowcase" class="view-section">
+            <div class="showcase-hero glass">
+                <div class="showcase-hero-top">
+                    <div><h2>🎬 Motion Showcase Gallery</h2><p>แสดงผลงานภาพและมีเดียทั้งหมด จัดเรียงลำดับจากล่าสุดไปเก่าที่สุดแบบ Motion Graphic</p></div>
+                </div>
+                <div class="filter-bar" style="margin-top:0;">
+                    <input type="text" id="searchShowcase" class="search-input filter-search" placeholder="🔍 ค้นหาผลงาน, แคมเปญ..." onkeyup="renderShowcase()">
+                    <select id="scFilterDay" class="search-input filter-select" onchange="renderShowcase()"></select>
+                    <select id="scFilterMonth" class="search-input filter-select" onchange="renderShowcase()"></select>
+                    <select id="scFilterYear" class="search-input filter-select" onchange="renderShowcase()"></select>
+                    <select id="filterShowcaseCat" class="search-input filter-select" onchange="renderShowcase()">
+                        <option value="all">📁 ทุกประเภท</option><option value="ArtWork">ArtWork</option><option value="Video">Video</option><option value="Photography">Photography</option>
+                    </select>
+                </div>
+            </div>
+            <div class="gallery-grid" id="showcaseGrid"></div>
+        </div>
+
+        <!-- ================= VIEW 3: GOOGLE FORM CLONE (HRD Feedback) ================= -->
+        <div id="viewEvaluation" class="view-section">
+            <div class="guest-block">
+                <div class="gform-container reveal">
+                    <div class="gform-card gform-header-card">
+                        <h1 class="gform-title">HRD Creative Feedback: แบบตรวจรับและประเมินงานกราฟิก</h1>
+                        <p class="gform-desc">รบกวนเวลาพี่ๆ ติ๊กให้คะแนนผลงานสร้างสรรค์สื่อภายในง่ายๆ เพื่อนำ Feedback ไปพัฒนางานดีไซน์และการสื่อสารให้ตอบโจทย์ทุกคนมากยิ่งขึ้นครับ</p>
+                        <p class="gform-req">* ระบุว่าเป็นคำถามที่จำเป็น</p>
+                    </div>
+                    <div class="gform-card"><div class="gform-question">1. ผู้สั่งงาน / ผู้ตรวจรับโปรเจกต์นี้ <span class="gform-req">*</span></div><input type="text" id="evalOwner" class="gform-input" placeholder="คำตอบของคุณ"></div>
+                    <div class="gform-card"><div class="gform-question">2. ชื่อชิ้นงาน (Project Name) <span class="gform-req">*</span></div><input type="text" id="evalProject" class="gform-input" placeholder="คำตอบของคุณ"></div>
+                    <div class="gform-card">
+                        <div class="gform-question">3. ประเภทของสื่อ (Media Type) <span class="gform-req">*</span></div>
+                        <select id="evalMediaType" class="gform-select">
+                            <option value="" disabled selected>เลือก</option><option value="Video / Motion Graphics">🎬 Video / Motion Graphics</option><option value="Poster / ภาพประกาศออนไลน์">🖼️ Poster / ภาพประกาศออนไลน์</option><option value="ป้าย Vinyl / แบนเนอร์ขนาดใหญ่">🚩 ป้าย Vinyl / แบนเนอร์ขนาดใหญ่</option><option value="Presentation / งานเอกสาร">📝 Presentation / งานเอกสาร</option><option value="อื่นๆ">✨ อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">4. 1. Brief & Content (ความเป๊ะของเนื้อหา) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">บรีฟมายังไง ได้อย่างนั้นไหม? ข้อมูลครบถ้วน และตัวสะกดถูกต้อง</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="5"> 5 - ตรงบรีฟ 100% ข้อมูลเป๊ะ ไม่มีที่ติ</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="4"> 4 - เกือบสมบูรณ์ (มีแก้คำผิดนิดหน่อย)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="3"> 3 - พอใช้ (ต้องแก้ข้อมูลบางส่วน)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="2"> 2 - ข้อมูลผิดหรือตกหล่นเยอะ ต้องแก้หลายจุด</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="1"> 1 - ผิดบรีฟโดยสิ้นเชิง ใช้งานไม่ได้</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">5. 2. Mood, Tone & CI (ความสวยงามและภาพลักษณ์องค์กร) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">การจัดวาง Layout สวยงาม ดึงดูด และคุมโทนสี/ฟอนต์/โลโก้บริษัทได้เป๊ะ</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="5"> 5 - สวยโดดเด่น ตรง CI บริษัท 100%</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="4"> 4 - สวยงาม (มีขอปรับสี/จัดวางอีกแค่นิดเดียว)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="3"> 3 - ตามมาตรฐานทั่วไป ใช้งานได้</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="2"> 2 - ยังไม่ลงตัว ขัดกับ CI ของบริษัท</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="1"> 1 - ไม่สวยงาม ผิดภาพลักษณ์องค์กรรุนแรง</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">6. 3. Usability & Export Quality (คุณภาพไฟล์และการนำไปใช้งานจริง) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">เปิดในมือถืออ่านง่าย ซูมไม่แตก วิดีโอภาพชัดเสียงเคลียร์ เอาไปปรินต์แล้วโอเค</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="5"> 5 - สมบูรณ์แบบ (ภาพชัด เสียงเคลียร์ อ่านง่ายมาก)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="4"> 4 - ใช้งานได้ดี (อาจปรับให้อ่านง่ายขึ้นได้อีกนิด)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="3"> 3 - ใช้งานได้ (แต่มีแอบอ่านยาก หรือคุณภาพดรอปบ้าง)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="2"> 2 - ใช้งานลำบาก (เช่น ภาพแตก สัดส่วนผิด เสียงเบา)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="1"> 1 - ใช้งานไม่ได้เลย (ภาพเบลอ ตัวหนังสือเล็กจนอ่านไม่ออก)</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">7. 4. Timeline & Workflow (ความตรงต่อเวลาและการประสานงาน) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">ส่งงานดราฟต์ไว แก้งานราบรื่น ทันเดดไลน์ที่คุยกันไว้</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="5"> 5 - ไวกว่ากำหนด (ส่งก่อนเดดไลน์)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="4"> 4 - ตรงเวลาเป๊ะ</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="3"> 3 - เลทนิดหน่อย (ยังไม่กระทบแผนงาน)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="2"> 2 - ล่าช้า (เริ่มกระทบแผนงานของ HRD)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="1"> 1 - ช้ามาก (งานเสียหาย)</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">8. 5. Overall Score (ความประทับใจในภาพรวมของชิ้นงานนี้) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">คะแนนความฟิน! ชิ้นงานนี้ตอบโจทย์ HRD และพนักงานมากแค่ไหน</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="5"> 5 - ประทับใจมาก (เยี่ยมยอด)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="4"> 4 - พึงพอใจ (งานดี)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="3"> 3 - ปานกลาง (ตามมาตรฐานที่คาดหวัง)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="2"> 2 - ค่อนข้างไม่พอใจ (ยังต้องพัฒนาอีก)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="1"> 1 - ไม่พอใจเลย (ไม่ตอบโจทย์)</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">9. สรุปสถานะการตรวจรับงาน (Final Decision) <span class="gform-req">*</span></div>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="decision" value="Approve"> Approve (ผ่านฉลุย!) : ไฟล์ Final สมบูรณ์ นำไปใช้งาน/ส่งพิมพ์ได้เลย</label>
+                            <label class="gform-radio-label"><input type="radio" name="decision" value="Minor Edit"> Minor Edit (ขอแก้นิดนึง) : งานดีแล้ว ใช้งานได้ แต่ฝากปรับแก้กริบๆ ตามคอมเมนต์ด้านล่าง</label>
+                            <label class="gform-radio-label"><input type="radio" name="decision" value="Reject"> Reject (รื้อใหม่/แก้ด่วน) : ยังไม่ตรงบรีฟ ข้อมูลผิดพลาด ต้องส่งกลับมาแก้ใหม่</label>
+                        </div>
+                    </div>
+                    <div class="gform-card"><div class="gform-question">10. คอมเมนต์จากพี่ๆ (Feedback / สิ่งที่อยากให้แก้ หรือคำติชม)</div><input type="text" id="evalComment" class="gform-input" placeholder="คำตอบของคุณ"></div>
+                    <div class="gform-submit-row"><button class="btn btn-primary" onclick="submitEvaluation()" style="padding: 12px 30px; font-size: 1.1rem; border-radius: 6px;">ส่ง</button><span class="error-msg" id="evalError" style="margin:0; font-size:1rem;"></span></div>
+                </div>
+            </div>
+
+            <div class="admin-block" style="display:none;">
+                <div class="admin-dashboard-eval reveal">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:24px;">
+                        <div><h3 style="margin:0; color:var(--text); font-size: 1.8rem;">📊 แดชบอร์ดสรุปผลการประเมิน (Feedback Dashboard)</h3><p style="margin:6px 0 0 0; color:var(--text); font-size:1.15rem;" id="evalAvgText">คะแนนเฉลี่ยรวม: 0.0 / 5.0</p></div>
+                        <button class="btn btn-danger" onclick="clearEvaluations()">🗑 ล้างข้อมูลประเมินทั้งหมด</button>
+                    </div>
+                    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:30px;" id="evalChartsRow">
+                        <div class="chart-box glass" style="background:var(--panel);"><h3>สรุปการตัดสินใจ (Final Decision)</h3><div class="chart-container"><canvas id="decisionChart"></canvas></div></div>
+                        <div class="chart-box glass" style="background:var(--panel);"><h3>วิเคราะห์คุณภาพ 5 มิติ (Radar)</h3><div class="chart-container" style="display:flex; justify-content:center;"><canvas id="radarChart"></canvas></div></div>
+                    </div>
+                    <div class="table-box glass" id="evalTableBox" style="margin-bottom: 30px; padding: 28px; display:none; background:var(--panel);"><h3 style="margin-top:0; color:var(--text);">📈 สรุปรายการประเมินล่าสุด</h3><div style="overflow-x:auto; margin-top: 15px;"><table id="evalTableEl"></table></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: MONTHLY SUMMARY ================= -->
+        <div id="viewMonthlySummary" class="view-section">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>MONTHLY PERFORMANCE & ANALYTICS</div>
+                    <h1>สรุปผลงานเจาะลึกรายเดือน</h1>
+                    <p>เลือกเดือนและปี เพื่อวิเคราะห์ภาพรวม ประสิทธิภาพเวลา (Lead Time) และดาวน์โหลดข้อมูล CSV</p>
+                </div>
+            </div>
+            <div class="kpi-grid reveal" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 22px; animation-delay:0.1s;" id="msKpiGrid">
+                <div class="kpi-card kpi-prog glass"><div class="kpi-title">ผลงานที่เสร็จสิ้น (ชิ้น)</div><div class="kpi-value" id="msTotal">0</div></div>
+                <div class="kpi-card kpi-art glass"><div class="kpi-title">ประเภทงานที่ทำเยอะที่สุด</div><div class="kpi-value" id="msTopCat" style="font-size: 2rem; margin-top: 10px;">-</div></div>
+                <div class="kpi-card kpi-vid glass"><div class="kpi-title">ระยะเวลาเฉลี่ย (วัน/ชิ้น)</div><div class="kpi-value" id="msAvgDays">0</div></div>
+            </div>
+            <div class="chart-box glass reveal" style="animation-delay:0.15s; margin-bottom: 22px;">
+                <div class="table-header-top" style="margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+                    <h3>📊 กราฟสัดส่วนประเภทงาน</h3>
+                    <div style="display: flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <select id="msFilterMonth" class="search-input filter-select" onchange="renderMonthlySummary()" style="min-width: 150px;"></select>
+                        <select id="msFilterYear" class="search-input filter-select" onchange="renderMonthlySummary()" style="min-width: 150px;"></select>
+                        <button class="btn btn-success" onclick="exportMonthlyCSV()" style="margin-left:10px;">📄 Export CSV</button>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 380px;"><canvas id="monthFocusChart"></canvas></div>
+            </div>
+            <div class="table-box glass reveal" style="animation-delay:0.2s">
+                <h3 style="margin-top:0; color:var(--text); margin-bottom: 15px;">📑 รายละเอียดชิ้นงานที่สำเร็จ (Breakdown)</h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th width="8%">รหัส</th><th width="12%">ประเภท</th><th width="30%">ชื่องาน / โปรเจกต์</th><th width="15%">ผู้มอบหมาย</th><th width="15%">วันที่เสร็จสิ้น</th><th width="15%">ระยะเวลาผลิต (Lead Time)</th></tr></thead>
+                        <tbody id="msDataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 5: PERSONAL KPI SCORECARD ================= -->
+        <div id="viewPersonalKPI" class="view-section">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>HUMAN RESOURCES DEVELOPMENT (HRD)</div>
+                    <h1>⭐ Personal KPI Scorecard</h1>
+                    <p style="color:var(--primary-2); font-weight:600; font-size:1.2rem;">เจ้าหน้าที่ Graphic & Multimedia</p>
+                    <p>ระบบประเมินผลสัมฤทธิ์ตามตัวชี้วัด (Performance Indicators) และสมรรถนะ (Competencies)</p>
+                </div>
+                <div class="header-right" style="align-items:flex-end;">
+                    <div style="display: flex; gap: 10px; margin-bottom:10px;">
+                        <select id="kpiFilterMonth" class="search-input filter-select" onchange="renderPersonalKPI()"></select>
+                        <select id="kpiFilterYear" class="search-input filter-select" onchange="renderPersonalKPI()"></select>
+                    </div>
+                    <button class="btn btn-success" onclick="window.print()" style="font-size:0.9rem;">🖨️ พิมพ์รายงาน KPI</button>
+                </div>
+            </div>
+
+            <!-- 🏅 Overall Score & AI Insights -->
+            <div class="kpi-grid reveal" style="grid-template-columns: 1fr 2.5fr; margin-bottom: 22px; animation-delay: 0.08s;">
+                <div class="chart-box glass" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px;">
+                    <div class="grade-circle" id="kpiGradeCircle" style="background: linear-gradient(135deg, var(--muted), #333);">?</div>
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--muted);">เกรดประเมินรวม</h3>
+                    <div style="font-size:2rem; font-weight:800; color:var(--text); margin-top:5px;" id="kpiTotalScore" data-current="0">0<span style="font-size:1.2rem;">%</span></div>
+                </div>
+                <div class="chart-box glass" style="display:flex; flex-direction:column; justify-content:center;">
+                    <h3 style="margin:0 0 15px 0; color:var(--primary-2); display:flex; align-items:center; gap:8px;">💡 AI Smart Insights</h3>
+                    <div id="kpiInsightText" style="font-size: 1.05rem; line-height: 1.6; color: var(--text);">
+                        กำลังวิเคราะห์ข้อมูล...
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Metric Progress Bars -->
+            <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:22px;">
+                <div class="chart-box glass reveal" style="animation-delay:0.1s;">
+                    <!-- Header พร้อมฟังก์ชัน Toggle ที่ดีขึ้น -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 15px;">
+                        <h3 style="margin:0; border-bottom:none; padding-bottom:0;">🎯 ตัวชี้วัดผลงานหลัก (5 KPIs)</h3>
+                        <button class="btn btn-ghost" onclick="toggleKpiSection(this)" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 8px;">🙈 แสดง</button>
+                    </div>
+                    
+                    <!-- ส่วนเนื้อหาที่ถูกตั้งให้ซ่อนไว้ตอนแรก เพื่อลดโหลดตอนเปิดหน้า -->
+                    <div id="kpiIndicatorsContent" style="display: none;">
+                        <div class="kpi-progress-wrap" id="wrapKpi1">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable1" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    1. สื่อออกตามแผน (Planned Output)
+                                </label>
+                                <span id="kpiPlanVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiPlanBar" style="background:linear-gradient(90deg, #38bdf8, #a78bfa); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* เป้าหมาย 10 ชิ้น/เดือน</div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi2">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable2" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    2. งานเสร็จตรงเวลา (On-Time Delivery)
+                                </label>
+                                <span id="kpiTimeVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiTimeBar" style="background:linear-gradient(90deg, #34d399, #10b981); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* เสร็จภายใน Timeline ที่กำหนด</div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi3">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable3" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    3. ระยะเวลาผลิตสื่อ (Lead Time Speed)
+                                </label>
+                                <span id="kpiSpeedVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiSpeedBar" style="background:linear-gradient(90deg, #14b8a6, #0ea5e9); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+                                <span>* ระยะเวลาผลิตเฉลี่ยควรน้อยกว่าหรือเท่ากับ 3 วัน</span>
+                                <span class="revision-badge">⚠️ รวมระยะเวลาการรอ Feedback และการแก้ไขงาน (Revisions) แล้ว</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi4">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable4" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    4. ไม่มีผิด CI (CI Accuracy)
+                                </label>
+                                <span id="kpiCiVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiCiBar" style="background:linear-gradient(90deg, #fde047, #f59e0b); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* อ้างอิงคะแนนประเมิน CI ≥ 4 ขึ้นไป</div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi5">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable5" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    5. ความพึงพอใจผู้ใช้งาน (User Satisfaction)
+                                </label>
+                                <span id="kpiSatVal">0 / 5.0</span>
+                            </div>
+                            
+                            <!-- ฟังก์ชันใหม่: ปุ่มอัปโหลดไฟล์หลักฐานแทนการกรอกคะแนนดิบ -->
+                            <div style="margin-bottom: 12px; margin-top: 8px;">
+                                <label class="smart-upload-btn" for="kpiEvidenceUpload">
+                                    <span class="upload-icon">📂</span> 
+                                    <span class="upload-text">แนบหลักฐานการส่งงาน / แชท (รูป, Excel, Word)</span>
+                                    <div class="upload-glow"></div>
+                                </label>
+                                <input type="file" id="kpiEvidenceUpload" multiple accept="image/*,.doc,.docx,.xls,.xlsx" style="display:none;" onchange="handleKpiEvidence(event)">
+                                <div id="kpiEvidenceList" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                            </div>
+
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiSatBar" style="background:linear-gradient(90deg, #f472b6, #e91e63); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* คะแนนเฉลี่ยความพึงพอใจโดยรวมจากแบบประเมิน HRD</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Competency Radar -->
+                <div class="chart-box glass reveal" style="animation-delay:0.15s;">
+                    <h3>🧠 สมรรถนะการปฏิบัติงาน (Job Competencies)</h3>
+                    <div class="chart-container" style="display:flex; justify-content:center; height: 320px;"><canvas id="kpiRadarChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 22px;">
+                <!-- Target vs Actual Bar Chart -->
+                <div class="chart-box glass reveal" style="animation-delay:0.2s;">
+                    <h3 style="margin-bottom: 25px;">📊 เปรียบเทียบปริมาณงาน เป้าหมาย (Target) กับ ทำได้จริง (Actual)</h3>
+                    <div class="chart-container" style="height: 350px;"><canvas id="kpiBarChart"></canvas></div>
+                </div>
+                
+                <!-- Detailed Table for the Month -->
+                <div class="table-box glass reveal" style="animation-delay:0.25s">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+                        <h3 style="margin:0; color:var(--text);">📋 เจาะลึกรายโปรเจกต์ (Project Details)</h3>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr><th width="25%">ชื่อชิ้นงาน / โปรเจกต์</th><th width="15%">ผู้มอบหมาย</th><th width="15%" style="text-align:center;">ระยะเวลาผลิต<br>(Lead Time)</th><th width="15%" style="text-align:center;">คะแนน Feedback<br>(เต็ม 5)</th><th width="15%" style="text-align:center;">คะแนนความเป๊ะ CI<br>(เต็ม 5)</th><th width="15%">ผลประเมินย่อย</th></tr>
+                            </thead>
+                            <tbody id="kpiDetailTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+    <div class="lightbox-overlay" id="lightboxOverlay">
+        <div class="lightbox-box" id="lightboxBox">
+            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+            <div class="lightbox-media-wrap" id="lightboxMedia">
+                <button class="carousel-btn carousel-prev" onclick="prevLightboxImage(event)" id="lbPrevBtn">‹</button>
+                <div id="lbMediaContainer" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"></div>
+                <button class="carousel-btn carousel-next" onclick="nextLightboxImage(event)" id="lbNextBtn">›</button>
+                <div class="carousel-counter" id="lbCounter">1 / 1</div>
+            </div>
+            <div class="lightbox-details">
+                <div>
+                    <div id="lbCategory" style="font-size:0.9rem; font-weight:700; margin-bottom:8px; text-transform:uppercase;"></div>
+                    <h2 id="lbTitle" style="color:var(--text); font-size:1.6rem; margin:0 0 10px 0; line-height:1.3;"></h2>
+                    <div id="lbCampaign" style="margin-bottom: 20px;"></div>
+                    
+                    <div class="spec-box">
+                        <div class="spec-title">⚙️ เครื่องมือ & ซอฟต์แวร์ (Tech Stack)</div>
+                        <div id="lbTools" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div class="spec-box">
+                        <div class="spec-title">🤖 AI Workflow & Prompts</div>
+                        <div id="lbAiPrompt" style="color:var(--text); font-size:0.9rem; white-space:pre-wrap; line-height: 1.5; margin-top:8px;"></div>
+                    </div>
+
+                    <div style="font-size:0.95rem; color:var(--muted); margin-bottom:10px; display:grid; grid-template-columns:1fr 1fr; gap:10px; background:var(--panel); padding:16px; border-radius:14px; border: 1px solid var(--line);">
+                        <div>📅 <strong>รับบรีฟ:</strong> <span id="lbDateOrder"></span></div><div>⏳ <strong>เริ่มทำ:</strong> <span id="lbDateStart"></span></div>
+                        <div style="grid-column:1/-1;">✅ <strong>ส่งงาน:</strong> <span id="lbDateEnd" style="color:var(--success); font-weight:600;"></span></div>
+                    </div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px; margin-top:18px;">👤 <strong>ผู้มอบหมาย:</strong> <span id="lbOwner" style="color:var(--text);"></span></div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px;">📌 <strong>หมวดหมู่ย่อย:</strong> <span id="lbSub" style="color:var(--text);"></span></div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px;">🔄 <strong>แก้ดราฟต์ไป:</strong> <span id="lbRevision" style="color:var(--danger); font-weight:bold;">0</span> ครั้ง</div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px;">💬 <strong>หมายเหตุ:</strong> <span id="lbNote" style="color:var(--text);"></span></div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:20px;">📊 <strong>สถานะ:</strong> <span id="lbStatus"></span></div>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:auto;">
+                    <a id="lbDownloadBtn" class="btn btn-success" download="Portfolio_Creative_Work" href="#" target="_blank" style="display:none; text-decoration:none;">📥 ดาวน์โหลดสื่อนี้</a>
+                    <button class="btn btn-primary admin-inline" id="lbEditBtn" onclick="editCurrentFromLightbox()" style="display:none;">✎ แก้ไขโปรเจกต์นี้</button>
+                    <span id="lbIdBadge" style="font-size:0.9rem; color:var(--muted); margin-left:auto; font-weight:600;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div class="modal-overlay" id="loginOverlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeLogin()">✕</button>
+            <h2>เข้าสู่ระบบผู้ดูแล</h2>
+            <div class="sub">สำหรับทีมงานที่ต้องการแก้ไขข้อมูลและดูผลประเมิน</div>
+            <div class="field"><label>Username</label><input type="text" id="loginUser" placeholder="Admin" autocomplete="off"></div>
+            <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••" autocomplete="off"></div>
+            <div class="error-msg" id="loginError"></div>
+            <div class="modal-actions"><button class="btn btn-ghost" onclick="closeLogin()">ยกเลิก</button><button class="btn btn-primary" onclick="attemptLogin()">เข้าสู่ระบบ</button></div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT PROJECT MODAL -->
+    <div class="modal-overlay" id="projectOverlay">
+        <div class="modal-box wide">
+            <button class="modal-close" onclick="closeProjectModal()">✕</button>
+            <h2 id="projectModalTitle">เพิ่มโปรเจกต์ใหม่</h2>
+            <div class="field-row">
+                <div class="field"><label>ประเภทหลัก</label><select id="fMain"><option value="ArtWork">ArtWork</option><option value="Video">Video</option><option value="Photography">Photography</option></select></div>
+                <div class="field"><label>สถานะ</label><select id="fStatus"><option value="เสร็จสิ้น">เสร็จสิ้น</option><option value="กำลังดำเนินการ">กำลังดำเนินการ</option><option value="รอดำเนินการ">รอดำเนินการ</option></select></div>
+            </div>
+            
+            <div class="field-row">
+                <div class="field"><label>หมวดหมู่ย่อย</label><input type="text" id="fSub"></div>
+                <div class="field"><label>แคมเปญ / งานกิจกรรม (Tags)</label><input type="text" id="fCampaign" placeholder="เช่น Outing 2026"></div>
+            </div>
+            
+            <div class="field"><label>ชื่อชิ้นงาน / โปรเจกต์</label><input type="text" id="fName"></div>
+            
+            <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="field"><label>📅 วันที่รับบรีฟ</label><input type="date" id="fDateOrder"></div><div class="field"><label>⏳ วันเริ่มทำ</label><input type="date" id="fDateStart"></div><div class="field"><label>✅ วันที่เสร็จ</label><input type="date" id="fDateEnd"></div>
+            </div>
+            
+            <div class="field-row">
+                <div class="field"><label>ผู้มอบหมายงาน</label><input type="text" id="fOwner"></div>
+                <div class="field"><label>ซอฟต์แวร์ที่ใช้ (Tools)</label><input type="text" id="fTools" placeholder="เช่น Illustrator, CapCut"></div>
+            </div>
+
+            <div class="field-row" style="grid-template-columns: 2fr 1fr;">
+                <div class="field"><label>🤖 AI Prompts & Workflow (เทคนิคที่ใช้)</label><textarea id="fAiPrompt" rows="2" placeholder="เช่น ใช้ Google Flow เจน Time-lapse"></textarea></div>
+                <div class="field"><label>🔄 จำนวนครั้งที่แก้ดราฟต์</label><input type="number" id="fRevision" min="0" value="0"></div>
+            </div>
+
+            <div class="field"><label>หมายเหตุ</label><input type="text" id="fNote"></div>
+            
+            <div class="field" style="margin-top:20px;"><label>🖼️ รูปภาพผลงานในโปรเจกต์นี้</label><div class="thumb-manager" id="editThumbnailsContainer"></div></div>
+            <div class="field" style="background: var(--panel); padding: 18px; border-radius: 16px; border: 1px dashed var(--primary-2);">
+                <label style="color: var(--primary-2); font-weight: 700; margin-bottom: 10px;">📁 เพิ่มภาพจากเครื่อง (เลือกหลายรูปได้)</label>
+                <input type="file" id="fUpload" accept="image/*" multiple onchange="handleFileUpload(event)" style="padding: 8px 0; background: none; border: none; color: var(--text); width: 100%; cursor: pointer;">
+                <div id="uploadPreviewInfo" style="font-size:0.9rem; color:var(--success); margin-top:10px;"></div>
+            </div>
+            <div class="field"><label>🔗 เพิ่มลิงก์รูปภาพ / Google Drive (คั่นด้วยบรรทัดใหม่)</label><textarea id="fImageLinks" rows="2"></textarea></div>
+            <div class="field"><label>🎬 เพิ่มลิงก์วิดีโอ (MP4, YouTube, WebM คั่นด้วยบรรทัดใหม่)</label><textarea id="fVideoLinks" rows="2"></textarea></div>
+            <div class="error-msg" id="projectError"></div>
+            <div class="modal-actions"><button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveProjectData()">บันทึกข้อมูล</button></div>
+        </div>
+    </div>
+
+<script>
+    function safeGetLS(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); } }
+
+    const STORAGE_KEY = 'MasterPortfolio_DB_Ultimate23_Fast'; 
+    const EVAL_KEY = 'MasterPortfolio_EVAL_DB_v10';
+    const BASE_DATA = []; 
+
+    let rawData = loadData(); let evalData = loadEvalData();
+    let isAdmin = false; let editingId = null; let currentLightboxId = null; let currentLightboxImages = []; let currentLightboxIndex = 0; let editingProjectImages = [];
+    let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
+    let isDefaultSet = false;
+
+    // ฟังก์ชันจัดการการเปิด/ปิด KPI แบบไม่หน่วงเครื่อง
+    function toggleKpiSection(btnEl) {
+        const c = document.getElementById('kpiIndicatorsContent');
+        if(c.style.display === 'none') {
+            c.style.display = 'block';
+            btnEl.innerHTML = '👁️ ซ่อน';
+        } else {
+            c.style.display = 'none';
+            btnEl.innerHTML = '🙈 แสดง';
+        }
+    }
+    window.toggleKpiSection = toggleKpiSection;
+
+    function populateDateFilters() {
+        let dayHtml = '<option value="all">📅 ทุกวัน</option>';
+        for(let i=1; i<=31; i++) { let val = i.toString().padStart(2, '0'); dayHtml += `<option value="${val}">${val}</option>`; }
+        let monthHtml = '<option value="all">🗓️ ทุกเดือน</option>';
+        const monthNames = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+        for(let i=0; i<12; i++) { let val = (i+1).toString().padStart(2, '0'); monthHtml += `<option value="${val}">${monthNames[i]}</option>`; }
+        let yearHtml = '<option value="all">📆 ทุกปี</option><option value="nodate" style="color:var(--danger); font-weight:bold;">⚠️ งานที่ยังไม่ระบุวันที่</option>';
+        const currentYear = new Date().getFullYear();
+        for(let y=Math.max(2027, currentYear + 1); y>=2024; y--) { yearHtml += `<option value="${y}">${y+543}</option>`; }
+        
+        ['filterDay', 'scFilterDay'].forEach(id => { if(document.getElementById(id) && document.getElementById(id).options.length === 0) document.getElementById(id).innerHTML = dayHtml; });
+        ['filterMonth', 'scFilterMonth', 'msFilterMonth', 'kpiFilterMonth'].forEach(id => { if(document.getElementById(id) && document.getElementById(id).options.length === 0) document.getElementById(id).innerHTML = monthHtml; });
+        ['filterYear', 'scFilterYear', 'msFilterYear', 'kpiFilterYear'].forEach(id => { if(document.getElementById(id) && document.getElementById(id).options.length === 0) document.getElementById(id).innerHTML = yearHtml; });
+    }
+
+    function loadData() { const str = safeGetLS(STORAGE_KEY); if (str && str !== "[]") { try { return JSON.parse(str); } catch (e) {} } return JSON.parse(JSON.stringify(BASE_DATA)); }
+    function loadEvalData() { const str = safeGetLS(EVAL_KEY); if (str) { try { return JSON.parse(str); } catch (e) {} } return []; }
+    function saveData() { safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); }
+    function saveEvalData() { safeSetLS(EVAL_KEY, JSON.stringify(evalData)); }
+
+    // ============ REAL BACKUP / RESTORE (previously the button called a function that didn't exist) ============
+    function exportBackup() {
+        const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0,10);
+        a.href = url; a.download = `Portfolio_Backup_${stamp}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    window.exportBackup = exportBackup;
+
+    function triggerImportBackup() { const el = document.getElementById('importBackupInput'); if (el) el.click(); }
+    window.triggerImportBackup = triggerImportBackup;
+
+    function importBackup(event) {
+        const file = event.target.files && event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const payload = JSON.parse(e.target.result);
+                const incomingProjects = Array.isArray(payload.projects) ? payload.projects : (Array.isArray(payload) ? payload : null);
+                const incomingEvals = Array.isArray(payload.evaluations) ? payload.evaluations : [];
+                if (!incomingProjects) { alert('ไฟล์นี้ไม่ใช่ไฟล์สำรองข้อมูลที่ถูกต้อง'); return; }
+                const replace = confirm(`พบข้อมูล ${incomingProjects.length} โปรเจกต์ในไฟล์สำรอง\n\nกด "ตกลง" เพื่อแทนที่ข้อมูลปัจจุบันทั้งหมด\nกด "ยกเลิก" เพื่อรวมเข้ากับข้อมูลปัจจุบัน (ไม่แทนที่)`);
+                if (replace) { rawData = incomingProjects; evalData = incomingEvals; }
+                else {
+                    const maxId = rawData.length > 0 ? Math.max(...rawData.map(p => p['ลำดับ'] || 0)) : 0;
+                    incomingProjects.forEach((p, i) => { rawData.push({ ...p, 'ลำดับ': maxId + i + 1 }); });
+                    evalData = [...evalData, ...incomingEvals];
+                }
+                saveData(); saveEvalData(); refreshAll(true);
+                alert('นำเข้าข้อมูลเรียบร้อยแล้ว ✅');
+            } catch (err) { alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาตรวจสอบว่าเป็นไฟล์ JSON ที่ถูกต้อง'); }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+    window.importBackup = importBackup;
+    function formatDateThai(d) { if (!d) return '-'; const date = new Date(d); if (isNaN(date)) return '-'; return date.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }); }
+    
+    function getDaysDiff(startStr, endStr) {
+        if (!startStr || !endStr) return null;
+        const s = new Date(startStr); const e = new Date(endStr);
+        if (isNaN(s) || isNaN(e)) return null;
+        let days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)); return days <= 0 ? 1 : days; 
+    }
+
+    function setTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.querySelector(`.theme-btn[onclick="setTheme('${themeName}')"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+        safeSetLS('portfolio_theme', themeName);
+        
+        const style = getComputedStyle(document.documentElement);
+        const artworkColor = style.getPropertyValue('--artwork').trim() || '#f472b6'; const videoColor = style.getPropertyValue('--video').trim() || '#fde047'; const photoColor = style.getPropertyValue('--photo').trim() || '#5eead4';
+        const successColor = style.getPropertyValue('--success').trim() || '#34d399'; const dangerColor = style.getPropertyValue('--danger').trim() || '#fb7185';
+        const primaryColor = style.getPropertyValue('--primary').trim() || '#a78bfa'; const primary2Color = style.getPropertyValue('--primary-2').trim() || '#38bdf8';
+        const textColor = style.getPropertyValue('--text').trim() || '#ffffff'; const mutedColor = style.getPropertyValue('--muted').trim() || '#94a3b8'; const lineColor = style.getPropertyValue('--line').trim() || 'rgba(255,255,255,0.1)';
+        const panelColor = style.getPropertyValue('--panel-solid').trim() || '#121521';
+
+        try {
+            if (typeof typeChart !== 'undefined' && typeChart) {
+                typeChart.data.datasets[0].backgroundColor = [artworkColor, videoColor, photoColor]; statusChart.data.datasets[0].backgroundColor = [successColor, videoColor, artworkColor]; typeChart.update(); statusChart.update();
+                if(monthlyChart) {
+                    const ctx = document.getElementById('monthlyChart').getContext('2d'); const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, primary2Color); gradient.addColorStop(1, primaryColor);
+                    monthlyChart.data.datasets[0].backgroundColor = gradient; monthlyChart.options.scales.x.ticks.color = mutedColor; monthlyChart.options.scales.y.ticks.color = mutedColor; monthlyChart.options.scales.y.grid.color = lineColor;
+                    monthlyChart.options.plugins.tooltip.backgroundColor = panelColor; monthlyChart.options.plugins.tooltip.titleColor = textColor; monthlyChart.options.plugins.tooltip.bodyColor = mutedColor; monthlyChart.update();
+                }
+                if(decisionChart) { decisionChart.data.datasets[0].backgroundColor = [successColor, videoColor, dangerColor]; decisionChart.options.plugins.legend.labels.color = mutedColor; decisionChart.update(); }
+                if(radarChart) { radarChart.data.datasets[0].backgroundColor = `rgba(56, 189, 248, 0.4)`; radarChart.data.datasets[0].borderColor = primary2Color; radarChart.data.datasets[0].pointBackgroundColor = primary2Color; radarChart.options.scales.r.grid.color = lineColor; radarChart.options.scales.r.angleLines.color = lineColor; radarChart.options.scales.r.pointLabels.color = textColor; radarChart.options.scales.r.ticks.backdropColor = 'transparent'; radarChart.options.scales.r.ticks.color = mutedColor; radarChart.update(); }
+                if(monthFocusChart) { monthFocusChart.data.datasets[0].backgroundColor = [artworkColor, videoColor, photoColor]; monthFocusChart.options.scales.x.ticks.color = mutedColor; monthFocusChart.options.scales.y.ticks.color = mutedColor; monthFocusChart.options.scales.y.grid.color = lineColor; monthFocusChart.update(); }
+                if(kpiRadarChart) { kpiRadarChart.data.datasets[0].backgroundColor = `rgba(167, 139, 250, 0.4)`; kpiRadarChart.data.datasets[0].borderColor = primaryColor; kpiRadarChart.data.datasets[0].pointBackgroundColor = primaryColor; kpiRadarChart.options.scales.r.grid.color = lineColor; kpiRadarChart.options.scales.r.angleLines.color = lineColor; kpiRadarChart.options.scales.r.pointLabels.color = textColor; kpiRadarChart.options.scales.r.ticks.backdropColor = 'transparent'; kpiRadarChart.options.scales.r.ticks.color = mutedColor; kpiRadarChart.update(); }
+                if(kpiBarChart) { kpiBarChart.data.datasets[0].backgroundColor = lineColor; kpiBarChart.data.datasets[1].backgroundColor = successColor; if(kpiBarChart.options.scales.x) kpiBarChart.options.scales.x.ticks.color = mutedColor; if(kpiBarChart.options.scales.y) { kpiBarChart.options.scales.y.ticks.color = mutedColor; kpiBarChart.options.scales.y.grid.color = lineColor; } if(kpiBarChart.options.plugins.legend) kpiBarChart.options.plugins.legend.labels.color = mutedColor; kpiBarChart.update(); }
+            }
+        } catch(e) {}
+        
+        if(document.getElementById('viewDashboard').classList.contains('active-view')) renderModernGantt();
+    }
+    window.setTheme = setTheme; const savedTheme = safeGetLS('portfolio_theme') || 'dark';
+
+    function switchView(viewName) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        if (viewName === 'dashboard') { document.getElementById('viewDashboard').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); filterTable(); renderModernGantt(); } 
+        else if (viewName === 'showcase') { document.getElementById('viewShowcase').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); renderShowcase(); } 
+        else if (viewName === 'evaluation') { document.getElementById('viewEvaluation').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); renderFeedback(); } 
+        else if (viewName === 'monthlySummary') { document.getElementById('viewMonthlySummary').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="monthlySummary"]').classList.add('active'); renderMonthlySummary(); } 
+        else if (viewName === 'personalKPI') { document.getElementById('viewPersonalKPI').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="personalKPI"]').classList.add('active'); renderPersonalKPI(); }
+    }
+    window.switchView = switchView;
+
+    function isOverdue(p) {
+        if (!p || p['สถานะ'] === 'เสร็จสิ้น' || !p.dateEnd) return false;
+        const today = new Date(); today.setHours(0,0,0,0);
+        const due = new Date(p.dateEnd); if (isNaN(due.getTime())) return false;
+        return due < today;
+    }
+    function daysOverdue(p) {
+        const today = new Date(); today.setHours(0,0,0,0); const due = new Date(p.dateEnd); due.setHours(0,0,0,0);
+        return Math.max(1, Math.round((today - due) / 86400000));
+    }
+    function computeStats(data) {
+        const s = { total: data.length, ArtWork: 0, Video: 0, Photography: 0, done: 0, prog: 0, pend: 0, overdue: 0 };
+        data.forEach(p => {
+            if (s[p['ประเภทหลัก']] !== undefined) s[p['ประเภทหลัก']]++;
+            if (p['สถานะ'] === 'เสร็จสิ้น') s.done++; else if (p['สถานะ'] === 'กำลังดำเนินการ') s.prog++; else if (p['สถานะ'] === 'รอดำเนินการ') s.pend++;
+            if (isOverdue(p)) s.overdue++;
+        });
+        s.active = s.prog + s.pend; return s;
+    }
+
+    function animateCount(el, target, duration, suffix = "") {
+        if (!el) return; const startVal = parseFloat(el.getAttribute('data-current')) || 0; el.setAttribute('data-current', target);
+        if (startVal === target) { el.innerHTML = (Number.isInteger(target) ? target : target.toFixed(1)) + suffix; return; }
+        const start = performance.now();
+        function tick(now) {
+            const progress = Math.min((now - start) / duration, 1); const eased = 1 - Math.pow(1 - progress, 3); const val = startVal + (target - startVal) * eased;
+            el.innerHTML = (Number.isInteger(target) ? Math.round(val) : val.toFixed(1)) + suffix; if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function refreshAll(initial) {
+        populateDateFilters(); 
+        
+        if (initial || !isDefaultSet) {
+            const curDate = new Date(); const curMonth = (curDate.getMonth() + 1).toString().padStart(2, '0'); const curYear = curDate.getFullYear().toString();
+            ['msFilterMonth', 'kpiFilterMonth'].forEach(id => { if(document.getElementById(id) && !document.getElementById(id).value) document.getElementById(id).value = curMonth; });
+            ['msFilterYear', 'kpiFilterYear'].forEach(id => { if(document.getElementById(id) && !document.getElementById(id).value) document.getElementById(id).value = curYear; });
+            isDefaultSet = true;
+        }
+
+        const s = computeStats(rawData);
+        document.querySelectorAll('.kpi-value[data-kpi]').forEach(el => { const key = el.dataset.kpi; const target = s[key] !== undefined ? s[key] : 0; if (initial) { const delay = parseFloat(el.closest('.kpi-card').style.animationDelay || 0) * 1000; setTimeout(() => animateCount(el, target, 900), delay + 150); } else { animateCount(el, target, 500); } });
+        document.getElementById('totalBadge').textContent = `รวมทั้งหมด ${s.total} โปรเจกต์`;
+        const overdueCard = document.getElementById('kpiOverdueCard'); if (overdueCard) overdueCard.classList.toggle('has-overdue', s.overdue > 0);
+        const pct = s.total ? Math.round((s.done / s.total) * 100) : 0; document.getElementById('rateValue').textContent = pct + '%'; setTimeout(() => { document.getElementById('rateFill').style.width = pct + '%'; }, initial ? 700 : 50);
+
+        try {
+            if (typeof typeChart !== 'undefined' && typeChart) {
+                typeChart.data.labels = [`🎨 ArtWork (${s.ArtWork})`, `🎬 Video (${s.Video})`, `📸 Photography (${s.Photography})`]; typeChart.data.datasets[0].data = [s.ArtWork, s.Video, s.Photography]; typeChart.update();
+                statusChart.data.labels = [`เสร็จสิ้น (${s.done})`, `กำลังดำเนินการ (${s.prog})`, `รอดำเนินการ (${s.pend})`]; statusChart.data.datasets[0].data = [s.done, s.prog, s.pend]; statusChart.update();
+                animateCount(document.getElementById('typeCenterNum'), s.total, initial ? 900 : 500); animateCount(document.getElementById('statusCenterNum'), s.done, initial ? 900 : 500); updateMonthlyChart();
+            }
+        } catch(e) {}
+
+        filterTable(); renderShowcase(); renderFeedback(); renderModernGantt();
+        renderMonthlySummary(); renderPersonalKPI();
+    }
+
+    function updateMonthlyChart() {
+        if(!monthlyChart) return; const monthCounts = {};
+        rawData.forEach(p => { const d = p.dateEnd || p.dateStart || p.dateOrder; if (d && p['สถานะ'] === 'เสร็จสิ้น') { const [y, m] = d.split('-'); if (y && m) monthCounts[`${y}-${m}`] = (monthCounts[`${y}-${m}`] || 0) + 1; } });
+        const sortedMonths = Object.keys(monthCounts).sort();
+        monthlyChart.data.labels = sortedMonths.map(k => { const [y, m] = k.split('-'); return new Date(y, m - 1, 1).toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }); });
+        monthlyChart.data.datasets[0].data = sortedMonths.map(k => monthCounts[k]); monthlyChart.update();
+    }
+    
+    // ================= MONTHLY SUMMARY =================
+    function getMonthlyFilteredData(m, y) {
+        return rawData.filter(p => {
+            if(p['สถานะ'] !== 'เสร็จสิ้น') return false;
+            const pd = p.dateEnd || p.dateStart || p.dateOrder || ""; if(!pd) return false;
+            const [pY, pM] = pd.split('-');
+            if (y && y !== "all" && y !== "nodate" && pY !== y) return false; 
+            if (m && m !== "all" && pM !== m) return false;
+            return true;
+        });
+    }
+
+    function renderMonthlySummary() {
+        const m = document.getElementById('msFilterMonth').value; const y = document.getElementById('msFilterYear').value; const filtered = getMonthlyFilteredData(m, y);
+        let counts = { 'ArtWork': 0, 'Video': 0, 'Photography': 0 }; let totalDays = 0; let projectsWithValidDays = 0;
+        filtered.forEach(p => { if (counts[p['ประเภทหลัก']] !== undefined) counts[p['ประเภทหลัก']]++; const startDay = p.dateStart || p.dateOrder; if(startDay && p.dateEnd) { const d = getDaysDiff(startDay, p.dateEnd); if (d !== null) { totalDays += d; projectsWithValidDays++; } } });
+
+        const totalProjects = filtered.length; const avgDays = projectsWithValidDays > 0 ? (totalDays / projectsWithValidDays) : 0;
+        let topCatStr = '-';
+        if (totalProjects > 0) { let maxCount = -1; for (const [cat, count] of Object.entries(counts)) { if (count > maxCount) { maxCount = count; topCatStr = cat; } } if(topCatStr === 'ArtWork') topCatStr = '🎨 ArtWork'; else if(topCatStr === 'Video') topCatStr = '🎬 Video'; else if(topCatStr === 'Photography') topCatStr = '📸 Photography'; }
+
+        animateCount(document.getElementById('msTotal'), totalProjects, 600); document.getElementById('msTopCat').textContent = topCatStr; animateCount(document.getElementById('msAvgDays'), avgDays, 600);
+        if(monthFocusChart) { monthFocusChart.data.datasets[0].data = [counts['ArtWork'], counts['Video'], counts['Photography']]; monthFocusChart.update(); }
+
+        const tbody = document.getElementById('msDataTable'); tbody.innerHTML = '';
+        if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted); font-size:1.1rem;">ยังไม่มีข้อมูลผลงานที่เสร็จสิ้นในช่วงเวลานี้ 📭</td></tr>`; return; }
+
+        filtered.sort((a,b) => new Date(b.dateEnd || 0) - new Date(a.dateEnd || 0)).forEach((p, idx) => {
+            const tr = document.createElement('tr'); tr.className = 'row-in'; tr.style.animationDelay = (Math.min(idx, 20) * 0.03) + 's';
+            let tagClass = p['ประเภทหลัก'] === "Video" ? 'tag-video' : (p['ประเภทหลัก'] === "Photography" ? 'tag-photo' : 'tag-artwork');
+            const startDay = p.dateStart || p.dateOrder; const leadTime = (startDay && p.dateEnd) ? getDaysDiff(startDay, p.dateEnd) + ' วัน' : '-';
+            tr.innerHTML = `<td style="color:var(--muted);">#${p['ลำดับ']}</td><td><span class="${tagClass}">${p['ประเภทหลัก']}</span></td><td style="color:var(--text); font-weight:600;">${p['ชื่อชิ้นงาน / โปรเจกต์']}</td><td>👤 ${p['ผู้มอบหมาย']}</td><td>${formatDateThai(p.dateEnd)}</td><td style="color:var(--success); font-weight:700;">⏱️ ${leadTime}</td>`; tbody.appendChild(tr);
+        });
+    }
+
+    function exportMonthlyCSV() {
+        const m = document.getElementById('msFilterMonth').value; const y = document.getElementById('msFilterYear').value; const filtered = getMonthlyFilteredData(m, y);
+        if(filtered.length === 0) { alert('ไม่มีข้อมูลสำหรับเดือน/ปีนี้เพื่อ Export ครับ'); return; }
+        let csvContent = "\uFEFF"; csvContent += "ลำดับ,ประเภทหลัก,ประเภทย่อย,แคมเปญ,ชื่อชิ้นงาน / โปรเจกต์,ผู้มอบหมายงาน,โปรแกรมที่ใช้,AI Prompt,การแก้ดราฟต์,วันที่รับบรีฟ,วันที่เริ่มทำ,วันที่เสร็จสิ้น,ระยะเวลา(วัน),สถานะ\n";
+        filtered.forEach(p => {
+            const startDay = p.dateStart || p.dateOrder; const days = (startDay && p.dateEnd) ? getDaysDiff(startDay, p.dateEnd) : '-';
+            const row = [
+                p['ลำดับ'], p['ประเภทหลัก'], `"${(p['ประเภทย่อย'] || '').replace(/"/g, '""')}"`, `"${(p['campaign'] || '').replace(/"/g, '""')}"`, `"${(p['ชื่อชิ้นงาน / โปรเจกต์'] || '').replace(/"/g, '""')}"`, 
+                `"${(p['ผู้มอบหมาย'] || '').replace(/"/g, '""')}"`, `"${(p['tools'] || '').replace(/"/g, '""')}"`, `"${(p['aiPrompt'] || '').replace(/"/g, '""')}"`, p['revision'] || 0,
+                p.dateOrder || '-', p.dateStart || '-', p.dateEnd || '-', days, p['สถานะ']
+            ];
+            csvContent += row.join(",") + "\n";
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", `Monthly_Report_${y !== "all"?y:"All"}_${m !== "all"?m:"All"}.csv`); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    // ================= PERSONAL KPI SCORECARD =================
+    function renderPersonalKPI() {
+        const m = document.getElementById('kpiFilterMonth').value; const y = document.getElementById('kpiFilterYear').value;
+        const filteredWork = getMonthlyFilteredData(m, y);
+        
+        const thaiYearStr = (y && y !== "all" && y !== "nodate") ? (parseInt(y) + 543).toString() : "";
+        const monthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        let monthName = (m && m !== "all") ? monthNames[parseInt(m)-1] : "";
+
+        const filteredEval = evalData.filter(e => {
+            let match = true;
+            if(thaiYearStr && !e.date.includes(thaiYearStr)) match = false;
+            if(monthName && !e.date.includes(monthName)) match = false;
+            return match;
+        });
+
+        const TARGET_PROJECTS = 10;
+        let actualProjects = filteredWork.length;
+        
+        // คำนวณ KPI ข้อที่ 1-5
+        let planPercent = Math.min((actualProjects / TARGET_PROJECTS) * 100, 100);
+        
+        let onTimeCount = 0;
+        let totalDays = 0; let projectsWithValidDays = 0;
+        filteredWork.forEach(p => {
+            const startDay = p.dateStart || p.dateOrder;
+            if(startDay && p.dateEnd) { 
+                const days = getDaysDiff(startDay, p.dateEnd); 
+                if (days !== null) {
+                    if (days <= 5) onTimeCount++; 
+                    totalDays += days;
+                    projectsWithValidDays++;
+                }
+            }
+        });
+        let timePercent = actualProjects > 0 ? (onTimeCount / actualProjects) * 100 : 0;
+        
+        let avgDays = projectsWithValidDays > 0 ? (totalDays / projectsWithValidDays) : 0;
+        let speedPercent = avgDays <= 3 ? 100 : (avgDays <= 5 ? 80 : Math.max(0, 100 - (avgDays * 10)));
+        if (projectsWithValidDays === 0) speedPercent = 0;
+
+        let totalSatScore = 0; let totalCiScore = 0; let ciPassCount = 0;
+        filteredEval.forEach(e => {
+            totalSatScore += parseFloat(e.avgScore); totalCiScore += parseFloat(e.q2);
+            if (parseFloat(e.q2) >= 4) ciPassCount++; 
+        });
+        
+        let avgSat = filteredEval.length > 0 ? parseFloat((totalSatScore / filteredEval.length).toFixed(1)) : 0;
+        
+        let ciPercent = filteredEval.length > 0 ? (ciPassCount / filteredEval.length) * 100 : 100; 
+        if(actualProjects === 0) ciPercent = 0;
+        let satPercent = (avgSat / 5) * 100;
+
+        const en1 = document.getElementById('kpiEnable1') ? document.getElementById('kpiEnable1').checked : true;
+        const en2 = document.getElementById('kpiEnable2') ? document.getElementById('kpiEnable2').checked : true;
+        const en3 = document.getElementById('kpiEnable3') ? document.getElementById('kpiEnable3').checked : true;
+        const en4 = document.getElementById('kpiEnable4') ? document.getElementById('kpiEnable4').checked : true;
+        const en5 = document.getElementById('kpiEnable5') ? document.getElementById('kpiEnable5').checked : true;
+        
+        let w1 = en1 ? 0.20 : 0; let w2 = en2 ? 0.20 : 0; let w3 = en3 ? 0.20 : 0; let w4 = en4 ? 0.20 : 0; let w5 = en5 ? 0.20 : 0;
+        let totalW = w1 + w2 + w3 + w4 + w5;
+
+        let overallScore = 0;
+        if (totalW > 0) {
+            overallScore = ((planPercent * w1) + (timePercent * w2) + (speedPercent * w3) + (ciPercent * w4) + (satPercent * w5)) / totalW;
+        }
+
+        let grade = "D"; let gradeColor = "var(--danger)";
+        if(overallScore >= 90) { grade = "A"; gradeColor = "var(--success)"; }
+        else if(overallScore >= 80) { grade = "B"; gradeColor = "var(--primary-2)"; }
+        else if(overallScore >= 70) { grade = "C"; gradeColor = "var(--video)"; }
+        if(actualProjects === 0 || totalW === 0) { grade = "?"; gradeColor = "var(--muted)"; overallScore = 0; }
+
+        const gc = document.getElementById('kpiGradeCircle');
+        gc.textContent = grade; gc.style.background = `linear-gradient(135deg, ${gradeColor}, #222)`; gc.style.boxShadow = `0 10px 30px rgba(0,0,0,0.5)`;
+        
+        animateCount(document.getElementById('kpiTotalScore'), overallScore, 800, `<span style="font-size:1.2rem;">%</span>`);
+
+        let insightsHtml = "";
+        if (actualProjects === 0) { insightsHtml = "📭 ยังไม่มีชิ้นงานที่เสร็จสมบูรณ์ในช่วงเวลานี้ หรือยังไม่ได้บันทึกข้อมูลครับ"; } 
+        else {
+            insightsHtml += `<ul style="margin:0; padding-left:20px;">`;
+            if (planPercent >= 100) insightsHtml += `<li>🎉 <b>ปริมาณงานเยี่ยมมาก:</b> ทำได้ ${actualProjects} ชิ้น ทะลุเป้าหมายที่วางไว้</li>`;
+            else insightsHtml += `<li>📈 <b>ปริมาณงาน:</b> สำเร็จ ${actualProjects}/${TARGET_PROJECTS} ชิ้น (เร่งมืออีกนิดเพื่อถึงเป้าหมาย)</li>`;
+            if (timePercent >= 80) insightsHtml += `<li>⏱️ <b>ความรวดเร็ว:</b> บริหารเวลาได้ดีมาก! ส่วนใหญ่ใช้เวลาผลิตต่ำกว่า 5 วัน</li>`;
+            else insightsHtml += `<li>⚠️ <b>ความรวดเร็ว:</b> มีงานที่ใช้เวลาเกิน 5 วันพอสมควร ควรระวังเรื่องคิวงานและ Timeline</li>`;
+            if (ciPercent < 80 && filteredEval.length > 0) insightsHtml += `<li>🎨 <b>CI / Design:</b> โดนคอมเมนต์เรื่องความเป๊ะหรือ CI ค่อนข้างบ่อย ลองตรวจสอบไฟล์ก่อนส่งให้ละเอียดขึ้นครับ</li>`;
+            else if (filteredEval.length > 0) insightsHtml += `<li>✨ <b>คุณภาพงาน:</b> งานสวยเป๊ะ ตรงภาพลักษณ์บริษัท (CI) ได้รับคำชมจากผู้มอบหมายงาน</li>`;
+            insightsHtml += `</ul>`;
+        }
+        document.getElementById('kpiInsightText').innerHTML = insightsHtml;
+
+        document.getElementById('kpiPlanVal').textContent = `${Math.round(planPercent)}% (${actualProjects}/${TARGET_PROJECTS})`; document.getElementById('kpiPlanBar').style.width = `${planPercent}%`;
+        document.getElementById('kpiTimeVal').textContent = `${Math.round(timePercent)}%`; document.getElementById('kpiTimeBar').style.width = `${timePercent}%`;
+        document.getElementById('kpiSpeedVal').textContent = `${Math.round(speedPercent)}%`; document.getElementById('kpiSpeedBar').style.width = `${speedPercent}%`;
+        document.getElementById('kpiCiVal').textContent = `${Math.round(ciPercent)}%`; document.getElementById('kpiCiBar').style.width = `${ciPercent}%`;
+        document.getElementById('kpiSatVal').textContent = `${avgSat.toFixed(1)} / 5.0`; document.getElementById('kpiSatBar').style.width = `${satPercent}%`;
+
+        ['kpiEnable1', 'kpiEnable2', 'kpiEnable3', 'kpiEnable4', 'kpiEnable5'].forEach((id, idx) => {
+            const wrap = document.getElementById(`wrapKpi${idx+1}`);
+            if(wrap) {
+                const checked = document.getElementById(id) ? document.getElementById(id).checked : true;
+                wrap.style.opacity = checked ? "1" : "0.4";
+                wrap.style.filter = checked ? "none" : "grayscale(100%)";
+            }
+        });
+
+        if(kpiRadarChart) {
+            let scoreCreativity = 0, scoreTech = 0, scoreComm = 0, scoreCi = 0, scoreResp = 0;
+            if (filteredEval.length > 0) {
+                let sCr=0, sT=0, sCo=0, sCi=0, sR=0;
+                filteredEval.forEach(e => { sCr += (e.q1 + e.q5) / 2; sT += e.q3; sCo += e.q4; sCi += e.q2; sR += (e.q4 + e.q5) / 2; });
+                const n = filteredEval.length; scoreCreativity = sCr/n; scoreTech = sT/n; scoreComm = sCo/n; scoreCi = sCi/n; scoreResp = sR/n;
+            } else if(actualProjects > 0) { scoreCreativity = 3; scoreTech = 3; scoreComm = 3; scoreCi = 3; scoreResp = 3; }
+            kpiRadarChart.data.labels = ['ความคิดสร้างสรรค์ (Creativity)', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร & ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'];
+            kpiRadarChart.data.datasets[0].data = [scoreCreativity, scoreTech, scoreComm, scoreCi, scoreResp]; kpiRadarChart.update();
+        }
+
+        if(kpiBarChart) { kpiBarChart.data.datasets[0].data = [TARGET_PROJECTS]; kpiBarChart.data.datasets[1].data = [actualProjects]; kpiBarChart.update(); }
+
+        const tbody = document.getElementById('kpiDetailTable'); tbody.innerHTML = '';
+        if(filteredWork.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted); font-size:1.1rem;">ยังไม่มีข้อมูลผลงานที่เสร็จสิ้นในช่วงเวลานี้</td></tr>`; return; }
+
+        filteredWork.sort((a,b) => new Date(b.dateEnd || 0) - new Date(a.dateEnd || 0)).forEach((p, idx) => {
+            const tr = document.createElement('tr'); tr.className = 'row-in'; tr.style.animationDelay = (Math.min(idx, 20) * 0.03) + 's';
+            const pNameStr = (p['ชื่อชิ้นงาน / โปรเจกต์'] || "").toLowerCase();
+            const relatedEval = pNameStr ? filteredEval.find(e => {
+                const eProj = (e.project || "").toLowerCase();
+                return eProj && (eProj.includes(pNameStr) || pNameStr.includes(eProj));
+            }) : null;
+
+            const startDay = p.dateStart || p.dateOrder; const leadDays = (startDay && p.dateEnd) ? getDaysDiff(startDay, p.dateEnd) : null;
+            let timeColor = "var(--success)"; let timeText = `${leadDays} วัน`;
+            if (leadDays === null) { timeText = "-"; timeColor = "var(--muted)"; } else if (leadDays > 5) { timeColor = "var(--danger)"; timeText = `${leadDays} วัน (เกินกำหนด)`; }
+
+            let satText = "-"; let ciText = "-"; let evalBadge = `<span class="status-pend" style="font-size:0.75rem;">รอดำเนินการ</span>`;
+            if (relatedEval) {
+                satText = `<span style="color:var(--text); font-weight:700;">${relatedEval.avgScore}</span>`; ciText = `<span style="color:var(--text); font-weight:700;">${relatedEval.q2}</span>`;
+                if(relatedEval.decision === 'Approve') evalBadge = `<span class="status-done" style="font-size:0.75rem;">ผ่านฉลุย</span>`; else if(relatedEval.decision === 'Minor Edit') evalBadge = `<span class="status-prog" style="font-size:0.75rem;">ขอแก้ไข</span>`; else evalBadge = `<span class="status-danger" style="font-size:0.75rem;">รื้อใหม่</span>`;
+            }
+            tr.innerHTML = `<td><div style="color:var(--primary-2); font-size:0.8rem;">#${p['ลำดับ']} · ${p['ประเภทหลัก']}</div><strong style="color:var(--text);">${p['ชื่อชิ้นงาน / โปรเจกต์']}</strong></td><td>👤 ${p['ผู้มอบหมาย']}</td><td style="text-align:center; color:${timeColor}; font-weight:600;">${timeText}</td><td style="text-align:center;">${satText}</td><td style="text-align:center;">${ciText}</td><td>${evalBadge}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ---- MODERN CSS GANTT CHART ----
+    function renderModernGantt() {
+        const container = document.getElementById('cssGanttChart'); if(!container) return;
+        let validProjects = []; let minTime = Infinity; let maxTime = -Infinity;
+        rawData.forEach(p => {
+            if(p.dateStart && p.dateEnd) {
+                let s = new Date(p.dateStart).getTime(); let e = new Date(p.dateEnd).getTime();
+                if(s === e) e += 86400000; 
+                if(s < minTime) minTime = s; if(e > maxTime) maxTime = e;
+                validProjects.push({ ...p, sTime: s, eTime: e });
+            }
+        });
+        if(validProjects.length === 0) { container.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; height:150px; color:var(--muted); font-size:1.1rem;'>ยังไม่มีข้อมูลวันที่สำหรับสร้างกราฟ Timeline</div>"; return; }
+        const paddingTime = (maxTime - minTime) * 0.05; minTime -= paddingTime; maxTime += paddingTime; const totalDuration = maxTime - minTime;
+        let headerHtml = `<div class="gantt-header"><div class="gantt-header-label">ชื่อโปรเจกต์</div><div class="gantt-header-timeline">`;
+        let currentMonth = new Date(minTime); currentMonth.setDate(1);
+        while(currentMonth.getTime() <= maxTime) {
+            let leftPct = ((currentMonth.getTime() - minTime) / totalDuration) * 100;
+            if(leftPct >= 0 && leftPct <= 100) { let mLabel = currentMonth.toLocaleDateString('th-TH', {month:'short', year:'2-digit'}); headerHtml += `<div style="position:absolute; left:${leftPct}%; transform:translateX(-50%); border-left:1px dashed var(--line); padding-left:4px; height:100vh; z-index:0;">${mLabel}</div>`; }
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+        }
+        headerHtml += `</div></div>`;
+        let rowsHtml = '';
+        validProjects.sort((a,b) => a.sTime - b.sTime).forEach(p => {
+            let leftPct = ((p.sTime - minTime) / totalDuration) * 100; let widthPct = ((p.eTime - p.sTime) / totalDuration) * 100;
+            let colorClass = 'gb-artwork'; let icon = '🎨'; if(p['ประเภทหลัก'] === 'Video') { colorClass = 'gb-video'; icon = '🎬'; } else if(p['ประเภทหลัก'] === 'Photography') { colorClass = 'gb-photo'; icon = '📸'; }
+            rowsHtml += `<div class="gantt-row"><div class="gantt-label" title="${p['ชื่อชิ้นงาน / โปรเจกต์']}">${icon} ${p['ชื่อชิ้นงาน / โปรเจกต์']}</div><div class="gantt-track"><div class="gantt-bar ${colorClass}" style="left:${leftPct}%; width:${widthPct}%;" title="${formatDateThai(p.dateStart)} - ${formatDateThai(p.dateEnd)}">${p['ชื่อชิ้นงาน / โปรเจกต์']}</div></div></div>`;
+        });
+        container.innerHTML = headerHtml + rowsHtml;
+    }
+
+    function renderTable(data) {
+        if (!data) data = rawData; // Support direct call from switchView
+        const tbody = document.getElementById('dataTable'); tbody.innerHTML = '';
+        if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:50px; font-size:1.1rem;">ไม่พบข้อมูลที่ค้นหา 🧐</td></tr>`; return; }
+        data.forEach((p, i) => {
+            const tr = document.createElement('tr'); tr.className = 'row-in'; tr.style.animationDelay = (Math.min(i, 24) * 0.02) + 's';
+            
+            let statusHtml = p['สถานะ'] === "กำลังดำเนินการ" ? `<span class="status-prog">⏳ กำลังดำเนินการ</span>` : (p['สถานะ'] === "รอดำเนินการ" ? `<span class="status-pend">📅 รอดำเนินการ</span>` : `<span class="status-done">✓ เสร็จสิ้น</span>`);
+            if (isOverdue(p)) statusHtml = `<span class="status-overdue" title="เลยกำหนดส่งมาแล้ว ${daysOverdue(p)} วัน">⚠️ เลยกำหนด ${daysOverdue(p)} วัน</span>`;
+            let typeHtml = p['ประเภทหลัก'] === "Video" ? `<span class="tag-video">🎬 Video</span>` : (p['ประเภทหลัก'] === "Photography" ? `<span class="tag-photo">📸 Photography</span>` : `<span class="tag-artwork">🎨 ArtWork</span>`);
+            let dateStr = `<span style="font-size:0.85rem; color:var(--muted);">เริ่ม: ${formatDateThai(p.dateStart)}<br>เสร็จ: ${formatDateThai(p.dateEnd)}</span>`;
+            
+            // Pro Features Rendering
+            let campHtml = p['campaign'] ? `<br><span class="tag-campaign">🏷️ ${p['campaign']}</span>` : '';
+            let toolsHtml = (p['tools'] || '').split(',').map(t => t.trim() ? `<span class="tool-badge">${t}</span>` : '').join('');
+            let subCatHtml = `${p['ประเภทย่อย']}<br>${toolsHtml}`;
+
+            tr.innerHTML = `<td>${p['ลำดับ']}</td><td>${typeHtml}</td><td>${subCatHtml}</td><td style="color:var(--text);"><strong>${p['ชื่อชิ้นงาน / โปรเจกต์']}</strong>${campHtml}</td><td style="color:var(--primary-2); font-weight:500;">👤 ${p['ผู้มอบหมาย']}</td><td>${dateStr}</td><td style="font-size:0.94rem; color:var(--muted);">${p['หมายเหตุ'] || '-'}</td><td>${statusHtml}</td><td class="admin-col"><div class="row-actions admin-inline"><button class="icon-btn" title="แก้ไข" onclick="openEditModal(${p['ลำดับ']})">✎</button><button class="icon-btn del" title="ลบ" onclick="deleteProject(${p['ลำดับ']})">🗑</button></div></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    let tableSortKey = null; let tableSortDir = 1;
+    function sortTableBy(key) {
+        if (tableSortKey === key) tableSortDir *= -1; else { tableSortKey = key; tableSortDir = 1; }
+        document.querySelectorAll('#dataTable').forEach(() => {});
+        document.querySelectorAll('.table-box thead th.sortable').forEach(th => {
+            th.classList.toggle('sort-active', th.dataset.key === key);
+            const arrow = th.querySelector('.sort-arrow'); if (arrow) arrow.textContent = th.dataset.key === key ? (tableSortDir === 1 ? '▲' : '▼') : '▲▼';
+        });
+        filterTable();
+    }
+    window.sortTableBy = sortTableBy;
+
+    function applySortToTable(list) {
+        if (!tableSortKey) return list;
+        const key = tableSortKey; const dir = tableSortDir;
+        return [...list].sort((a, b) => {
+            let va, vb;
+            if (key === 'dateEnd') { va = a.dateEnd || a.dateStart || a.dateOrder || ''; vb = b.dateEnd || b.dateStart || b.dateOrder || ''; }
+            else { va = a[key]; vb = b[key]; }
+            if (key === 'ลำดับ') { va = Number(va) || 0; vb = Number(vb) || 0; return (va - vb) * dir; }
+            va = (va || '').toString(); vb = (vb || '').toString();
+            return va.localeCompare(vb, 'th') * dir;
+        });
+    }
+
+    function filterTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase(); const category = document.getElementById('categoryFilter').value; const fDay = document.getElementById('filterDay').value; const fMonth = document.getElementById('filterMonth').value; const fYear = document.getElementById('filterYear').value;
+        const filtered = rawData.filter(p => {
+            const matchSearch = (p['ชื่อชิ้นงาน / โปรเจกต์'] || '').toLowerCase().includes(search) || (p['ผู้มอบหมาย'] || '').toLowerCase().includes(search) || (p['ประเภทย่อย'] || '').toLowerCase().includes(search) || (p['campaign'] || '').toLowerCase().includes(search);
+            const matchCategory = category === "all" || category === "" || p['ประเภทหลัก'] === category;
+            let matchDate = true;
+            if (fYear === "nodate") { const pd = p.dateEnd || p.dateStart || p.dateOrder || ""; matchDate = pd.trim() === ""; } 
+            else {
+                const pd = p.dateEnd || p.dateStart || p.dateOrder || "";
+                if (pd) { const [pY, pM, pD] = pd.split('-'); if (fYear && fYear !== "all" && pY !== fYear) matchDate = false; if (fMonth && fMonth !== "all" && pM !== fMonth) matchDate = false; if (fDay && fDay !== "all" && pD !== fDay) matchDate = false; } 
+                else { if ((fYear && fYear !== "all") || (fMonth && fMonth !== "all") || (fDay && fDay !== "all")) matchDate = false; }
+                if (!matchDate && fYear && fYear !== "all" && !fMonth && !fDay && pd.trim() === "") { if (p['ชื่อชิ้นงาน / โปรเจกต์'] && p['ชื่อชิ้นงาน / โปรเจกต์'].includes(fYear)) matchDate = true; }
+            }
+            return matchSearch && matchCategory && matchDate;
+        }); renderTable(applySortToTable(filtered));
+    }
+    window.filterTable = filterTable;
+
+    function sanitizeLink(link) {
+        if (!link) return ''; link = link.trim();
+        if (link.includes('drive.google.com')) { let fileId = ''; if (link.includes('/file/d/')) fileId = link.split('/file/d/')[1].split('/')[0]; else if (link.includes('id=')) fileId = new URLSearchParams(link.split('?')[1]).get('id'); if (fileId) return `https://drive.google.com/uc?export=view&id=${fileId}`; }
+        return link;
+    }
+
+    function getMediaHtml(link, title) {
+        link = sanitizeLink(link); if (!link || link.trim() === '') return ''; let embedUrl = '';
+        if (link.includes('youtube.com/watch?v=')) embedUrl = `https://www.youtube.com/embed/${link.split('v=')[1].split('&')[0]}`; else if (link.includes('youtu.be/')) embedUrl = `https://www.youtube.com/embed/${link.split('youtu.be/')[1].split('?')[0]}`;
+        if (embedUrl) return `<iframe src="${embedUrl}" title="${title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        else if (link.match(/\.(mp4|webm|ogg)$/i) || link.includes('video/mp4')) return `<video controls preload="metadata" style="background:#000; width:100%; height:100%;"><source src="${link}"></video>`;
+        else return `<img src="${link}" alt="${title}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'portfolio-media-placeholder\\'>🖼️<br><span style=\\'font-size:1rem\\'>โหลดรูป/สื่อไม่สำเร็จ</span></div>';">`;
+    }
+
+    function renderShowcase() {
+        const grid = document.getElementById('showcaseGrid'); const search = document.getElementById('searchShowcase').value.toLowerCase(); const cat = document.getElementById('filterShowcaseCat').value; const fDay = document.getElementById('scFilterDay').value; const fMonth = document.getElementById('scFilterMonth').value; const fYear = document.getElementById('scFilterYear').value;
+        const filtered = [...rawData].sort((a, b) => b['ลำดับ'] - a['ลำดับ']).filter(p => {
+            const matchS = (p['ชื่อชิ้นงาน / โปรเจกต์'] || '').toLowerCase().includes(search) || (p['ผู้มอบหมาย'] || '').toLowerCase().includes(search) || (p['ประเภทย่อย'] || '').toLowerCase().includes(search) || (p['campaign'] || '').toLowerCase().includes(search);
+            const matchC = cat === "all" || cat === "" || p['ประเภทหลัก'] === cat;
+            let matchDate = true;
+            if (fYear === "nodate") { const pd = p.dateEnd || p.dateStart || p.dateOrder || ""; matchDate = pd.trim() === ""; } 
+            else { const pd = p.dateEnd || p.dateStart || p.dateOrder || ""; if (pd) { const [pY, pM, pD] = pd.split('-'); if (fYear && fYear !== "all" && pY !== fYear) matchDate = false; if (fMonth && fMonth !== "all" && pM !== fMonth) matchDate = false; if (fDay && fDay !== "all" && pD !== fDay) matchDate = false; } else { if ((fYear && fYear !== "all") || (fMonth && fMonth !== "all") || (fDay && fDay !== "all")) matchDate = false; } if (!matchDate && fYear && fYear !== "all" && !fMonth && !fDay && pd.trim() === "") { if (p['ชื่อชิ้นงาน / โปรเจกต์'] && p['ชื่อชิ้นงาน / โปรเจกต์'].includes(fYear)) matchDate = true; } } return matchS && matchC && matchDate;
+        });
+
+        grid.innerHTML = ''; if (filtered.length === 0) { grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--muted); padding:80px; font-size: 1.2rem;">ไม่พบผลงานในแกลเลอรี 🧐</div>`; return; }
+        filtered.forEach((p, idx) => {
+            const card = document.createElement('div'); card.className = 'portfolio-card reveal'; card.style.animationDelay = (Math.min(idx, 15) * 0.04) + 's'; card.onclick = () => openLightbox(p['ลำดับ']);
+            let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
+            const links = [...(p.imageLinks || []), ...(p.videoLinks || [])];
+            let mediaHtml = (links.length > 0 && links[0].trim() !== '') ? getMediaHtml(links[0], p['ชื่อชิ้นงาน / โปรเจกต์']) : `<div class="portfolio-media-placeholder">✨<br><span style="font-size:0.9rem">#${p['ลำดับ']} · ${p['ประเภทย่อย']}</span></div>`;
+            let countBadge = links.length > 1 ? `<span style="position:absolute; bottom:14px; right:14px; z-index:2; background:rgba(0,0,0,0.8); padding:4px 10px; border-radius:8px; font-size:0.75rem; color:#fff; font-weight:600;">สื่อ ${links.length} รายการ</span>` : '';
+            card.innerHTML = `<div class="portfolio-media"><span class="portfolio-badge ${tagClass}">${p['ประเภทหลัก']}</span>${mediaHtml}${countBadge}</div><div class="portfolio-content"><div><div style="font-size:0.85rem; color:var(--primary-2); margin-bottom:6px; font-weight:600;">${p['ประเภทย่อย']}</div><h3 class="portfolio-title">${p['ชื่อชิ้นงาน / โปรเจกต์']}</h3></div><div class="portfolio-meta"><span>👤 ${p['ผู้มอบหมาย']}</span><span>#${p['ลำดับ']}</span></div></div>`;
+            grid.appendChild(card);
+        });
+    }
+    window.renderShowcase = renderShowcase;
+
+    function openLightbox(id) {
+        const p = rawData.find(x => x['ลำดับ'] === id); if (!p) return;
+        currentLightboxId = id; currentLightboxImages = [...(p.imageLinks || []), ...(p.videoLinks || [])]; currentLightboxIndex = 0;
+        let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
+        document.getElementById('lbCategory').innerHTML = `<span class="${tagClass}" style="padding:4px 10px; margin-right:8px; border-radius:8px;">${p['ประเภทหลัก']}</span>`;
+        document.getElementById('lbTitle').textContent = p['ชื่อชิ้นงาน / โปรเจกต์']; 
+        document.getElementById('lbCampaign').innerHTML = p['campaign'] ? `<span class="tag-campaign">🏷️ ${p['campaign']}</span>` : '';
+        document.getElementById('lbTools').innerHTML = (p['tools'] || '-').split(',').map(t => t.trim() ? `<span class="tool-badge">${t}</span>` : '-').join('');
+        document.getElementById('lbAiPrompt').textContent = p['aiPrompt'] || '-';
+        document.getElementById('lbRevision').textContent = p['revision'] || 0;
+
+        document.getElementById('lbOwner').textContent = p['ผู้มอบหมาย'];
+        document.getElementById('lbSub').textContent = p['ประเภทย่อย']; document.getElementById('lbNote').textContent = p['หมายเหตุ'] || '-';
+        document.getElementById('lbStatus').textContent = p['สถานะ']; document.getElementById('lbIdBadge').textContent = 'Project ID #' + p['ลำดับ'];
+        document.getElementById('lbDateOrder').textContent = formatDateThai(p.dateOrder); document.getElementById('lbDateStart').textContent = formatDateThai(p.dateStart); document.getElementById('lbDateEnd').textContent = formatDateThai(p.dateEnd);
+        updateLightboxSlide(); document.getElementById('lbEditBtn').style.display = isAdmin ? 'inline-flex' : 'none'; document.getElementById('lightboxOverlay').classList.add('open');
+    }
+    window.openLightbox = openLightbox;
+
+    function updateLightboxSlide() {
+        const container = document.getElementById('lbMediaContainer'); const prevBtn = document.getElementById('lbPrevBtn'); const nextBtn = document.getElementById('lbNextBtn'); const counter = document.getElementById('lbCounter'); const dlBtn = document.getElementById('lbDownloadBtn');
+        if (currentLightboxImages.length === 0 || currentLightboxImages[0].trim() === '') { container.innerHTML = `<div class="portfolio-media-placeholder" style="width:100%; height:100%; min-height:400px;">🖼️<br><span style="font-size:1.2rem;">ไม่มีรูปภาพ/วิดีโอตัวอย่าง</span></div>`; prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; counter.style.display = 'none'; dlBtn.style.display = 'none'; return; }
+        if (currentLightboxImages.length > 1) { prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex'; counter.style.display = 'block'; counter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`; } else { prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; counter.style.display = 'none'; }
+        dlBtn.style.display = 'inline-flex'; let link = sanitizeLink(currentLightboxImages[currentLightboxIndex]); if(link.includes('youtube.com/embed/')) link = link.replace('embed/', 'watch?v='); dlBtn.href = link;
+        container.innerHTML = getMediaHtml(currentLightboxImages[currentLightboxIndex], 'Project Media');
+    }
+    function prevLightboxImage(e) { if(e) e.stopPropagation(); if (currentLightboxImages.length > 1) { currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length; updateLightboxSlide(); } }
+    function nextLightboxImage(e) { if(e) e.stopPropagation(); if (currentLightboxImages.length > 1) { currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length; updateLightboxSlide(); } }
+    function closeLightbox() { document.getElementById('lightboxOverlay').classList.remove('open'); document.getElementById('lbMediaContainer').innerHTML = ''; }
+    function editCurrentFromLightbox() { if (currentLightboxId !== null) { closeLightbox(); openEditModal(currentLightboxId); } }
+    window.prevLightboxImage = prevLightboxImage; window.nextLightboxImage = nextLightboxImage; window.closeLightbox = closeLightbox; window.editCurrentFromLightbox = editCurrentFromLightbox; 
+
+    // ============ SATISFACTION EVALUATION ============
+    function getRadioVal(name) { const radios = document.getElementsByName(name); for(let i=0; i<radios.length; i++) { if(radios[i].checked) return radios[i].value; } return null; }
+
+    function submitEvaluation() {
+        const q1 = parseInt(getRadioVal('q1')), q2 = parseInt(getRadioVal('q2')), q3 = parseInt(getRadioVal('q3')), q4 = parseInt(getRadioVal('q4')), q5 = parseInt(getRadioVal('q5'));
+        const decision = getRadioVal('decision'); const owner = document.getElementById('evalOwner').value.trim(); const mType = document.getElementById('evalMediaType').value;
+        const errorEl = document.getElementById('evalError');
+        
+        if(!owner || !mType || isNaN(q1) || isNaN(q2) || isNaN(q3) || isNaN(q4) || isNaN(q5) || !decision) { errorEl.style.color = 'var(--danger)'; errorEl.textContent = 'กรุณากรอกข้อมูลและให้คะแนนให้ครบทุกข้อก่อนส่งครับ 🚨'; return; }
+        
+        const project = document.getElementById('evalProject').value.trim() || "ไม่ระบุโปรเจกต์"; const comment = document.getElementById('evalComment').value.trim();
+        const date = new Date().toLocaleDateString('th-TH', {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+        evalData.push({ owner, project, mediaType: mType, q1, q2, q3, q4, q5, decision, comment, date, avgScore: ((q1 + q2 + q3 + q4 + q5) / 5).toFixed(1) });
+        saveEvalData();
+        
+        ['q1','q2','q3','q4','q5','decision'].forEach(name => { const r = document.getElementsByName(name); for(let i=0; i<r.length; i++) r[i].checked = false; });
+        ['evalOwner','evalProject','evalMediaType','evalComment'].forEach(id => document.getElementById(id).value = '');
+        errorEl.style.color = 'var(--success)'; errorEl.textContent = 'ได้รับรีวิวเรียบร้อยครับ! ขอบคุณที่ร่วมสร้างสรรค์ผลงานไปด้วยกัน 🎬✨';
+        setTimeout(() => { errorEl.textContent = ''; }, 5000); 
+        refreshAll(false);
+    }
+    window.submitEvaluation = submitEvaluation;
+
+    function renderFeedback() {
+        const grid = document.getElementById('evalTableEl'); const tableBox = document.getElementById('evalTableBox');
+        if(!grid) return;
+        
+        if (evalData.length === 0) {
+            document.getElementById('evalAvgText').innerHTML = `ยังไม่มีข้อมูลการประเมิน`;
+            if(tableBox) tableBox.style.display = 'none';
+            if(decisionChart) { decisionChart.data.datasets[0].data = [0,0,0]; decisionChart.update(); }
+            if(radarChart) { radarChart.data.datasets[0].data = [0,0,0,0,0]; radarChart.update(); }
+            return;
+        }
+        if(tableBox) tableBox.style.display = 'block';
+
+        let totalSum = 0; let decCounts = { "Approve":0, "Minor Edit":0, "Reject":0 }; let radarSums = { q1:0, q2:0, q3:0, q4:0, q5:0 };
+        let tbody = '';
+        [...evalData].reverse().forEach(item => {
+            let score = parseFloat(item.avgScore); totalSum += score;
+            if(decCounts[item.decision] !== undefined) decCounts[item.decision]++;
+            radarSums.q1 += item.q1; radarSums.q2 += item.q2; radarSums.q3 += item.q3; radarSums.q4 += item.q4; radarSums.q5 += item.q5;
+            let badgeClass = item.decision === 'Minor Edit' ? 'status-prog' : (item.decision === 'Reject' ? 'status-danger' : 'status-done');
+            let icon = item.decision === 'Minor Edit' ? '🟡' : (item.decision === 'Reject' ? '🔴' : '🟢');
+            tbody += `<tr><td style="color:var(--primary-2); font-weight:500;">${item.owner}</td><td style="color:var(--text);"><b>${item.project}</b><br><span style="font-size:0.8rem; color:var(--muted);">${item.mediaType}</span></td><td style="color:var(--text); font-weight:bold; font-size:1.1rem;">${score.toFixed(1)}</td><td><span class="${badgeClass}">${icon} ${item.decision}</span></td><td style="color:var(--muted); font-size:0.9rem;">${item.comment || '-'}</td></tr>`;
+        });
+        
+        grid.innerHTML = `<thead><tr style="background: var(--panel);"><th width="15%">ผู้ตรวจรับ</th><th width="20%">ชื่องาน</th><th width="10%">เฉลี่ย</th><th width="15%">สถานะ</th><th width="40%">คอมเมนต์</th></tr></thead><tbody>${tbody}</tbody>`;
+        document.getElementById('evalAvgText').innerHTML = `คะแนนเฉลี่ยรวม: <b>${(totalSum / evalData.length).toFixed(1)} / 5.0</b> <span style="font-size:0.9em; color:var(--muted);">(${evalData.length} รีวิว)</span> <span style="color:var(--ink); margin-left:12px; background:var(--success); padding:6px 12px; border-radius:10px; font-weight:700;">🏆 ประสิทธิภาพ: ${(((totalSum / evalData.length) / 5) * 100).toFixed(1)}%</span>`;
+
+        if(decisionChart) { decisionChart.data.datasets[0].data = [decCounts['Approve'], decCounts['Minor Edit'], decCounts['Reject']]; decisionChart.update(); }
+        if(radarChart) { const n = evalData.length; radarChart.data.datasets[0].data = [radarSums.q1/n, radarSums.q2/n, radarSums.q3/n, radarSums.q4/n, radarSums.q5/n]; radarChart.update(); }
+    }
+    window.renderFeedback = renderFeedback;
+
+    function clearEvaluations() { 
+        if(confirm("ต้องการล้างข้อมูลแบบประเมินทั้งหมดใช่หรือไม่?")) { evalData = []; saveEvalData(); refreshAll(false); } 
+    }
+    window.clearEvaluations = clearEvaluations;
+
+    // ============ ADMIN LOGIN ============
+    function openLogin() { document.getElementById('loginOverlay').classList.add('open'); }
+    function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+    function attemptLogin() {
+        const u = document.getElementById('loginUser').value.trim().toLowerCase();
+        const p = document.getElementById('loginPass').value;
+        if ((u === 'admin') && p === 'Admin') { 
+            isAdmin = true; document.body.classList.add('admin-on'); closeLogin(); refreshAll(false); 
+        } else {
+            document.getElementById('loginError').textContent = 'Username หรือ Password ไม่ถูกต้อง';
+        }
+    }
+    function logoutAdmin() { isAdmin = false; document.body.classList.remove('admin-on'); refreshAll(false); }
+    window.openLogin = openLogin; window.closeLogin = closeLogin; window.attemptLogin = attemptLogin; window.logoutAdmin = logoutAdmin;
+
+    // ============ Add / Edit Modal Actions ============
+    function handleFileUpload(event) {
+        const files = event.target.files; if (!files || files.length === 0) return;
+        const info = document.getElementById('uploadPreviewInfo'); if(info) info.textContent = `⏳ กำลังบีบอัดและโหลดรูปภาพ...`;
+        let loadedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas'); let width = img.width; let height = img.height;
+                    if (width > height) { if (width > 1200) { height *= 1200 / width; width = 1200; } } else { if (height > 1200) { width *= 1200 / height; height = 1200; } }
+                    canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    editingProjectImages.push(canvas.toDataURL('image/jpeg', 0.8)); loadedCount++;
+                    if (loadedCount === files.length) { renderEditThumbnails(); const upInput = document.getElementById('fUpload'); if(upInput) upInput.value = ''; if(info) info.textContent = `✅ บีบอัดและโหลดรูปสำเร็จ ${loadedCount} รูปแล้ว`; }
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(files[i]);
+        }
+    }
+    function renderEditThumbnails() {
+        const container = document.getElementById('editThumbnailsContainer'); container.innerHTML = '';
+        if (editingProjectImages.length === 0) { container.innerHTML = `<span style="font-size:0.9rem; color:var(--muted);">ยังไม่มีรูปภาพในโปรเจกต์นี้</span>`; return; }
+        editingProjectImages.forEach((img, idx) => {
+            const div = document.createElement('div'); div.className = 'thumb-item';
+            div.innerHTML = `<img src="${sanitizeLink(img)}" alt="thumb" onerror="this.src='';"><button class="thumb-del" type="button" onclick="removeImageAt(${idx})">✕</button>`;
+            container.appendChild(div);
+        });
+    }
+    window.handleFileUpload = handleFileUpload; window.removeImageAt = function(idx) { editingProjectImages.splice(idx, 1); renderEditThumbnails(); };
+
+    function openAddModal() {
+        editingId = null; editingProjectImages = [];
+        ['fSub','fName','fCampaign','fOwner','fTools','fAiPrompt','fNote','fDateOrder','fDateStart','fDateEnd','fImageLinks','fVideoLinks','fUpload'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('fRevision').value = 0;
+        document.getElementById('projectModalTitle').textContent = 'เพิ่มโปรเจกต์ใหม่';
+        document.getElementById('fMain').value = 'ArtWork'; document.getElementById('fStatus').value = 'เสร็จสิ้น';
+        if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
+        renderEditThumbnails(); document.getElementById('projectError').textContent = ''; document.getElementById('projectOverlay').classList.add('open');
+    }
+    function openEditModal(id) {
+        const p = rawData.find(x => x['ลำดับ'] === id); if (!p) return;
+        editingId = id; editingProjectImages = p.imageLinks ? [...p.imageLinks] : [];
+        document.getElementById('projectModalTitle').textContent = 'แก้ไขโปรเจกต์ #' + id;
+        document.getElementById('fMain').value = p['ประเภทหลัก']; document.getElementById('fStatus').value = p['สถานะ'];
+        document.getElementById('fSub').value = p['ประเภทย่อย']; document.getElementById('fName').value = p['ชื่อชิ้นงาน / โปรเจกต์'];
+        document.getElementById('fCampaign').value = p['campaign'] || '';
+        document.getElementById('fOwner').value = p['ผู้มอบหมาย']; 
+        document.getElementById('fTools').value = p['tools'] || '';
+        document.getElementById('fAiPrompt').value = p['aiPrompt'] || '';
+        document.getElementById('fRevision').value = p['revision'] || 0;
+        document.getElementById('fNote').value = p['หมายเหตุ'] || '';
+        document.getElementById('fDateOrder').value = p['dateOrder'] || ''; document.getElementById('fDateStart').value = p['dateStart'] || ''; document.getElementById('fDateEnd').value = p['dateEnd'] || '';
+        document.getElementById('fImageLinks').value = ''; document.getElementById('fVideoLinks').value = p.videoLinks ? p.videoLinks.join('\n') : ''; document.getElementById('fUpload').value = '';
+        if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
+        renderEditThumbnails(); document.getElementById('projectError').textContent = ''; document.getElementById('projectOverlay').classList.add('open');
+    }
+    function deleteProject(id) { const p = rawData.find(x => x['ลำดับ'] === id); if (!p) return; if (confirm(`ลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ใช่หรือไม่?`)) { rawData = rawData.filter(x => x['ลำดับ'] !== id); saveData(); refreshAll(false); } }
+    function closeProjectModal() { document.getElementById('projectOverlay').classList.remove('open'); }
+    function saveProjectData() {
+        const name = document.getElementById('fName').value.trim(); const owner = document.getElementById('fOwner').value.trim(); const sub = document.getElementById('fSub').value.trim();
+        if (!name || !owner || !sub) { document.getElementById('projectError').textContent = 'กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบ'; return; }
+
+        const record = {
+            'ประเภทหลัก': document.getElementById('fMain').value, 
+            'ประเภทย่อย': sub, 
+            'ชื่อชิ้นงาน / โปรเจกต์': name, 
+            'campaign': document.getElementById('fCampaign').value.trim(),
+            'ผู้มอบหมาย': owner, 
+            'tools': document.getElementById('fTools').value.trim(),
+            'aiPrompt': document.getElementById('fAiPrompt').value.trim(),
+            'revision': parseInt(document.getElementById('fRevision').value) || 0,
+            'หมายเหตุ': document.getElementById('fNote').value.trim() || null, 
+            'สถานะ': document.getElementById('fStatus').value, 
+            'dateOrder': document.getElementById('fDateOrder').value, 
+            'dateStart': document.getElementById('fDateStart').value, 
+            'dateEnd': document.getElementById('fDateEnd').value,
+            'imageLinks': [...editingProjectImages, ...document.getElementById('fImageLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)],
+            'videoLinks': document.getElementById('fVideoLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+        };
+
+        if (editingId === null) { record['ลำดับ'] = rawData.length > 0 ? Math.max(...rawData.map(p => p['ลำดับ'])) + 1 : 1; rawData.push(record); } 
+        else { record['ลำดับ'] = editingId; rawData[rawData.findIndex(x => x['ลำดับ'] === editingId)] = record; }
+        saveData(); closeProjectModal(); refreshAll(false);
+    }
+    window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
+
+    // ============ SMART EVIDENCE UPLOAD ============
+    function handleKpiEvidence(event) {
+        const files = event.target.files;
+        const container = document.getElementById('kpiEvidenceList');
+        if(!files || files.length === 0) return;
+        
+        Array.from(files).forEach(file => {
+            let icon = '📄';
+            if(file.type.includes('image')) icon = '🖼️';
+            else if(file.name.toLowerCase().includes('.xls')) icon = '📊';
+            else if(file.name.toLowerCase().includes('.doc')) icon = '📝';
+            else if(file.type.includes('pdf')) icon = '📕';
+            
+            const chip = document.createElement('div');
+            chip.className = 'evidence-chip';
+            chip.innerHTML = `${icon} <span style="max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</span> 
+            <span style="color:var(--danger); cursor:pointer; font-weight:bold; margin-left:4px;" onclick="this.parentElement.remove()" title="ลบไฟล์นี้">✕</span>`;
+            
+            container.appendChild(chip);
+        });
+        
+        event.target.value = ''; 
+    }
+    window.handleKpiEvidence = handleKpiEvidence;
+
+    // ============ init charts & data ============
+    try {
+        if (typeof Chart !== 'undefined') {
+            const style = getComputedStyle(document.documentElement); function getCSSVar(name, def) { return style.getPropertyValue(name).trim() || def; }
+            const legendLabelStyle = { font: { family: 'Kanit', size: 14 }, color: getCSSVar('--muted', '#aab6cc'), padding: 18, usePointStyle: true, pointStyle: 'circle' };
+            const doughnutOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', animation: { animateRotate: true, animateScale: true, duration: 1200, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: legendLabelStyle } } };
+
+            typeChart = new Chart(document.getElementById('typeChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], borderWidth: 0, hoverOffset: 12 }] }, options: doughnutOptions });
+            statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], borderWidth: 0, hoverOffset: 12 }] }, options: doughnutOptions });
+            monthlyChart = new Chart(document.getElementById('monthlyChart').getContext('2d'), { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนงานที่เสร็จสิ้น (โปรเจกต์)', data: [], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+            decisionChart = new Chart(document.getElementById('decisionChart').getContext('2d'), { type: 'doughnut', data: { labels: ['Approve', 'Minor Edit', 'Reject'], datasets: [{ data: [0,0,0], borderWidth: 0 }] }, options: doughnutOptions });
+            radarChart = new Chart(document.getElementById('radarChart').getContext('2d'), { type: 'radar', data: { labels: ['เนื้อหา (Brief)', 'ความสวยงาม (CI)', 'ใช้งานได้จริง (Usability)', 'ตรงเวลา (Timeline)', 'ภาพรวม (Overall)'], datasets: [{ label: 'คะแนนเฉลี่ย', data: [0,0,0,0,0], fill: true, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+            monthFocusChart = new Chart(document.getElementById('monthFocusChart').getContext('2d'), { type: 'bar', data: { labels: ['🎨 ArtWork', '🎬 Video', '📸 Photography'], datasets: [{ label: 'จำนวนงานที่เสร็จสิ้น', data: [0,0,0], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+            kpiRadarChart = new Chart(document.getElementById('kpiRadarChart').getContext('2d'), { type: 'radar', data: { labels: ['ความคิดสร้างสรรค์', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร & ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'], datasets: [{ label: 'ระดับสมรรถนะประเมิน (เต็ม 5)', data: [0,0,0,0,0], fill: true, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+            
+            kpiBarChart = new Chart(document.getElementById('kpiBarChart').getContext('2d'), { 
+                type: 'bar', 
+                data: { labels: ['ปริมาณงานประจำเดือน (Projects)'], datasets: [{ label: 'เป้าหมายที่ต้องทำ (Target)', data: [10], borderRadius: 6 }, { label: 'ทำได้จริง (Actual)', data: [0], borderRadius: 6 }] }, 
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    scales: { 
+                        x: { ticks: {} }, 
+                        y: { beginAtZero: true, ticks: { stepSize: 2 } } 
+                    }, 
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Kanit' } } } } 
+                } 
+            });
+        }
+    } catch (err) {}
+
+    setTheme(savedTheme); refreshAll(true);
+</script>
+</body>
+</html>
