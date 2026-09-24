@@ -1,3 +1,1049 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Master Portfolio & Creative Scorecard</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- ใช้งาน Chart.js สำหรับกราฟทั้งหมด -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+<style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    
+    /* ---- Theme Variables ---- */
+    :root {
+        color-scheme: dark;
+        --ink: #0a0b10; --panel: rgba(255, 255, 255, 0.03); --panel-solid: #121521; --panel-2: #1b1e2f;
+        --line: rgba(255, 255, 255, 0.08); --primary: #a78bfa; --primary-2: #38bdf8; 
+        --artwork: #f472b6; --video: #fde047; --photo: #5eead4; 
+        --success: #34d399; --danger: #fb7185; --text: #f8fafc; --muted: #94a3b8;
+    }
+    [data-theme="light"] {
+        color-scheme: light;
+        --ink: #f0ebf8; --panel: rgba(255, 255, 255, 0.8); --panel-solid: #ffffff; --panel-2: #f8f9fa;
+        --line: #dadce0; --primary: #673ab7; --primary-2: #4285f4; 
+        --artwork: #e91e63; --video: #f59e0b; --photo: #0d9488; 
+        --success: #0f9d58; --danger: #d93025; --text: #202124; --muted: #5f6368;
+    }
+    [data-theme="colorblind"] {
+        color-scheme: dark;
+        --ink: #111111; --panel: rgba(255, 255, 255, 0.06); --panel-solid: #222222; --panel-2: #333333;
+        --line: rgba(255, 255, 255, 0.2); --primary: #ffb000; --primary-2: #785ef0; 
+        --artwork: #dc267f; --video: #fe6100; --photo: #648fff; 
+        --success: #648fff; --danger: #fe6100; --text: #ffffff; --muted: #d0d0d0;
+    }
+
+    body { 
+        font-family: 'Kanit', sans-serif; margin: 0; padding: 2vh 2vw; 
+        color: var(--text); background-color: transparent; /* ให้โปร่งแสงเพื่อโชว์พื้นหลังทะเล */
+        min-height: 100vh; position: relative; overflow-x: hidden; 
+        transition: color 0.3s; 
+    }
+
+    /* ================= GLOBAL OCEAN BACKGROUND (Optimized) ================= */
+    #ocean-bg {
+        position: fixed; inset: 0; z-index: -999; overflow: hidden; pointer-events: none;
+        background: linear-gradient(180deg, #0284c7 0%, #082f49 100%);
+    }
+    /* เอฟเฟกต์แหวกคลื่น / แสงไฟตามเมาส์ (ประหยัดทรัพยากรมาก) */
+    #ocean-bg::after {
+        content: ''; position: absolute; inset: 0;
+        background: radial-gradient(circle 350px at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.15), transparent 70%);
+        mix-blend-mode: overlay; z-index: 10; transition: background 0.1s ease;
+    }
+
+    /* ฟองอากาศลอยขึ้น */
+    .bubble {
+        position: absolute; bottom: -50px; background: rgba(255, 255, 255, 0.3); border-radius: 50%;
+        animation: rise infinite ease-in; box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+        will-change: transform, opacity;
+    }
+    @keyframes rise {
+        0% { bottom: -50px; transform: translateX(0); opacity: 0; }
+        50% { opacity: 1; transform: translateX(15px); }
+        100% { bottom: 110vh; transform: translateX(-15px); opacity: 0; }
+    }
+
+    /* สัตว์ทะเลว่ายน้ำ (ตัดเงาออกเพื่อลดการกินสเปค เพิ่ม will-change) */
+    .creature { 
+        position: absolute; white-space: nowrap; font-size: 3rem; opacity: 0.85;
+        z-index: 1; will-change: transform; transition: transform 0.2s ease-out;
+    }
+    .c1 { top: 18%; animation: swimRight 20s linear infinite, bob 4s ease-in-out infinite; font-size: 3.5rem; }
+    .c2 { top: 55%; animation: swimLeft 28s linear infinite, bob 5s ease-in-out infinite; font-size: 4.5rem; }
+    .c3 { top: 80%; animation: swimRight 25s linear infinite, bob 3s ease-in-out infinite; font-size: 2.5rem; animation-delay: 3s; }
+    .c4 { bottom: 20px; animation: scuttleRight 35s linear infinite; font-size: 2rem; z-index: 4; opacity: 0.6; }
+
+    /* Parallax แหวกคลื่น: เลื่อนซ้ายขวาตามเมาส์เล็กน้อย (--wave-shift) */
+    @keyframes swimRight { 0% { left: -10vw; transform: scaleX(1) translateX(var(--wave-shift, 0px)); } 100% { left: 110vw; transform: scaleX(1) translateX(var(--wave-shift, 0px)); } }
+    @keyframes swimLeft { 0% { left: 110vw; transform: scaleX(-1) translateX(calc(var(--wave-shift, 0px) * -1)); } 100% { left: -10vw; transform: scaleX(-1) translateX(calc(var(--wave-shift, 0px) * -1)); } }
+    @keyframes scuttleRight { 0% { left: -10vw; transform: translateX(calc(var(--wave-shift, 0px) * 0.5)); } 100% { left: 110vw; transform: translateX(calc(var(--wave-shift, 0px) * 0.5)); } }
+    @keyframes bob { 0%, 100% { margin-top: 0; } 50% { margin-top: -20px; } }
+
+    /* คลื่นใต้น้ำ (ลดเหลือ 2 ชั้นเพื่อไม่ให้แลค) */
+    .ocean-waves { position: absolute; bottom: 0; left: 0; width: 100%; height: 150px; z-index: 2; transform: translateX(var(--wave-shift, 0px)); transition: transform 0.3s ease-out; will-change: transform;}
+    .wave {
+        position: absolute; bottom: 0; left: 0; width: 200%; height: 100%;
+        background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M0,40 C150,80 300,0 450,40 C600,80 750,0 900,40 C1050,80 1200,0 1200,40 L1200,120 L0,120 Z" fill="%23ffffff" fill-opacity="0.06"/></svg>') repeat-x;
+        background-size: 50% 100%; will-change: transform;
+    }
+    .wave1 { animation: moveWave 22s linear infinite; z-index: 3; height: 100px; }
+    .wave2 { animation: moveWave 16s linear infinite reverse; z-index: 2; height: 130px; background-position: 50px 0; }
+
+    @keyframes moveWave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    /* ================= ELEMENTS & COMPONENTS ================= */
+    .container { width: 100%; max-width: 100%; margin: 0 auto; position: relative; z-index: 50; }
+    .reveal { opacity: 0; transform: translateY(14px); animation: revealUp 0.7s cubic-bezier(.16,.84,.44,1) forwards; }
+    @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* เพิ่มสีพื้นหลังการ์ดให้ทึบขึ้นเล็กน้อยเพื่อให้ตัดกับทะเล */
+    .glass { background: linear-gradient(155deg, rgba(27, 30, 47, 0.75), rgba(18, 21, 33, 0.9)); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); transition: background 0.3s, border-color 0.3s; }
+    [data-theme="light"] .glass { background: rgba(255,255,255,0.85); box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5); }
+
+    .theme-switcher { display: flex; gap: 8px; background: var(--panel-solid); border: 1px solid var(--line); padding: 4px; border-radius: 12px; }
+    .theme-btn { border: none; background: transparent; cursor: pointer; border-radius: 8px; padding: 6px 10px; color: var(--muted); transition: all 0.2s; font-size: 1.1rem; }
+    .theme-btn:hover { color: var(--text); background: var(--panel-2); }
+    .theme-btn.active { color: var(--text); background: var(--line); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+
+    .view-switcher { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 15px; }
+    .nav-tabs { display: inline-flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 5px; gap: 4px; flex-wrap: wrap; }
+    .nav-tab { border: none; background: transparent; color: var(--muted); font-family: 'Kanit', sans-serif; font-size: 0.96rem; font-weight: 600; padding: 10px 22px; border-radius: 10px; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .nav-tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; box-shadow: 0 4px 20px rgba(167, 139, 250, 0.4); }
+
+    .view-section { display: none; }
+    .view-section.active-view { display: block; animation: viewFadeIn 0.45s cubic-bezier(.16,.84,.44,1); }
+    @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ---- header ---- */
+    .header { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 34px 44px; border-radius: 22px; margin-bottom: 22px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--primary-2); font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .eyebrow .line { width: 30px; height: 2px; background: var(--primary-2); border-radius: 2px;}
+    .header h1 { margin: 0; font-size: 2.5rem; font-weight: 800; position: relative; color: var(--text); letter-spacing: -0.02em;}
+    .header p { margin: 10px 0 0 0; color: var(--muted); font-size: 1.1rem; position: relative; line-height: 1.6; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; position: relative; }
+    .badge { background: rgba(56,189,248,0.15); color: var(--primary-2); padding: 10px 22px 10px 18px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(56,189,248,0.35); display: inline-flex; align-items: center; gap: 10px; }
+
+    /* ---- KPI & Charts ---- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-bottom: 18px; }
+    .kpi-card { position: relative; padding: 24px; border-radius: 18px; text-align: center; overflow: hidden; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
+    .kpi-card::before { content:""; position:absolute; left:0; right:0; top:0; height:4px; background: var(--accent, var(--primary)); box-shadow: 0 0 20px var(--accent, var(--primary)); }
+    .kpi-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    [data-theme="light"] .kpi-card:hover { box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+    .kpi-total { --accent: var(--primary-2); } .kpi-art { --accent: var(--artwork); } .kpi-vid { --accent: var(--video); } .kpi-photo { --accent: var(--photo); } .kpi-prog { --accent: var(--success); }
+    .kpi-overdue { --accent: var(--danger); }
+    .kpi-overdue .kpi-value { color: var(--danger); }
+    .kpi-overdue.has-overdue { animation: kpiWarnGlow 2s ease-in-out infinite; }
+    @keyframes kpiWarnGlow { 0%,100% { box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); } 50% { box-shadow: 0 0 0 3px rgba(251,113,133,0.35), 0 10px 40px -10px rgba(0,0,0,0.5); } }
+    .kpi-title { font-size: 1rem; color: var(--muted); margin-bottom: 10px; font-weight: 600; letter-spacing: 0.5px;}
+    .kpi-value { font-size: 3rem; font-weight: 800; color: var(--text); margin: 0; font-variant-numeric: tabular-nums; text-shadow: 0 0 20px rgba(255,255,255,0.1);}
+
+    .rate-box { padding: 22px 28px; border-radius: 18px; margin-bottom: 22px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .rate-box .rate-label { font-size: 1.05rem; font-weight: 600; color: var(--muted); min-width: 180px; }
+    .rate-box .rate-value { font-size: 1.8rem; font-weight: 800; color: var(--success); min-width: 70px; font-variant-numeric: tabular-nums; text-shadow: 0 0 15px rgba(52, 211, 153, 0.4);}
+    .rate-track { flex: 1; min-width: 200px; height: 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+    .rate-fill { height: 100%; border-radius: 10px; width: 0%; background: linear-gradient(90deg, var(--success), var(--primary-2)); transition: width 1.2s cubic-bezier(.16,.84,.44,1); box-shadow: 0 0 20px var(--success); }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 22px; margin-bottom: 22px; }
+    @media (max-width: 1400px) { .charts-grid { grid-template-columns: 1fr 1fr; } .monthly-chart-box { grid-column: 1 / -1; } }
+    
+    .chart-box { padding: 28px; border-radius: 20px; }
+    .chart-box h3 { margin-top: 0; color: var(--text); border-bottom: 1px solid var(--line); padding-bottom: 15px; font-size: 1.25rem; font-weight: 600; }
+    .chart-container { position: relative; height: 320px; width: 100%; }
+    .chart-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+    .chart-center .num { font-size: 2.2rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .chart-center .lbl { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+
+    /* ---- MODERN CSS GANTT CHART ---- */
+    .gantt-wrapper { overflow-x: auto; overflow-y: hidden; padding-bottom: 15px; margin-top: 20px;}
+    .gantt-container { min-width: 800px; display: flex; flex-direction: column; gap: 10px; position: relative;}
+    .gantt-header { display: flex; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 10px; color: var(--muted); font-size: 0.9rem; font-weight: 600; text-transform: uppercase;}
+    .gantt-header-label { width: 250px; flex-shrink: 0; padding-right: 15px; }
+    .gantt-header-timeline { flex-grow: 1; display: flex; justify-content: space-between; position: relative;}
+    .gantt-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.03); transition: background 0.2s; border-radius: 8px;}
+    .gantt-row:hover { background: var(--panel); }
+    .gantt-label { width: 250px; flex-shrink: 0; padding-right: 15px; font-size: 0.95rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px;}
+    .gantt-track { flex-grow: 1; position: relative; height: 32px; background: var(--panel); border-radius: 16px; border: 1px solid var(--line);}
+    .gantt-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 14px; display: flex; align-items: center; padding: 0 12px; font-size: 0.8rem; font-weight: 600; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); white-space: nowrap; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;}
+    .gantt-bar:hover { transform: scaleY(1.1) translateY(-2px); z-index: 10; box-shadow: 0 8px 20px rgba(0,0,0,0.4);}
+    .gb-artwork { background: linear-gradient(90deg, var(--artwork), #d946ef); }
+    .gb-video { background: linear-gradient(90deg, var(--video), #f59e0b); }
+    .gb-photo { background: linear-gradient(90deg, var(--photo), #14b8a6); }
+
+    /* ---- BALANCED FILTER BAR ---- */
+    .filter-bar { display: flex; width: 100%; gap: 12px; margin-top: 15px; margin-bottom: 5px; flex-wrap: wrap; align-items: center; }
+    .filter-search { flex: 2; min-width: 250px; }
+    .filter-select { flex: 1; min-width: 120px; }
+    
+    .table-box { padding: 32px; border-radius: 20px; }
+    .table-header { display: flex; flex-direction: column; margin-bottom: 22px; }
+    .table-header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px; }
+    .table-header h3 { margin: 0; color: var(--text); font-size: 1.4rem; font-weight: 600; }
+    
+    .search-input { padding: 12px 18px; border-radius: 12px; border: 1px solid var(--line); font-family: 'Kanit', sans-serif; font-size: 0.95rem; width: 100%; outline: none; background: var(--panel); color: var(--text); transition: box-shadow 0.2s, border-color 0.2s, background 0.2s; }
+    .search-input:focus { border-color: var(--primary-2); background: var(--panel-2); box-shadow: 0 0 0 4px rgba(56,189,248,0.15); }
+    select.search-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23aab6cc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 10px auto; padding-right: 35px; }
+    
+    .btn { font-family: 'Kanit', sans-serif; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 12px; padding: 12px 22px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, background 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn:hover { transform: translateY(-3px); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #000; box-shadow: 0 8px 25px rgba(167, 139, 250, 0.35); }
+    .btn-success { background: linear-gradient(135deg, var(--success), #10b981); color: #000; box-shadow: 0 8px 25px rgba(52, 211, 153, 0.35); }
+    .btn-ghost { background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+    .btn-ghost:hover { background: var(--panel-2); border-color: var(--primary-2); }
+    .btn-danger { background: rgba(251, 113, 133, 0.15); color: var(--danger); border: 1px solid rgba(251, 113, 133, 0.4); }
+
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th, td { padding: 18px 16px; text-align: left; border-bottom: 1px solid var(--line); font-size: 0.96rem; line-height: 1.5; }
+    th { background-color: var(--panel); color: var(--muted); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;}
+    th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; white-space: nowrap; }
+    th.sortable:hover { color: var(--primary-2); }
+    th.sortable .sort-arrow { display: inline-block; margin-left: 5px; opacity: 0.35; font-size: 0.75em; transition: opacity 0.2s; }
+    th.sortable.sort-active .sort-arrow { opacity: 1; color: var(--primary-2); }
+    thead th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; } 
+    thead th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    tbody tr { transition: background-color 0.2s; }
+    tbody tr:hover { background-color: var(--panel); }
+    .row-in { animation: rowIn 0.4s ease both; }
+    @keyframes rowIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    .status-done { background: rgba(52,211,153,0.15); color: var(--success); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(52,211,153,0.3); }
+    .status-prog { background: rgba(253,224,71,0.15); color: var(--video); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(253,224,71,0.3); }
+    .status-pend { background: rgba(167,139,250,0.15); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(167,139,250,0.3); }
+    .status-danger { background: rgba(251,113,133,0.15); color: var(--danger); padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(251,113,133,0.3); }
+    .status-overdue { background: rgba(251,113,133,0.18); color: var(--danger); padding: 6px 14px; border-radius: 20px; font-weight: 700; display: inline-block; font-size: 0.85rem; border: 1px solid rgba(251,113,133,0.45); animation: overduePulse 1.8s ease-in-out infinite; }
+    @keyframes overduePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(251,113,133,0.35); } 50% { box-shadow: 0 0 0 6px rgba(251,113,133,0); } }
+
+    .tag-artwork { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--artwork), #d946ef); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(244, 114, 182, 0.3); border: none; }
+    .tag-video { color: #000; font-weight: 700; background: linear-gradient(135deg, var(--video), #f59e0b); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(253, 224, 71, 0.3); border: none; }
+    .tag-photo { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--photo), #14b8a6); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(94, 234, 212, 0.3); border: none; }
+
+    /* ---- PRO FEATURES CSS ---- */
+    .tag-campaign { background: rgba(167, 139, 250, 0.15); color: var(--primary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 4px;}
+    .tool-badge { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; margin-right: 4px; display: inline-block; margin-top: 4px;}
+    .spec-box { background: var(--panel); border: 1px dashed var(--line); padding: 12px; border-radius: 10px; margin-bottom: 15px;}
+    .spec-title { font-size: 0.85rem; color: var(--primary-2); font-weight: 600; margin-bottom: 6px; text-transform: uppercase;}
+
+    .admin-col { display: none; }
+    .admin-inline { display: none !important; }
+    .guest-inline { display: inline-flex !important; }
+    
+    body.admin-on .admin-col { display: table-cell; }
+    body.admin-on .admin-inline { display: inline-flex !important; }
+    body.admin-on .admin-block { display: block !important; }
+    body.admin-on .guest-inline { display: none !important; }
+    body.admin-on .guest-block { display: none !important; }
+    
+    .icon-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .icon-btn:hover { color: var(--text); border-color: var(--primary-2); background: var(--panel-2); transform: scale(1.05);}
+
+    /* ---- PAGE 2: MOTION SHOWCASE GALLERY ---- */
+    .showcase-hero { padding: 40px; border-radius: 24px; margin-bottom: 28px; background: linear-gradient(135deg, rgba(167, 139, 250, 0.08), rgba(56, 189, 248, 0.08)); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden;}
+    .showcase-hero::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%); opacity: 0.5; pointer-events: none; }
+    .showcase-hero-top { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap:wrap; gap: 10px; z-index: 1;}
+    .showcase-hero h2 { margin: 0 0 8px 0; font-size: 2.2rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em;}
+    .showcase-hero p { margin: 0; color: var(--muted); font-size: 1.1rem; }
+
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 26px; }
+    .portfolio-card { border-radius: 20px; overflow: hidden; position: relative; background: var(--panel-solid); border: 1px solid var(--line); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease; display: flex; flex-direction: column; cursor: pointer; }
+    .portfolio-card:hover { transform: translateY(-10px); box-shadow: 0 25px 50px rgba(0,0,0,0.4); border-color: var(--primary); }
+    [data-theme="light"] .portfolio-card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .portfolio-media { width: 100%; height: 240px; background: #000; position: relative; overflow: hidden; }
+    .portfolio-media img, .portfolio-media iframe, .portfolio-media video { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s ease; pointer-events: none; opacity: 0.9; }
+    .portfolio-card:hover .portfolio-media img { transform: scale(1.08); opacity: 1; }
+    .portfolio-media-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel-2); color: var(--muted); font-size: 3rem; gap: 8px; }
+    .portfolio-badge { position: absolute; top: 16px; left: 16px; z-index: 2; padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; backdrop-filter: blur(10px); background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; letter-spacing: 0.5px;}
+    .portfolio-content { padding: 26px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .portfolio-title { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 10px 0; line-height: 1.4; }
+    .portfolio-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--muted); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+    /* ---- PAGE 3: EVALUATION FORM ---- */
+    .gform-container { max-width: 770px; margin: 0 auto; padding-top: 10px;}
+    .gform-card { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 10px; padding: 26px 32px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: box-shadow 0.3s;}
+    .gform-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: var(--primary);}
+    .gform-header-card { border-top: 10px solid var(--primary); border-radius: 10px 10px 10px 10px; }
+    .gform-title { font-size: 2rem; font-weight: 700; margin: 0 0 12px 0; color: var(--text); line-height: 1.3;}
+    .gform-desc { font-size: 1.05rem; color: var(--text); margin-bottom: 15px; line-height: 1.6;}
+    .gform-req { color: var(--danger); font-size: 0.95rem; font-weight: 500;}
+    .gform-question { font-size: 1.15rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .gform-q-desc { font-size: 0.95rem; color: var(--muted); margin-bottom: 16px; display: block;}
+    .gform-input { width: 100%; border: none; border-bottom: 1px solid var(--line); background: transparent; padding: 10px 0; font-family: 'Kanit'; font-size: 1.05rem; color: var(--text); outline: none; transition: border-bottom-color 0.3s;}
+    .gform-input:focus { border-bottom: 2px solid var(--primary); padding-bottom: 9px; }
+    .gform-select { width: 100%; max-width: 400px; padding: 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-family: 'Kanit'; font-size: 1rem; outline: none; cursor: pointer; transition: border-color 0.3s;}
+    .gform-select:focus { border-color: var(--primary); }
+    .gform-radio-group { display: flex; flex-direction: column; gap: 14px; margin-top: 10px;}
+    .gform-radio-label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1.05rem; color: var(--text); }
+    .gform-radio-label input[type="radio"] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; margin: 0;}
+    .gform-submit-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px;}
+    .admin-dashboard-eval { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 20px; padding: 30px; margin-top: 30px;}
+
+    /* ---- LIGHTBOX MODAL ---- */
+    .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
+    .lightbox-overlay.open { display: flex; }
+    .lightbox-box { width: 100%; max-width: 1100px; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8); animation: modalIn 0.35s cubic-bezier(.16,.84,.44,1); display: grid; grid-template-columns: 1.5fr 1fr; position: relative; }
+    .lightbox-media-wrap { background: #000; display: flex; align-items: center; justify-content: center; min-height: 450px; position: relative; overflow:hidden;}
+    .lightbox-media-wrap img, .lightbox-media-wrap iframe, .lightbox-media-wrap video { width: 100%; height: 100%; max-height: 700px; object-fit: contain; }
+    .lightbox-details { padding: 36px; display: flex; flex-direction: column; justify-content: space-between; background: var(--panel-2); overflow-y: auto; max-height: 90vh; }
+    .lightbox-close { position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: background 0.2s;}
+    .lightbox-close:hover { background: var(--danger); }
+    .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight:bold; transition: background 0.2s, transform 0.2s; padding-bottom:4px; }
+    .carousel-btn:hover { background: var(--primary-2); color: #000; transform: translateY(-50%) scale(1.1); }
+    .carousel-prev { left: 16px; } .carousel-next { right: 16px; }
+    .carousel-counter { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #fff; z-index: 5; font-weight: 500; letter-spacing: 1px;}
+
+    /* ---- GLOBAL MODALS ---- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { width: 100%; max-width: 440px; border-radius: 24px; padding: 36px; background: var(--panel-solid); border: 1px solid var(--line); position: relative; box-shadow: 0 25px 60px rgba(0,0,0,0.7); }
+    .modal-box.wide { max-width: 700px; max-height: 90vh; overflow-y: auto; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(15px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .modal-box h2 { margin: 0 0 8px 0; color: var(--text); font-size: 1.6rem; font-weight: 700;}
+    .modal-box .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 26px; }
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 0.9rem; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-family: 'Kanit'; font-size: 1rem; outline: none; transition: border-color 0.2s, background 0.2s; }
+    .field input[type="date"] { color-scheme: dark; }
+    [data-theme="light"] .field input[type="date"] { color-scheme: light; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary-2); background: var(--panel-2); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 28px; }
+    .modal-actions .btn { flex: 1; justify-content: center; padding: 14px; font-size: 1.05rem;}
+    .error-msg { color: var(--danger); font-size: 0.9rem; margin-top: -10px; margin-bottom: 16px; min-height: 1em; font-weight: 500;}
+    .modal-close { position: absolute; top: 20px; right: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.2rem; cursor: pointer; transition: all 0.2s;}
+    .modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger);}
+    .thumb-manager { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .thumb-item { position: relative; width: 80px; height: 80px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-del { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+
+    /* ---- PROGRESS BARS FOR KPI ---- */
+    .kpi-progress-wrap { margin-bottom: 20px; transition: opacity 0.3s ease; }
+    .kpi-progress-header { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .kpi-progress-bg { width: 100%; height: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .kpi-progress-fill { height: 100%; border-radius: 10px; transition: width 1s cubic-bezier(.16,.84,.44,1); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    
+    /* ---- GRADE CIRCLE ---- */
+    .grade-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 800; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 0 auto 15px auto; transition: background 0.3s; }
+
+    /* ---- SMART UPLOAD BUTTON & REVISION BADGE ---- */
+    .revision-badge {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--video);
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        font-weight: 500;
+        font-size: 0.75rem;
+        animation: pulseBadge 2s infinite;
+    }
+    @keyframes pulseBadge { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+
+    .smart-upload-btn {
+        position: relative; display: inline-flex; align-items: center; gap: 10px;
+        padding: 10px 20px; background: var(--panel); border: 1px dashed var(--primary-2);
+        border-radius: 12px; cursor: pointer; overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--text); font-size: 0.9rem; font-weight: 500;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .smart-upload-btn:hover {
+        background: var(--panel-2); transform: translateY(-2px);
+        border-style: solid; box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
+        color: #fff;
+    }
+    .smart-upload-btn .upload-glow {
+        position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(56,189,248,0.2) 0%, transparent 60%);
+        opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .smart-upload-btn:hover .upload-glow { opacity: 1; animation: rotateGlow 3s linear infinite; }
+    @keyframes rotateGlow { 100% { transform: rotate(360deg); } }
+    
+    .evidence-chip {
+        background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(56, 189, 248, 0.15));
+        border: 1px solid var(--primary-2); color: var(--text); padding: 6px 12px;
+        border-radius: 20px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 8px;
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .evidence-chip:hover { border-color: var(--danger); }
+    @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ---- PRINT STYLES ---- */
+    @media print {
+        body { background: #fff !important; color: #000 !important; font-size: 12pt; margin: 0; padding: 0; }
+        .view-switcher, .theme-switcher, .btn, .icon-btn, .header-right select, .filter-bar, .smart-upload-btn, .evidence-chip { display: none !important; }
+        .glass { background: #fff !important; border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; }
+        .chart-box { box-shadow: none !important; border: 1px solid #ddd !important; margin-bottom: 20px; }
+        .kpi-grid, .charts-grid { display: block !important; }
+        .kpi-card, .chart-box { width: 100%; display: block; margin-bottom: 15px; }
+        .header { padding: 15px !important; border-bottom: 2px solid #000; border-radius: 0; margin-bottom: 20px; }
+        h1, h2, h3, h4 { color: #000 !important; }
+        .kpi-progress-bg { border: 1px solid #000; background: #eee; }
+        .kpi-progress-fill { border-radius: 0; }
+        table { border: 1px solid #ccc; width: 100%; }
+        th, td { border-bottom: 1px solid #eee; padding: 8px; font-size: 10pt; color: #000 !important; }
+        th { background-color: #f5f5f5 !important; color: #000 !important; }
+        canvas { max-height: 250px !important; }
+        .tag-artwork, .tag-video, .tag-photo { color: #000 !important; background: transparent !important; border: 1px solid #000; box-shadow: none; font-weight: normal; }
+        #ocean-bg { display: none !important; }
+    }
+
+    @media (max-width: 1024px) { 
+        .charts-grid { grid-template-columns: 1fr 1fr; }
+        .monthly-chart-box { grid-column: 1 / -1; }
+        .lightbox-box { grid-template-columns: 1fr; max-width: 600px; max-height:90vh; overflow-y:auto; } 
+        .lightbox-media-wrap { min-height: 350px; } 
+    }
+    @media (max-width: 768px) { 
+        body { padding: 15px; }
+        .kpi-grid { grid-template-columns: 1fr 1fr; } 
+        .kpi-total, .kpi-overdue { grid-column: 1 / -1; }
+        .charts-grid { grid-template-columns: 1fr; } 
+        .header { flex-direction: column; text-align: center; padding: 24px 20px;} 
+        .header-right { align-items: center; margin-top:1rem;} 
+        .filter-bar > * { min-width: 100%; } 
+        .field-row { grid-template-columns: 1fr; } 
+        .view-switcher { flex-direction: column; align-items: stretch; } 
+        .gform-card { padding: 20px 20px;}
+    }
+
+    /* ---- OCEAN LOADER (ปรับให้โปร่งใสเพื่อโชว์ทะเลด้านหลัง) ---- */
+    .ocean-loader-overlay {
+        position: fixed; inset: 0; background: rgba(8, 47, 73, 0.75); backdrop-filter: blur(8px); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: opacity 0.8s ease; overflow: hidden;
+    }
+    .ocean-loader-overlay.active { opacity: 1; pointer-events: all; }
+
+    /* ส่วนแสดงผลข้อมูลตรงกลาง (Loader) */
+    .ocean-loader-content { position: relative; z-index: 10; text-align: center; }
+    .ocean-spinner {
+        font-size: 5.5rem; animation: spinFloat 4s ease-in-out infinite; margin-bottom: 25px;
+        filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4)); display: inline-block;
+    }
+    @keyframes spinFloat { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-20px) rotate(15deg); } }
+
+    .ocean-loader-text {
+        color: #e0f2fe; font-family: 'Kanit', sans-serif; font-size: 1.5rem; font-weight: 700; 
+        letter-spacing: 2px; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    
+    .ocean-progress-bar {
+        width: 350px; height: 16px; background: rgba(0,0,0,0.4); 
+        border-radius: 20px; overflow: hidden; position: relative; border: 2px solid rgba(255,255,255,0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .ocean-progress-fill {
+        height: 100%; width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+        box-shadow: 0 0 15px #38bdf8; transition: width 0.1s linear; border-radius: 20px;
+        position: relative; overflow: hidden;
+    }
+    /* ลายน้ำริ้วๆ วิ่งในหลอดโหลด */
+    .ocean-progress-fill::after {
+        content: ""; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.3) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.3) 75%, transparent 75%, transparent);
+        background-size: 20px 20px; animation: moveStripes 1s linear infinite;
+    }
+    @keyframes moveStripes { 0% { background-position: 0 0; } 100% { background-position: 20px 0; } }
+
+    /* เอฟเฟกต์วาร์ปโผล่ขึ้นผิวน้ำ */
+    .splash-out { animation: splashOut 1.2s ease-in forwards; }
+    @keyframes splashOut {
+        0% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        30% { transform: scale(1.05) translateY(30px); filter: blur(2px); opacity: 0.9; }
+        100% { opacity: 0; transform: scale(2.5) translateY(-100vh); filter: blur(15px); }
+    }
+</style>
+</head>
+<body>
+    <!-- ================= GLOBAL BACKGROUND & MARINE LIFE ================= -->
+    <div id="ocean-bg">
+        <!-- Bubbles ฟองอากาศ -->
+        <div class="bubble" style="left: 15%; width: 18px; height: 18px; animation-duration: 4.5s;"></div>
+        <div class="bubble" style="left: 45%; width: 25px; height: 25px; animation-duration: 5.5s; animation-delay: 0.5s;"></div>
+        <div class="bubble" style="left: 75%; width: 15px; height: 15px; animation-duration: 3.5s; animation-delay: 2s;"></div>
+        <div class="bubble" style="left: 85%; width: 30px; height: 30px; animation-duration: 6s; animation-delay: 0.2s;"></div>
+        <div class="bubble" style="left: 25%; width: 12px; height: 12px; animation-duration: 4s; animation-delay: 1.5s;"></div>
+        
+        <!-- Sea Creatures สัตว์ทะเลว่ายน้ำไปมา -->
+        <div class="creature c1">🐬</div>
+        <div class="creature c2">🐋</div>
+        <div class="creature c3">🐢</div>
+        <div class="creature c4">🦀</div>
+        
+        <!-- Waves คลื่นน้ำซ้อนทับด้านล่าง -->
+        <div class="ocean-waves">
+            <div class="wave wave2"></div>
+            <div class="wave wave1"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Top Navigation View Switcher & Theme & Admin Actions -->
+        <div class="view-switcher reveal" style="animation-delay:0s">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchView('dashboard')">📊 รายงานภาพรวม</button>
+                <button class="nav-tab" onclick="switchView('showcase')">🎬 แกลเลอรีผลงาน</button>
+                <button class="nav-tab" onclick="switchView('evaluation')">📝 แบบประเมิน (HRD)</button>
+                <button class="nav-tab" onclick="switchView('monthlySummary')">📅 สรุปรายเดือน</button>
+                <button class="nav-tab" onclick="switchView('personalKPI')">⭐ ประเมิน KPI ส่วนตัว</button>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <div class="theme-switcher">
+                    <button class="theme-btn" onclick="setTheme('light')" title="Light Mode">☀️</button>
+                    <button class="theme-btn active" onclick="setTheme('dark')" title="Dark Mode (Cyber-Pastel)">🌌</button>
+                    <button class="theme-btn" onclick="setTheme('colorblind')" title="IBM Colorblind Safe">👁️</button>
+                </div>
+                <button class="btn btn-ghost" onclick="exportBackup()" title="สำรองข้อมูลทั้งหมดเป็นไฟล์ JSON">💾 Backup DB</button>
+                <button class="btn btn-ghost" onclick="triggerImportBackup()" title="นำเข้าไฟล์ JSON ที่เคยสำรองไว้">📂 นำเข้าข้อมูล</button>
+                <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)">
+                <button class="btn btn-ghost guest-inline" onclick="openLogin()">🔒 Admin Login</button>
+                <button class="btn btn-primary admin-inline" onclick="openAddModal()">＋ เพิ่มโปรเจกต์</button>
+                <button class="btn btn-danger admin-inline" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 1: DASHBOARD REPORT ================= -->
+        <div id="viewDashboard" class="view-section active-view">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>CREATIVE OPERATIONS · FY2026–2027</div>
+                    <h1>Report All Project For Dashboard</h1>
+                    <p>ระบบเว็บสรุปผลงานวิชาชีพทั้งหมด (ArtWork, Video, Photography)</p>
+                </div>
+                <div class="header-right">
+                    <div class="badge"><span class="dot"></span><span id="totalBadge">รวมทั้งหมด 0 โปรเจกต์</span></div>
+                    <div class="timestamp" id="timestamp"></div>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-total glass reveal" style="animation-delay:0.10s">
+                    <div class="kpi-title">โปรเจกต์ทั้งหมด</div>
+                    <div class="kpi-value" data-kpi="total">0</div>
+                </div>
+                <div class="kpi-card kpi-art glass reveal" style="animation-delay:0.15s">
+                    <div class="kpi-title">🎨 ArtWork</div>
+                    <div class="kpi-value" data-kpi="ArtWork">0</div>
+                </div>
+                <div class="kpi-card kpi-vid glass reveal" style="animation-delay:0.20s">
+                    <div class="kpi-title">🎬 Video</div>
+                    <div class="kpi-value" data-kpi="Video">0</div>
+                </div>
+                <div class="kpi-card kpi-photo glass reveal" style="animation-delay:0.25s">
+                    <div class="kpi-title">📸 Photography</div>
+                    <div class="kpi-value" data-kpi="Photography">0</div>
+                </div>
+                <div class="kpi-card kpi-prog glass reveal" style="animation-delay:0.30s">
+                    <div class="kpi-title">กำลัง/รอดำเนินการ</div>
+                    <div class="kpi-value" data-kpi="active">0</div>
+                </div>
+                <div class="kpi-card kpi-overdue glass reveal" id="kpiOverdueCard" style="animation-delay:0.33s">
+                    <div class="kpi-title">⚠️ เลยกำหนดส่ง</div>
+                    <div class="kpi-value" data-kpi="overdue">0</div>
+                </div>
+            </div>
+
+            <div class="rate-box glass reveal" style="animation-delay:0.35s">
+                <div class="rate-label">อัตราความสำเร็จโดยรวม</div>
+                <div class="rate-track"><div class="rate-fill" id="rateFill"></div></div>
+                <div class="rate-value" id="rateValue">0%</div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box glass reveal" style="animation-delay:0.40s">
+                    <h3>สัดส่วนประเภทงานหลัก (Category Breakdown)</h3>
+                    <div class="chart-container"><canvas id="typeChart"></canvas>
+                        <div class="chart-center"><div class="num" id="typeCenterNum">0</div><div class="lbl">โปรเจกต์</div></div>
+                    </div>
+                </div>
+                <div class="chart-box glass reveal" style="animation-delay:0.45s">
+                    <h3>สถานะการดำเนินงาน (Project Status)</h3>
+                    <div class="chart-container"><canvas id="statusChart"></canvas>
+                        <div class="chart-center"><div class="num" id="statusCenterNum">0</div><div class="lbl">เสร็จสิ้น</div></div>
+                    </div>
+                </div>
+                <div class="chart-box glass reveal monthly-chart-box" style="animation-delay:0.47s">
+                    <h3>📈 ปริมาณงานที่แล้วเสร็จรายเดือน (Monthly Output)</h3>
+                    <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-box glass reveal" style="animation-delay:0.48s; margin-bottom: 22px;">
+                <h3>🗓️ กราฟระยะเวลาการทำงาน (Modern Project Timeline)</h3>
+                <div class="gantt-wrapper"><div class="gantt-container" id="cssGanttChart"></div></div>
+            </div>
+
+            <div class="table-box glass reveal" style="animation-delay:0.50s">
+                <div class="table-header">
+                    <div class="table-header-top"><h3>ตารางรายการชิ้นงานทั้งหมด (Master Work Log)</h3></div>
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" class="search-input filter-search" placeholder="🔍 ค้นหาชื่อโปรเจกต์, ผู้มอบหมาย หรือ แคมเปญ..." onkeyup="filterTable()">
+                        <select id="filterDay" class="search-input filter-select" onchange="filterTable()"></select>
+                        <select id="filterMonth" class="search-input filter-select" onchange="filterTable()"></select>
+                        <select id="filterYear" class="search-input filter-select" onchange="filterTable()"></select>
+                        <select id="categoryFilter" class="search-input filter-select" onchange="filterTable()">
+                            <option value="all">📁 ทุกประเภท</option><option value="ArtWork">ArtWork</option><option value="Video">Video</option><option value="Photography">Photography</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="5%" class="sortable" data-key="ลำดับ" onclick="sortTableBy('ลำดับ')">ลำดับ<span class="sort-arrow">▲▼</span></th>
+                                <th width="10%" class="sortable" data-key="ประเภทหลัก" onclick="sortTableBy('ประเภทหลัก')">ประเภท<span class="sort-arrow">▲▼</span></th>
+                                <th width="12%" class="sortable" data-key="ประเภทย่อย" onclick="sortTableBy('ประเภทย่อย')">หมวดหมู่ย่อย<span class="sort-arrow">▲▼</span></th>
+                                <th width="24%" class="sortable" data-key="ชื่อชิ้นงาน / โปรเจกต์" onclick="sortTableBy('ชื่อชิ้นงาน / โปรเจกต์')">ชื่อชิ้นงาน / โปรเจกต์<span class="sort-arrow">▲▼</span></th>
+                                <th width="12%" class="sortable" data-key="ผู้มอบหมาย" onclick="sortTableBy('ผู้มอบหมาย')">ผู้มอบหมายงาน<span class="sort-arrow">▲▼</span></th>
+                                <th width="15%" class="sortable" data-key="dateEnd" onclick="sortTableBy('dateEnd')">ระยะเวลา (เริ่ม - เสร็จ)<span class="sort-arrow">▲▼</span></th>
+                                <th width="10%">หมายเหตุ</th>
+                                <th width="7%" class="sortable" data-key="สถานะ" onclick="sortTableBy('สถานะ')">สถานะ<span class="sort-arrow">▲▼</span></th>
+                                <th width="5%" class="admin-col">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 2: MOTION SHOWCASE GALLERY ================= -->
+        <div id="viewShowcase" class="view-section">
+            <div class="showcase-hero glass">
+                <div class="showcase-hero-top">
+                    <div><h2>🎬 Motion Showcase Gallery</h2><p>แสดงผลงานภาพและมีเดียทั้งหมด จัดเรียงลำดับจากล่าสุดไปเก่าที่สุดแบบ Motion Graphic</p></div>
+                </div>
+                <div class="filter-bar" style="margin-top:0;">
+                    <input type="text" id="searchShowcase" class="search-input filter-search" placeholder="🔍 ค้นหาผลงาน, แคมเปญ..." onkeyup="renderShowcase()">
+                    <select id="scFilterDay" class="search-input filter-select" onchange="renderShowcase()"></select>
+                    <select id="scFilterMonth" class="search-input filter-select" onchange="renderShowcase()"></select>
+                    <select id="scFilterYear" class="search-input filter-select" onchange="renderShowcase()"></select>
+                    <select id="filterShowcaseCat" class="search-input filter-select" onchange="renderShowcase()">
+                        <option value="all">📁 ทุกประเภท</option><option value="ArtWork">ArtWork</option><option value="Video">Video</option><option value="Photography">Photography</option>
+                    </select>
+                </div>
+            </div>
+            <div class="gallery-grid" id="showcaseGrid"></div>
+        </div>
+
+        <!-- ================= VIEW 3: GOOGLE FORM CLONE (HRD Feedback) ================= -->
+        <div id="viewEvaluation" class="view-section">
+            <div class="guest-block">
+                <div class="gform-container reveal">
+                    <div class="gform-card gform-header-card">
+                        <h1 class="gform-title">HRD Creative Feedback: แบบตรวจรับและประเมินงานกราฟิก</h1>
+                        <p class="gform-desc">รบกวนเวลาพี่ๆ ติ๊กให้คะแนนผลงานสร้างสรรค์สื่อภายในง่ายๆ เพื่อนำ Feedback ไปพัฒนางานดีไซน์และการสื่อสารให้ตอบโจทย์ทุกคนมากยิ่งขึ้นครับ</p>
+                        <p class="gform-req">* ระบุว่าเป็นคำถามที่จำเป็น</p>
+                    </div>
+                    <div class="gform-card"><div class="gform-question">1. ผู้สั่งงาน / ผู้ตรวจรับโปรเจกต์นี้ <span class="gform-req">*</span></div><input type="text" id="evalOwner" class="gform-input" placeholder="คำตอบของคุณ"></div>
+                    <div class="gform-card"><div class="gform-question">2. ชื่อชิ้นงาน (Project Name) <span class="gform-req">*</span></div><input type="text" id="evalProject" class="gform-input" placeholder="คำตอบของคุณ"></div>
+                    <div class="gform-card">
+                        <div class="gform-question">3. ประเภทของสื่อ (Media Type) <span class="gform-req">*</span></div>
+                        <select id="evalMediaType" class="gform-select">
+                            <option value="" disabled selected>เลือก</option><option value="Video / Motion Graphics">🎬 Video / Motion Graphics</option><option value="Poster / ภาพประกาศออนไลน์">🖼️ Poster / ภาพประกาศออนไลน์</option><option value="ป้าย Vinyl / แบนเนอร์ขนาดใหญ่">🚩 ป้าย Vinyl / แบนเนอร์ขนาดใหญ่</option><option value="Presentation / งานเอกสาร">📝 Presentation / งานเอกสาร</option><option value="อื่นๆ">✨ อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">4. 1. Brief & Content (ความเป๊ะของเนื้อหา) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">บรีฟมายังไง ได้อย่างนั้นไหม? ข้อมูลครบถ้วน และตัวสะกดถูกต้อง</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="5"> 5 - ตรงบรีฟ 100% ข้อมูลเป๊ะ ไม่มีที่ติ</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="4"> 4 - เกือบสมบูรณ์ (มีแก้คำผิดนิดหน่อย)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="3"> 3 - พอใช้ (ต้องแก้ข้อมูลบางส่วน)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="2"> 2 - ข้อมูลผิดหรือตกหล่นเยอะ ต้องแก้หลายจุด</label>
+                            <label class="gform-radio-label"><input type="radio" name="q1" value="1"> 1 - ผิดบรีฟโดยสิ้นเชิง ใช้งานไม่ได้</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">5. 2. Mood, Tone & CI (ความสวยงามและภาพลักษณ์องค์กร) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">การจัดวาง Layout สวยงาม ดึงดูด และคุมโทนสี/ฟอนต์/โลโก้บริษัทได้เป๊ะ</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="5"> 5 - สวยโดดเด่น ตรง CI บริษัท 100%</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="4"> 4 - สวยงาม (มีขอปรับสี/จัดวางอีกแค่นิดเดียว)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="3"> 3 - ตามมาตรฐานทั่วไป ใช้งานได้</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="2"> 2 - ยังไม่ลงตัว ขัดกับ CI ของบริษัท</label>
+                            <label class="gform-radio-label"><input type="radio" name="q2" value="1"> 1 - ไม่สวยงาม ผิดภาพลักษณ์องค์กรรุนแรง</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">6. 3. Usability & Export Quality (คุณภาพไฟล์และการนำไปใช้งานจริง) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">เปิดในมือถืออ่านง่าย ซูมไม่แตก วิดีโอภาพชัดเสียงเคลียร์ เอาไปปรินต์แล้วโอเค</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="5"> 5 - สมบูรณ์แบบ (ภาพชัด เสียงเคลียร์ อ่านง่ายมาก)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="4"> 4 - ใช้งานได้ดี (อาจปรับให้อ่านง่ายขึ้นได้อีกนิด)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="3"> 3 - ใช้งานได้ (แต่มีแอบอ่านยาก หรือคุณภาพดรอปบ้าง)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="2"> 2 - ใช้งานลำบาก (เช่น ภาพแตก สัดส่วนผิด เสียงเบา)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q3" value="1"> 1 - ใช้งานไม่ได้เลย (ภาพเบลอ ตัวหนังสือเล็กจนอ่านไม่ออก)</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">7. 4. Timeline & Workflow (ความตรงต่อเวลาและการประสานงาน) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">ส่งงานดราฟต์ไว แก้งานราบรื่น ทันเดดไลน์ที่คุยกันไว้</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="5"> 5 - ไวกว่ากำหนด (ส่งก่อนเดดไลน์)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="4"> 4 - ตรงเวลาเป๊ะ</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="3"> 3 - เลทนิดหน่อย (ยังไม่กระทบแผนงาน)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="2"> 2 - ล่าช้า (เริ่มกระทบแผนงานของ HRD)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q4" value="1"> 1 - ช้ามาก (งานเสียหาย)</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">8. 5. Overall Score (ความประทับใจในภาพรวมของชิ้นงานนี้) <span class="gform-req">*</span></div>
+                        <span class="gform-q-desc">คะแนนความฟิน! ชิ้นงานนี้ตอบโจทย์ HRD และพนักงานมากแค่ไหน</span>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="5"> 5 - ประทับใจมาก (เยี่ยมยอด)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="4"> 4 - พึงพอใจ (งานดี)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="3"> 3 - ปานกลาง (ตามมาตรฐานที่คาดหวัง)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="2"> 2 - ค่อนข้างไม่พอใจ (ยังต้องพัฒนาอีก)</label>
+                            <label class="gform-radio-label"><input type="radio" name="q5" value="1"> 1 - ไม่พอใจเลย (ไม่ตอบโจทย์)</label>
+                        </div>
+                    </div>
+                    <div class="gform-card">
+                        <div class="gform-question">9. สรุปสถานะการตรวจรับงาน (Final Decision) <span class="gform-req">*</span></div>
+                        <div class="gform-radio-group">
+                            <label class="gform-radio-label"><input type="radio" name="decision" value="Approve"> Approve (ผ่านฉลุย!) : ไฟล์ Final สมบูรณ์ นำไปใช้งาน/ส่งพิมพ์ได้เลย</label>
+                            <label class="gform-radio-label"><input type="radio" name="decision" value="Minor Edit"> Minor Edit (ขอแก้นิดนึง) : งานดีแล้ว ใช้งานได้ แต่ฝากปรับแก้กริบๆ ตามคอมเมนต์ด้านล่าง</label>
+                            <label class="gform-radio-label"><input type="radio" name="decision" value="Reject"> Reject (รื้อใหม่/แก้ด่วน) : ยังไม่ตรงบรีฟ ข้อมูลผิดพลาด ต้องส่งกลับมาแก้ใหม่</label>
+                        </div>
+                    </div>
+                    <div class="gform-card"><div class="gform-question">10. คอมเมนต์จากพี่ๆ (Feedback / สิ่งที่อยากให้แก้ หรือคำติชม)</div><input type="text" id="evalComment" class="gform-input" placeholder="คำตอบของคุณ"></div>
+                    <div class="gform-submit-row"><button class="btn btn-primary" onclick="submitEvaluation()" style="padding: 12px 30px; font-size: 1.1rem; border-radius: 6px;">ส่ง</button><span class="error-msg" id="evalError" style="margin:0; font-size:1rem;"></span></div>
+                </div>
+            </div>
+
+            <div class="admin-block" style="display:none;">
+                <div class="admin-dashboard-eval reveal">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:24px;">
+                        <div><h3 style="margin:0; color:var(--text); font-size: 1.8rem;">📊 แดชบอร์ดสรุปผลการประเมิน (Feedback Dashboard)</h3><p style="margin:6px 0 0 0; color:var(--text); font-size:1.15rem;" id="evalAvgText">คะแนนเฉลี่ยรวม: 0.0 / 5.0</p></div>
+                        <button class="btn btn-danger" onclick="clearEvaluations()">🗑 ล้างข้อมูลประเมินทั้งหมด</button>
+                    </div>
+                    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:30px;" id="evalChartsRow">
+                        <div class="chart-box glass" style="background:var(--panel);"><h3>สรุปการตัดสินใจ (Final Decision)</h3><div class="chart-container"><canvas id="decisionChart"></canvas></div></div>
+                        <div class="chart-box glass" style="background:var(--panel);"><h3>วิเคราะห์คุณภาพ 5 มิติ (Radar)</h3><div class="chart-container" style="display:flex; justify-content:center;"><canvas id="radarChart"></canvas></div></div>
+                    </div>
+                    <div class="table-box glass" id="evalTableBox" style="margin-bottom: 30px; padding: 28px; display:none; background:var(--panel);"><h3 style="margin-top:0; color:var(--text);">📈 สรุปรายการประเมินล่าสุด</h3><div style="overflow-x:auto; margin-top: 15px;"><table id="evalTableEl"></table></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: MONTHLY SUMMARY ================= -->
+        <div id="viewMonthlySummary" class="view-section">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>MONTHLY PERFORMANCE & ANALYTICS</div>
+                    <h1>สรุปผลงานเจาะลึกรายเดือน</h1>
+                    <p>เลือกเดือนและปี เพื่อวิเคราะห์ภาพรวม ประสิทธิภาพเวลา (Lead Time) และดาวน์โหลดข้อมูล CSV</p>
+                </div>
+            </div>
+            <div class="kpi-grid reveal" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 22px; animation-delay:0.1s;" id="msKpiGrid">
+                <div class="kpi-card kpi-prog glass"><div class="kpi-title">ผลงานที่เสร็จสิ้น (ชิ้น)</div><div class="kpi-value" id="msTotal">0</div></div>
+                <div class="kpi-card kpi-art glass"><div class="kpi-title">ประเภทงานที่ทำเยอะที่สุด</div><div class="kpi-value" id="msTopCat" style="font-size: 2rem; margin-top: 10px;">-</div></div>
+                <div class="kpi-card kpi-vid glass"><div class="kpi-title">ระยะเวลาเฉลี่ย (วัน/ชิ้น)</div><div class="kpi-value" id="msAvgDays">0</div></div>
+            </div>
+            <div class="chart-box glass reveal" style="animation-delay:0.15s; margin-bottom: 22px;">
+                <div class="table-header-top" style="margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+                    <h3>📊 กราฟสัดส่วนประเภทงาน</h3>
+                    <div style="display: flex; gap: 10px; align-items:center; flex-wrap: wrap;">
+                        <select id="msFilterMonth" class="search-input filter-select" onchange="renderMonthlySummary()" style="min-width: 150px;"></select>
+                        <select id="msFilterYear" class="search-input filter-select" onchange="renderMonthlySummary()" style="min-width: 150px;"></select>
+                        <button class="btn btn-success" onclick="exportMonthlyCSV()" style="margin-left:10px;">📄 Export CSV</button>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 380px;"><canvas id="monthFocusChart"></canvas></div>
+            </div>
+            <div class="table-box glass reveal" style="animation-delay:0.2s">
+                <h3 style="margin-top:0; color:var(--text); margin-bottom: 15px;">📑 รายละเอียดชิ้นงานที่สำเร็จ (Breakdown)</h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th width="8%">รหัส</th><th width="12%">ประเภท</th><th width="30%">ชื่องาน / โปรเจกต์</th><th width="15%">ผู้มอบหมาย</th><th width="15%">วันที่เสร็จสิ้น</th><th width="15%">ระยะเวลาผลิต (Lead Time)</th></tr></thead>
+                        <tbody id="msDataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 5: PERSONAL KPI SCORECARD ================= -->
+        <div id="viewPersonalKPI" class="view-section">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>HUMAN RESOURCES DEVELOPMENT (HRD)</div>
+                    <h1>⭐ Personal KPI Scorecard</h1>
+                    <p style="color:var(--primary-2); font-weight:600; font-size:1.2rem;">เจ้าหน้าที่ Graphic & Multimedia</p>
+                    <p>ระบบประเมินผลสัมฤทธิ์ตามตัวชี้วัด (Performance Indicators) และสมรรถนะ (Competencies)</p>
+                </div>
+                <div class="header-right" style="align-items:flex-end;">
+                    <div style="display: flex; gap: 10px; margin-bottom:10px;">
+                        <select id="kpiFilterMonth" class="search-input filter-select" onchange="renderPersonalKPI()"></select>
+                        <select id="kpiFilterYear" class="search-input filter-select" onchange="renderPersonalKPI()"></select>
+                    </div>
+                    <button class="btn btn-success" onclick="window.print()" style="font-size:0.9rem;">🖨️ พิมพ์รายงาน KPI</button>
+                </div>
+            </div>
+
+            <!-- 🏅 Overall Score & AI Insights -->
+            <div class="kpi-grid reveal" style="grid-template-columns: 1fr 2.5fr; margin-bottom: 22px; animation-delay: 0.08s;">
+                <div class="chart-box glass" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px;">
+                    <div class="grade-circle" id="kpiGradeCircle" style="background: linear-gradient(135deg, var(--muted), #333);">?</div>
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--muted);">เกรดประเมินรวม</h3>
+                    <div style="font-size:2rem; font-weight:800; color:var(--text); margin-top:5px;" id="kpiTotalScore" data-current="0">0<span style="font-size:1.2rem;">%</span></div>
+                </div>
+                <div class="chart-box glass" style="display:flex; flex-direction:column; justify-content:center;">
+                    <h3 style="margin:0 0 15px 0; color:var(--primary-2); display:flex; align-items:center; gap:8px;">💡 AI Smart Insights</h3>
+                    <div id="kpiInsightText" style="font-size: 1.05rem; line-height: 1.6; color: var(--text);">
+                        กำลังวิเคราะห์ข้อมูล...
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Metric Progress Bars -->
+            <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:22px;">
+                <div class="chart-box glass reveal" style="animation-delay:0.1s;">
+                    <!-- Header พร้อมฟังก์ชัน Toggle ที่ดีขึ้น -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 15px;">
+                        <h3 style="margin:0; border-bottom:none; padding-bottom:0;">🎯 ตัวชี้วัดผลงานหลัก (5 KPIs)</h3>
+                        <button class="btn btn-ghost" onclick="toggleKpiSection(this)" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 8px;">🙈 แสดง</button>
+                    </div>
+                    
+                    <!-- ส่วนเนื้อหาที่ถูกตั้งให้ซ่อนไว้ตอนแรก เพื่อลดโหลดตอนเปิดหน้า -->
+                    <div id="kpiIndicatorsContent" style="display: none;">
+                        <div class="kpi-progress-wrap" id="wrapKpi1">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable1" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    1. สื่อออกตามแผน (Planned Output)
+                                </label>
+                                <span id="kpiPlanVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiPlanBar" style="background:linear-gradient(90deg, #38bdf8, #a78bfa); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* เป้าหมาย 10 ชิ้น/เดือน</div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi2">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable2" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    2. งานเสร็จตรงเวลา (On-Time Delivery)
+                                </label>
+                                <span id="kpiTimeVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiTimeBar" style="background:linear-gradient(90deg, #34d399, #10b981); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* เสร็จภายใน Timeline ที่กำหนด</div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi3">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable3" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    3. ระยะเวลาผลิตสื่อ (Lead Time Speed)
+                                </label>
+                                <span id="kpiSpeedVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiSpeedBar" style="background:linear-gradient(90deg, #14b8a6, #0ea5e9); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+                                <span>* ระยะเวลาผลิตเฉลี่ยควรน้อยกว่าหรือเท่ากับ 3 วัน</span>
+                                <span class="revision-badge">⚠️ รวมระยะเวลาการรอ Feedback และการแก้ไขงาน (Revisions) แล้ว</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi4">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable4" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    4. ไม่มีผิด CI (CI Accuracy)
+                                </label>
+                                <span id="kpiCiVal">0%</span>
+                            </div>
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiCiBar" style="background:linear-gradient(90deg, #fde047, #f59e0b); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* อ้างอิงคะแนนประเมิน CI ≥ 4 ขึ้นไป</div>
+                        </div>
+
+                        <div class="kpi-progress-wrap" id="wrapKpi5">
+                            <div class="kpi-progress-header">
+                                <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="kpiEnable5" checked onchange="renderPersonalKPI()" style="accent-color: var(--primary);"> 
+                                    5. ความพึงพอใจผู้ใช้งาน (User Satisfaction)
+                                </label>
+                                <span id="kpiSatVal">0 / 5.0</span>
+                            </div>
+                            
+                            <!-- ฟังก์ชันใหม่: ปุ่มอัปโหลดไฟล์หลักฐานแทนการกรอกคะแนนดิบ -->
+                            <div style="margin-bottom: 12px; margin-top: 8px;">
+                                <label class="smart-upload-btn" for="kpiEvidenceUpload">
+                                    <span class="upload-icon">📂</span> 
+                                    <span class="upload-text">แนบหลักฐานการส่งงาน / แชท (รูป, Excel, Word)</span>
+                                    <div class="upload-glow"></div>
+                                </label>
+                                <input type="file" id="kpiEvidenceUpload" multiple accept="image/*,.doc,.docx,.xls,.xlsx" style="display:none;" onchange="handleKpiEvidence(event)">
+                                <div id="kpiEvidenceList" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                            </div>
+
+                            <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="kpiSatBar" style="background:linear-gradient(90deg, #f472b6, #e91e63); width:0%;"></div></div>
+                            <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">* คะแนนเฉลี่ยความพึงพอใจโดยรวมจากแบบประเมิน HRD</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Competency Radar -->
+                <div class="chart-box glass reveal" style="animation-delay:0.15s;">
+                    <h3>🧠 สมรรถนะการปฏิบัติงาน (Job Competencies)</h3>
+                    <div class="chart-container" style="display:flex; justify-content:center; height: 320px;"><canvas id="kpiRadarChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 22px;">
+                <!-- Target vs Actual Bar Chart -->
+                <div class="chart-box glass reveal" style="animation-delay:0.2s;">
+                    <h3 style="margin-bottom: 25px;">📊 เปรียบเทียบปริมาณงาน เป้าหมาย (Target) กับ ทำได้จริง (Actual)</h3>
+                    <div class="chart-container" style="height: 350px;"><canvas id="kpiBarChart"></canvas></div>
+                </div>
+                
+                <!-- Detailed Table for the Month -->
+                <div class="table-box glass reveal" style="animation-delay:0.25s">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+                        <h3 style="margin:0; color:var(--text);">📋 เจาะลึกรายโปรเจกต์ (Project Details)</h3>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr><th width="25%">ชื่อชิ้นงาน / โปรเจกต์</th><th width="15%">ผู้มอบหมาย</th><th width="15%" style="text-align:center;">ระยะเวลาผลิต<br>(Lead Time)</th><th width="15%" style="text-align:center;">คะแนน Feedback<br>(เต็ม 5)</th><th width="15%" style="text-align:center;">คะแนนความเป๊ะ CI<br>(เต็ม 5)</th><th width="15%">ผลประเมินย่อย</th></tr>
+                            </thead>
+                            <tbody id="kpiDetailTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+    <div class="lightbox-overlay" id="lightboxOverlay">
+        <div class="lightbox-box" id="lightboxBox">
+            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+            <div class="lightbox-media-wrap" id="lightboxMedia">
+                <button class="carousel-btn carousel-prev" onclick="prevLightboxImage(event)" id="lbPrevBtn">‹</button>
+                <div id="lbMediaContainer" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"></div>
+                <button class="carousel-btn carousel-next" onclick="nextLightboxImage(event)" id="lbNextBtn">›</button>
+                <div class="carousel-counter" id="lbCounter">1 / 1</div>
+            </div>
+            <div class="lightbox-details">
+                <div>
+                    <div id="lbCategory" style="font-size:0.9rem; font-weight:700; margin-bottom:8px; text-transform:uppercase;"></div>
+                    <h2 id="lbTitle" style="color:var(--text); font-size:1.6rem; margin:0 0 10px 0; line-height:1.3;"></h2>
+                    <div id="lbCampaign" style="margin-bottom: 20px;"></div>
+                    
+                    <div class="spec-box">
+                        <div class="spec-title">⚙️ เครื่องมือ & ซอฟต์แวร์ (Tech Stack)</div>
+                        <div id="lbTools" style="margin-top:8px;"></div>
+                    </div>
+
+                    <div class="spec-box">
+                        <div class="spec-title">🤖 AI Workflow & Prompts</div>
+                        <div id="lbAiPrompt" style="color:var(--text); font-size:0.9rem; white-space:pre-wrap; line-height: 1.5; margin-top:8px;"></div>
+                    </div>
+
+                    <div style="font-size:0.95rem; color:var(--muted); margin-bottom:10px; display:grid; grid-template-columns:1fr 1fr; gap:10px; background:var(--panel); padding:16px; border-radius:14px; border: 1px solid var(--line);">
+                        <div>📅 <strong>รับบรีฟ:</strong> <span id="lbDateOrder"></span></div><div>⏳ <strong>เริ่มทำ:</strong> <span id="lbDateStart"></span></div>
+                        <div style="grid-column:1/-1;">✅ <strong>ส่งงาน:</strong> <span id="lbDateEnd" style="color:var(--success); font-weight:600;"></span></div>
+                    </div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px; margin-top:18px;">👤 <strong>ผู้มอบหมาย:</strong> <span id="lbOwner" style="color:var(--text);"></span></div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px;">📌 <strong>หมวดหมู่ย่อย:</strong> <span id="lbSub" style="color:var(--text);"></span></div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px;">🔄 <strong>แก้ดราฟต์ไป:</strong> <span id="lbRevision" style="color:var(--danger); font-weight:bold;">0</span> ครั้ง</div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:10px;">💬 <strong>หมายเหตุ:</strong> <span id="lbNote" style="color:var(--text);"></span></div>
+                    <div style="font-size:1rem; color:var(--muted); margin-bottom:20px;">📊 <strong>สถานะ:</strong> <span id="lbStatus"></span></div>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:auto;">
+                    <a id="lbDownloadBtn" class="btn btn-success" download="Portfolio_Creative_Work" href="#" target="_blank" style="display:none; text-decoration:none;">📥 ดาวน์โหลดสื่อนี้</a>
+                    <button class="btn btn-primary admin-inline" id="lbEditBtn" onclick="editCurrentFromLightbox()" style="display:none;">✎ แก้ไขโปรเจกต์นี้</button>
+                    <span id="lbIdBadge" style="font-size:0.9rem; color:var(--muted); margin-left:auto; font-weight:600;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL (หน้าจอเข้าสู่ระบบ) -->
+    <div class="modal-overlay" id="loginOverlay">
+        <div class="modal-box" style="border: 1px solid var(--primary-2); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15);">
+            <button class="modal-close" onclick="closeLogin()">✕</button>
+            <h2 style="color: var(--primary-2); display: flex; align-items: center; gap: 10px;">
+                <span>🌊</span> DEEP BLUE ACCESS
+            </h2>
+            <div class="sub">ดำดิ่งสู่ระบบฐานข้อมูลระดับผู้ดูแล</div>
+            <div class="field">
+                <label>DIVER ID</label>
+                <input type="text" id="loginUser" placeholder="Enter ID..." autocomplete="off" style="font-family: monospace; letter-spacing: 1px;">
+            </div>
+            <div class="field">
+                <label>SECURITY KEY</label>
+                <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off" style="font-family: monospace; letter-spacing: 2px;">
+            </div>
+            <div class="error-msg" id="loginError"></div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeLogin()">ABORT</button>
+                <button class="btn btn-primary" onclick="attemptLogin()" style="font-family: monospace; font-size: 1.1rem; letter-spacing: 1px; background: linear-gradient(135deg, #0ea5e9, #3b82f6); color: #fff; box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);">DIVE IN ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ฉากโหลดสุดล้ำตอนเข้าสู่ระบบ (Background ใส โชว์ทะเล) -->
+    <div id="oceanLoader" class="ocean-loader-overlay">
+        <div class="ocean-loader-content">
+            <div class="ocean-spinner">🤿</div>
+            <div id="oceanLoaderText" class="ocean-loader-text">DUMPING OXYGEN...</div>
+            <div class="ocean-progress-bar"><div class="ocean-progress-fill" id="oceanProgress"></div></div>
+            <div id="oceanPercent" style="color:#bae6fd; font-family:'Kanit', sans-serif; font-weight:600; margin-top:10px; font-size:1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">0%</div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT PROJECT MODAL -->
+    <div class="modal-overlay" id="projectOverlay">
+        <div class="modal-box wide">
+            <button class="modal-close" onclick="closeProjectModal()">✕</button>
+            <h2 id="projectModalTitle">เพิ่มโปรเจกต์ใหม่</h2>
+            <div class="field-row">
+                <div class="field"><label>ประเภทหลัก</label><select id="fMain"><option value="ArtWork">ArtWork</option><option value="Video">Video</option><option value="Photography">Photography</option></select></div>
+                <div class="field"><label>สถานะ</label><select id="fStatus"><option value="เสร็จสิ้น">เสร็จสิ้น</option><option value="กำลังดำเนินการ">กำลังดำเนินการ</option><option value="รอดำเนินการ">รอดำเนินการ</option></select></div>
+            </div>
+            
+            <div class="field-row">
+                <div class="field"><label>หมวดหมู่ย่อย</label><input type="text" id="fSub"></div>
+                <div class="field"><label>แคมเปญ / งานกิจกรรม (Tags)</label><input type="text" id="fCampaign" placeholder="เช่น Outing 2026"></div>
+            </div>
+            
+            <div class="field"><label>ชื่อชิ้นงาน / โปรเจกต์</label><input type="text" id="fName"></div>
+            
+            <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="field"><label>📅 วันที่รับบรีฟ</label><input type="date" id="fDateOrder"></div><div class="field"><label>⏳ วันเริ่มทำ</label><input type="date" id="fDateStart"></div><div class="field"><label>✅ วันที่เสร็จ</label><input type="date" id="fDateEnd"></div>
+            </div>
+            
+            <div class="field-row">
+                <div class="field"><label>ผู้มอบหมายงาน</label><input type="text" id="fOwner"></div>
+                <div class="field"><label>ซอฟต์แวร์ที่ใช้ (Tools)</label><input type="text" id="fTools" placeholder="เช่น Illustrator, CapCut"></div>
+            </div>
+
+            <div class="field-row" style="grid-template-columns: 2fr 1fr;">
+                <div class="field"><label>🤖 AI Prompts & Workflow (เทคนิคที่ใช้)</label><textarea id="fAiPrompt" rows="2" placeholder="เช่น ใช้ Google Flow เจน Time-lapse"></textarea></div>
+                <div class="field"><label>🔄 จำนวนครั้งที่แก้ดราฟต์</label><input type="number" id="fRevision" min="0" value="0"></div>
+            </div>
+
+            <div class="field"><label>หมายเหตุ</label><input type="text" id="fNote"></div>
+            
+            <div class="field" style="margin-top:20px;"><label>🖼️ รูปภาพผลงานในโปรเจกต์นี้</label><div class="thumb-manager" id="editThumbnailsContainer"></div></div>
+            <div class="field" style="background: var(--panel); padding: 18px; border-radius: 16px; border: 1px dashed var(--primary-2);">
+                <label style="color: var(--primary-2); font-weight: 700; margin-bottom: 10px;">📁 เพิ่มภาพจากเครื่อง (เลือกหลายรูปได้)</label>
+                <input type="file" id="fUpload" accept="image/*" multiple onchange="handleFileUpload(event)" style="padding: 8px 0; background: none; border: none; color: var(--text); width: 100%; cursor: pointer;">
+                <div id="uploadPreviewInfo" style="font-size:0.9rem; color:var(--success); margin-top:10px;"></div>
+            </div>
+            <div class="field"><label>🔗 เพิ่มลิงก์รูปภาพ / Google Drive (คั่นด้วยบรรทัดใหม่)</label><textarea id="fImageLinks" rows="2"></textarea></div>
+            <div class="field"><label>🎬 เพิ่มลิงก์วิดีโอ (MP4, YouTube, WebM คั่นด้วยบรรทัดใหม่)</label><textarea id="fVideoLinks" rows="2"></textarea></div>
+            <div class="error-msg" id="projectError"></div>
+            <div class="modal-actions"><button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveProjectData()">บันทึกข้อมูล</button></div>
+        </div>
+    </div>
+
 <script>
     function safeGetLS(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
     function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); } }
@@ -6,39 +1052,23 @@
     const EVAL_KEY = 'MasterPortfolio_EVAL_DB_v10';
     const BASE_DATA = []; 
 
-    // ================== FIREBASE INITIALIZATION ==================
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        databaseURL: "https://YOUR_PROJECT_ID.asia-southeast1.firebasedatabase.app",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-    
-    // ตรวจสอบและเริ่มต้นใช้งาน Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const database = firebase.database();
-    // ============================================================
-
     let rawData = loadData(); let evalData = loadEvalData();
     let isAdmin = false; let editingId = null; let currentLightboxId = null; let currentLightboxImages = []; let currentLightboxIndex = 0; let editingProjectImages = [];
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
 
-    // ============ MOUSE TRACKER แหวกคลื่นใต้น้ำ ============
+    // ============ MOUSE TRACKER แหวกคลื่นใต้น้ำ (ไร้รอยต่อ & เบาเครื่อง) ============
     let isMouseTicking = false;
     document.addEventListener('mousemove', (e) => {
         if (!isMouseTicking) {
             window.requestAnimationFrame(() => {
                 const bg = document.getElementById('ocean-bg');
                 if(bg) {
+                    // สร้างไฟฉายใต้น้ำ / น้ำแหวก
                     bg.style.setProperty('--mx', e.clientX + 'px');
                     bg.style.setProperty('--my', e.clientY + 'px');
-                    const shiftX = (e.clientX / window.innerWidth - 0.5) * 30;
+                    // Parallax ให้คลื่นขยับตามเมาส์
+                    const shiftX = (e.clientX / window.innerWidth - 0.5) * 30; // ขยับ -15px ถึง 15px
                     bg.style.setProperty('--wave-shift', shiftX + 'px');
                 }
                 isMouseTicking = false;
@@ -47,6 +1077,7 @@
         }
     });
 
+    // ฟังก์ชันจัดการการเปิด/ปิด KPI แบบไม่หน่วงเครื่อง
     function toggleKpiSection(btnEl) {
         const c = document.getElementById('kpiIndicatorsContent');
         if(c.style.display === 'none') {
@@ -76,18 +1107,10 @@
 
     function loadData() { const str = safeGetLS(STORAGE_KEY); if (str && str !== "[]") { try { return JSON.parse(str); } catch (e) {} } return JSON.parse(JSON.stringify(BASE_DATA)); }
     function loadEvalData() { const str = safeGetLS(EVAL_KEY); if (str) { try { return JSON.parse(str); } catch (e) {} } return []; }
-    
-    // ================== SAVE TO FIREBASE ==================
-    function saveData() { 
-        safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); 
-        database.ref('projects').set(rawData).catch(err => console.error("Firebase save error:", err)); 
-    }
-    function saveEvalData() { 
-        safeSetLS(EVAL_KEY, JSON.stringify(evalData)); 
-        database.ref('evaluations').set(evalData).catch(err => console.error("Firebase save error:", err)); 
-    }
-    // ======================================================
+    function saveData() { safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); }
+    function saveEvalData() { safeSetLS(EVAL_KEY, JSON.stringify(evalData)); }
 
+    // ============ REAL BACKUP / RESTORE ============
     function exportBackup() {
         const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -874,21 +1897,7 @@
         }
     } catch (err) {}
 
-    // ================== FETCH FIREBASE ON LOAD ==================
-    database.ref('/').once('value').then((snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            if (data.projects) rawData = data.projects;
-            if (data.evaluations) evalData = data.evaluations;
-            safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-            safeSetLS(EVAL_KEY, JSON.stringify(evalData));
-        }
-        setTheme(savedTheme); 
-        refreshAll(true);
-    }).catch((error) => {
-        console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
-        setTheme(savedTheme); 
-        refreshAll(true);
-    });
-    // ============================================================
+    setTheme(savedTheme); refreshAll(true);
 </script>
+</body>
+</html>
