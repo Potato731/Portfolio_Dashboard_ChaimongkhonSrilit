@@ -116,6 +116,27 @@
     .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; position: relative; }
     .badge { background: rgba(56,189,248,0.15); color: var(--primary-2); padding: 10px 22px 10px 18px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(56,189,248,0.35); display: inline-flex; align-items: center; gap: 10px; }
 
+    /* ================= HOME VIEW STYLES ================= */
+    .home-carousel-container { position: relative; overflow: hidden; padding: 20px 45px; border-radius: 24px; margin-bottom: 24px; display: flex; align-items: center; }
+    .home-carousel-track { display: flex; gap: 20px; transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; width: 100%; }
+    .home-carousel-item { flex: 0 0 calc(25% - 15px); min-width: 0; position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
+    .home-carousel-item:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(167, 139, 250, 0.4); border-color: var(--primary); }
+    .home-carousel-img { width: 100%; height: 240px; object-fit: cover; display: block; }
+    
+    .featured-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 26px; margin-bottom: 30px; }
+    .featured-img-wrap { border-radius: 24px; overflow: hidden; position: relative; min-height: 380px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+    .featured-img-wrap img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; transition: transform 0.5s ease; }
+    .featured-img-wrap:hover img { transform: scale(1.05); }
+    .featured-details { padding: 40px; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; }
+    
+    @media (max-width: 1200px) { .home-carousel-item { flex: 0 0 calc(33.333% - 13.33px); } }
+    @media (max-width: 900px) { 
+        .home-carousel-item { flex: 0 0 calc(50% - 10px); } 
+        .featured-grid { grid-template-columns: 1fr; }
+        .featured-img-wrap { min-height: 250px; }
+    }
+    @media (max-width: 600px) { .home-carousel-item { flex: 0 0 100%; } .home-carousel-container { padding: 20px 30px; } }
+
     .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-bottom: 18px; }
     .kpi-card { position: relative; padding: 24px; border-radius: 18px; text-align: center; overflow: hidden; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
     .kpi-card::before { content:""; position:absolute; left:0; right:0; top:0; height:4px; background: var(--accent, var(--primary)); box-shadow: 0 0 20px var(--accent, var(--primary)); }
@@ -452,7 +473,8 @@
         <!-- Top Navigation View Switcher & Theme & Admin Actions -->
         <div class="view-switcher reveal" style="animation-delay:0s">
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="switchView('dashboard')">📊 รายงานภาพรวม</button>
+                <button class="nav-tab active" onclick="switchView('home')">🏠 หน้าแรก</button>
+                <button class="nav-tab" onclick="switchView('dashboard')">📊 รายงานภาพรวม</button>
                 <button class="nav-tab" onclick="switchView('showcase')">🎬 แกลเลอรีผลงาน</button>
                 <button class="nav-tab" onclick="switchView('evaluation')">📝 แบบประเมิน (HRD)</button>
                 <button class="nav-tab" onclick="switchView('monthlySummary')">📅 สรุปรายเดือน</button>
@@ -473,8 +495,53 @@
             </div>
         </div>
 
+        <!-- ================= VIEW 0: HOME PAGE ================= -->
+        <div id="viewHome" class="view-section active-view">
+            <div class="header glass reveal" style="animation-delay:0.05s">
+                <div>
+                    <div class="eyebrow"><span class="line"></span>PORTFOLIO & CREATIVE HUB</div>
+                    <h1>Welcome to Dashboard by Mr.Yeen</h1>
+                    <p>ยินดีต้อนรับสู่ระบบจัดการผลงานสื่อสารองค์กร สรุปข้อมูล และแกลเลอรีผลงานทั้งหมด</p>
+                </div>
+            </div>
+
+            <!-- Auto-scrolling Carousel -->
+            <div class="home-carousel-container glass reveal" style="animation-delay: 0.1s;">
+                <button class="carousel-btn carousel-prev" onclick="moveHomeCarousel(-1)" style="left: 15px; z-index: 10;">‹</button>
+                <div class="home-carousel-track" id="homeCarouselTrack">
+                    <!-- Images will be injected by JavaScript -->
+                </div>
+                <button class="carousel-btn carousel-next" onclick="moveHomeCarousel(1)" style="right: 15px; z-index: 10;">›</button>
+            </div>
+
+            <!-- Split Layout for Featured Job -->
+            <div class="featured-grid reveal" style="animation-delay: 0.2s;">
+                <div class="featured-img-wrap glass">
+                    <img src="https://placehold.co/800x600/121521/a78bfa?text=Featured+Project" alt="Featured Work">
+                </div>
+                <div class="featured-details glass">
+                    <div class="eyebrow" style="margin-bottom: 12px; color: var(--success);"><span class="line" style="background: var(--success);"></span>🔥 LATEST HIGHLIGHT</div>
+                    <h2 style="font-size: 2.2rem; margin: 0 0 15px 0; color: var(--text); line-height: 1.2;">Corporate Annual Concept Art 2026</h2>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
+                        <div style="font-size: 1.1rem; color: var(--muted);"><span style="color: var(--primary-2); font-weight: 600;">👤 ผู้มอบหมาย:</span> ผู้บริหารฝ่ายการตลาด (CMO)</div>
+                        <div style="font-size: 1.1rem; color: var(--muted);"><span style="color: var(--primary-2); font-weight: 600;">🏢 บริษัท / แคมเปญ:</span> TechSpace Global / Q1 Launch Event</div>
+                        <div style="font-size: 1.1rem; color: var(--muted);"><span style="color: var(--primary-2); font-weight: 600;">🎨 ประเภทงาน:</span> ArtWork & Motion Graphics</div>
+                    </div>
+                    
+                    <p style="color: var(--muted); line-height: 1.6; font-size: 1.05rem; margin-bottom: 30px;">
+                        ชิ้นงานล่าสุดที่เป็นไฮไลท์ของการสื่อสารแบรนด์ประจำปีนี้ ถูกออกแบบโดยเน้นแนวคิดแห่งอนาคต ผสมผสานโทนสี Cyber-Pastel เข้ากับเอกลักษณ์ดั้งเดิมขององค์กรได้อย่างลงตัว (สามารถคลิกดูผลงานอื่นๆ ได้ในหน้าแกลเลอรี)
+                    </p>
+                    
+                    <div>
+                        <button class="btn btn-primary" onclick="switchView('showcase')" style="padding: 14px 28px; font-size: 1.05rem;">เข้าสู่แกลเลอรีผลงาน (Showcase)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ================= VIEW 1: DASHBOARD REPORT ================= -->
-        <div id="viewDashboard" class="view-section active-view">
+        <div id="viewDashboard" class="view-section">
             <div class="header glass reveal" style="animation-delay:0.05s">
                 <div>
                     <div class="eyebrow"><span class="line"></span>CREATIVE OPERATIONS · FY2026–2027</div>
@@ -1015,7 +1082,6 @@
     let database = null; 
     
     try {
-        // ใช้ Config จริงจาก Firebase ของคุณ
         const firebaseConfig = {
             apiKey: "AIzaSyDoNJMaHIHW-i_pca1N5u4N67-xD1QRE-g",
             authDomain: "master-dashborad-by-mhee.firebaseapp.com",
@@ -1058,6 +1124,59 @@
         }
     });
 
+    let homeSlideIdx = 0;
+    let homeSlideTimer = null;
+    
+    function initHomeCarousel() {
+        const track = document.getElementById('homeCarouselTrack');
+        if (!track) return;
+        
+        // Generate 10 placeholder images matching the pastel theme
+        let html = '';
+        for (let i = 1; i <= 10; i++) {
+            html += `
+            <div class="home-carousel-item" onclick="switchView('showcase')">
+                <img src="https://placehold.co/600x400/121521/a78bfa?text=Portfolio+Sample+0${i}" class="home-carousel-img" alt="Sample ${i}">
+            </div>`;
+        }
+        track.innerHTML = html;
+        startHomeCarousel();
+    }
+
+    function startHomeCarousel() {
+        if (homeSlideTimer) clearInterval(homeSlideTimer);
+        homeSlideTimer = setInterval(() => { moveHomeCarousel(1); }, 3000); // auto-scroll every 3 seconds
+    }
+
+    function moveHomeCarousel(step) {
+        const items = document.querySelectorAll('.home-carousel-item');
+        if (!items.length) return;
+        
+        // Calculate max index based on how many items can be visible at once
+        const track = document.getElementById('homeCarouselTrack');
+        const containerWidth = track.parentElement.offsetWidth;
+        const itemWidth = items[0].offsetWidth + 20; // 20px is the gap
+        
+        const visibleItems = Math.floor(containerWidth / itemWidth) || 1;
+        const maxIdx = Math.max(0, items.length - visibleItems);
+
+        homeSlideIdx += step;
+        if (homeSlideIdx > maxIdx) homeSlideIdx = 0;
+        if (homeSlideIdx < 0) homeSlideIdx = maxIdx;
+        
+        track.style.transform = `translateX(-${homeSlideIdx * itemWidth}px)`;
+        
+        // Reset timer to avoid immediate jumps after user clicks
+        startHomeCarousel();
+    }
+
+    // Re-adjust carousel layout on window resize to prevent empty space bugs
+    window.addEventListener('resize', () => {
+        homeSlideIdx = 0;
+        const track = document.getElementById('homeCarouselTrack');
+        if(track) track.style.transform = `translateX(0px)`;
+    });
+
     function toggleKpiSection(btnEl) {
         const c = document.getElementById('kpiIndicatorsContent');
         if(c.style.display === 'none') {
@@ -1088,7 +1207,6 @@
     function loadData() { const str = safeGetLS(STORAGE_KEY); if (str && str !== "[]") { try { return JSON.parse(str); } catch (e) {} } return JSON.parse(JSON.stringify(BASE_DATA)); }
     function loadEvalData() { const str = safeGetLS(EVAL_KEY); if (str) { try { return JSON.parse(str); } catch (e) {} } return []; }
     
-    // ================== SAVE TO FIREBASE ==================
     function saveData() { 
         safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); 
         if(database) database.ref('projects').set(rawData).catch(err => console.error("Firebase save error:", err)); 
@@ -1097,7 +1215,6 @@
         safeSetLS(EVAL_KEY, JSON.stringify(evalData)); 
         if(database) database.ref('evaluations').set(evalData).catch(err => console.error("Firebase save error:", err)); 
     }
-    // ======================================================
 
     function exportBackup() {
         const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
@@ -1138,6 +1255,7 @@
         reader.readAsText(file);
     }
     window.importBackup = importBackup;
+    
     function formatDateThai(d) { if (!d) return '-'; const date = new Date(d); if (isNaN(date)) return '-'; return date.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }); }
     
     function getDaysDiff(startStr, endStr) {
@@ -1185,11 +1303,36 @@
     function switchView(viewName) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-        if (viewName === 'dashboard') { document.getElementById('viewDashboard').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); filterTable(); renderModernGantt(); } 
-        else if (viewName === 'showcase') { document.getElementById('viewShowcase').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); renderShowcase(); } 
-        else if (viewName === 'evaluation') { document.getElementById('viewEvaluation').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); renderFeedback(); } 
-        else if (viewName === 'monthlySummary') { document.getElementById('viewMonthlySummary').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="monthlySummary"]').classList.add('active'); renderMonthlySummary(); } 
-        else if (viewName === 'personalKPI') { document.getElementById('viewPersonalKPI').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="personalKPI"]').classList.add('active'); renderPersonalKPI(); }
+        
+        if (viewName === 'home') { 
+            document.getElementById('viewHome').classList.add('active-view'); 
+            document.querySelector('.nav-tab[onclick*="home"]').classList.add('active'); 
+        }
+        else if (viewName === 'dashboard') { 
+            document.getElementById('viewDashboard').classList.add('active-view'); 
+            document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); 
+            filterTable(); renderModernGantt(); 
+        } 
+        else if (viewName === 'showcase') { 
+            document.getElementById('viewShowcase').classList.add('active-view'); 
+            document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); 
+            renderShowcase(); 
+        } 
+        else if (viewName === 'evaluation') { 
+            document.getElementById('viewEvaluation').classList.add('active-view'); 
+            document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); 
+            renderFeedback(); 
+        } 
+        else if (viewName === 'monthlySummary') { 
+            document.getElementById('viewMonthlySummary').classList.add('active-view'); 
+            document.querySelector('.nav-tab[onclick*="monthlySummary"]').classList.add('active'); 
+            renderMonthlySummary(); 
+        } 
+        else if (viewName === 'personalKPI') { 
+            document.getElementById('viewPersonalKPI').classList.add('active-view'); 
+            document.querySelector('.nav-tab[onclick*="personalKPI"]').classList.add('active'); 
+            renderPersonalKPI(); 
+        }
     }
     window.switchView = switchView;
 
@@ -1875,25 +2018,28 @@
     } catch (err) {}
 
     // ================== FETCH FIREBASE ON LOAD ==================
-    if (database) {
-        database.ref('/').once('value').then((snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                if (data.projects) rawData = data.projects;
-                if (data.evaluations) evalData = data.evaluations;
-                safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-                safeSetLS(EVAL_KEY, JSON.stringify(evalData));
-            }
+    window.onload = function() {
+        initHomeCarousel();
+        if (database) {
+            database.ref('/').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if (data.projects) rawData = data.projects;
+                    if (data.evaluations) evalData = data.evaluations;
+                    safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
+                    safeSetLS(EVAL_KEY, JSON.stringify(evalData));
+                }
+                setTheme(savedTheme); 
+                refreshAll(true);
+            }).catch((error) => {
+                console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
+                setTheme(savedTheme); 
+                refreshAll(true);
+            });
+        } else {
             setTheme(savedTheme); 
             refreshAll(true);
-        }).catch((error) => {
-            console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
-            setTheme(savedTheme); 
-            refreshAll(true);
-        });
-    } else {
-        setTheme(savedTheme); 
-        refreshAll(true);
+        }
     }
     // ============================================================
 </script>
