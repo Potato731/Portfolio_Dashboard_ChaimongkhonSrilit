@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- ใช้งาน Chart.js สำหรับกราฟทั้งหมด -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 <style>
@@ -38,24 +39,21 @@
 
     body { 
         font-family: 'Kanit', sans-serif; margin: 0; padding: 2vh 2vw; 
-        color: var(--text); background-color: transparent; /* ให้โปร่งแสงเพื่อโชว์พื้นหลังทะเล */
+        color: var(--text); background-color: transparent; 
         min-height: 100vh; position: relative; overflow-x: hidden; 
         transition: color 0.3s; 
     }
 
-    /* ================= GLOBAL OCEAN BACKGROUND (Optimized) ================= */
+    /* ================= GLOBAL OCEAN BACKGROUND ================= */
     #ocean-bg {
         position: fixed; inset: 0; z-index: -999; overflow: hidden; pointer-events: none;
         background: linear-gradient(180deg, #0284c7 0%, #082f49 100%);
     }
-    /* เอฟเฟกต์แหวกคลื่น / แสงไฟตามเมาส์ (ประหยัดทรัพยากรมาก) */
     #ocean-bg::after {
         content: ''; position: absolute; inset: 0;
         background: radial-gradient(circle 350px at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.15), transparent 70%);
         mix-blend-mode: overlay; z-index: 10; transition: background 0.1s ease;
     }
-
-    /* ฟองอากาศลอยขึ้น */
     .bubble {
         position: absolute; bottom: -50px; background: rgba(255, 255, 255, 0.3); border-radius: 50%;
         animation: rise infinite ease-in; box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
@@ -66,8 +64,6 @@
         50% { opacity: 1; transform: translateX(15px); }
         100% { bottom: 110vh; transform: translateX(-15px); opacity: 0; }
     }
-
-    /* สัตว์ทะเลว่ายน้ำ (ตัดเงาออกเพื่อลดการกินสเปค เพิ่ม will-change) */
     .creature { 
         position: absolute; white-space: nowrap; font-size: 3rem; opacity: 0.85;
         z-index: 1; will-change: transform; transition: transform 0.2s ease-out;
@@ -76,14 +72,10 @@
     .c2 { top: 55%; animation: swimLeft 28s linear infinite, bob 5s ease-in-out infinite; font-size: 4.5rem; }
     .c3 { top: 80%; animation: swimRight 25s linear infinite, bob 3s ease-in-out infinite; font-size: 2.5rem; animation-delay: 3s; }
     .c4 { bottom: 20px; animation: scuttleRight 35s linear infinite; font-size: 2rem; z-index: 4; opacity: 0.6; }
-
-    /* Parallax แหวกคลื่น: เลื่อนซ้ายขวาตามเมาส์เล็กน้อย (--wave-shift) */
     @keyframes swimRight { 0% { left: -10vw; transform: scaleX(1) translateX(var(--wave-shift, 0px)); } 100% { left: 110vw; transform: scaleX(1) translateX(var(--wave-shift, 0px)); } }
     @keyframes swimLeft { 0% { left: 110vw; transform: scaleX(-1) translateX(calc(var(--wave-shift, 0px) * -1)); } 100% { left: -10vw; transform: scaleX(-1) translateX(calc(var(--wave-shift, 0px) * -1)); } }
     @keyframes scuttleRight { 0% { left: -10vw; transform: translateX(calc(var(--wave-shift, 0px) * 0.5)); } 100% { left: 110vw; transform: translateX(calc(var(--wave-shift, 0px) * 0.5)); } }
     @keyframes bob { 0%, 100% { margin-top: 0; } 50% { margin-top: -20px; } }
-
-    /* คลื่นใต้น้ำ (ลดเหลือ 2 ชั้นเพื่อไม่ให้แลค) */
     .ocean-waves { position: absolute; bottom: 0; left: 0; width: 100%; height: 150px; z-index: 2; transform: translateX(var(--wave-shift, 0px)); transition: transform 0.3s ease-out; will-change: transform;}
     .wave {
         position: absolute; bottom: 0; left: 0; width: 200%; height: 100%;
@@ -92,7 +84,6 @@
     }
     .wave1 { animation: moveWave 22s linear infinite; z-index: 3; height: 100px; }
     .wave2 { animation: moveWave 16s linear infinite reverse; z-index: 2; height: 130px; background-position: 50px 0; }
-
     @keyframes moveWave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
     /* ================= ELEMENTS & COMPONENTS ================= */
@@ -100,7 +91,6 @@
     .reveal { opacity: 0; transform: translateY(14px); animation: revealUp 0.7s cubic-bezier(.16,.84,.44,1) forwards; }
     @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
 
-    /* เพิ่มสีพื้นหลังการ์ดให้ทึบขึ้นเล็กน้อยเพื่อให้ตัดกับทะเล */
     .glass { background: linear-gradient(155deg, rgba(27, 30, 47, 0.75), rgba(18, 21, 33, 0.9)); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); transition: background 0.3s, border-color 0.3s; }
     [data-theme="light"] .glass { background: rgba(255,255,255,0.85); box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5); }
 
@@ -118,7 +108,6 @@
     .view-section.active-view { display: block; animation: viewFadeIn 0.45s cubic-bezier(.16,.84,.44,1); }
     @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ---- header ---- */
     .header { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 34px 44px; border-radius: 22px; margin-bottom: 22px; }
     .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--primary-2); font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
     .eyebrow .line { width: 30px; height: 2px; background: var(--primary-2); border-radius: 2px;}
@@ -127,7 +116,6 @@
     .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; position: relative; }
     .badge { background: rgba(56,189,248,0.15); color: var(--primary-2); padding: 10px 22px 10px 18px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(56,189,248,0.35); display: inline-flex; align-items: center; gap: 10px; }
 
-    /* ---- KPI & Charts ---- */
     .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-bottom: 18px; }
     .kpi-card { position: relative; padding: 24px; border-radius: 18px; text-align: center; overflow: hidden; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
     .kpi-card::before { content:""; position:absolute; left:0; right:0; top:0; height:4px; background: var(--accent, var(--primary)); box-shadow: 0 0 20px var(--accent, var(--primary)); }
@@ -157,7 +145,6 @@
     .chart-center .num { font-size: 2.2rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
     .chart-center .lbl { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
 
-    /* ---- MODERN CSS GANTT CHART ---- */
     .gantt-wrapper { overflow-x: auto; overflow-y: hidden; padding-bottom: 15px; margin-top: 20px;}
     .gantt-container { min-width: 800px; display: flex; flex-direction: column; gap: 10px; position: relative;}
     .gantt-header { display: flex; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 10px; color: var(--muted); font-size: 0.9rem; font-weight: 600; text-transform: uppercase;}
@@ -173,7 +160,6 @@
     .gb-video { background: linear-gradient(90deg, var(--video), #f59e0b); }
     .gb-photo { background: linear-gradient(90deg, var(--photo), #14b8a6); }
 
-    /* ---- BALANCED FILTER BAR ---- */
     .filter-bar { display: flex; width: 100%; gap: 12px; margin-top: 15px; margin-bottom: 5px; flex-wrap: wrap; align-items: center; }
     .filter-search { flex: 2; min-width: 250px; }
     .filter-select { flex: 1; min-width: 120px; }
@@ -220,7 +206,6 @@
     .tag-video { color: #000; font-weight: 700; background: linear-gradient(135deg, var(--video), #f59e0b); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(253, 224, 71, 0.3); border: none; }
     .tag-photo { color: #fff; font-weight: 600; background: linear-gradient(135deg, var(--photo), #14b8a6); padding: 5px 12px; border-radius: 8px; font-size: 0.82rem; box-shadow: 0 4px 10px rgba(94, 234, 212, 0.3); border: none; }
 
-    /* ---- PRO FEATURES CSS ---- */
     .tag-campaign { background: rgba(167, 139, 250, 0.15); color: var(--primary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 4px;}
     .tool-badge { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; margin-right: 4px; display: inline-block; margin-top: 4px;}
     .spec-box { background: var(--panel); border: 1px dashed var(--line); padding: 12px; border-radius: 10px; margin-bottom: 15px;}
@@ -239,7 +224,6 @@
     .icon-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .icon-btn:hover { color: var(--text); border-color: var(--primary-2); background: var(--panel-2); transform: scale(1.05);}
 
-    /* ---- PAGE 2: MOTION SHOWCASE GALLERY ---- */
     .showcase-hero { padding: 40px; border-radius: 24px; margin-bottom: 28px; background: linear-gradient(135deg, rgba(167, 139, 250, 0.08), rgba(56, 189, 248, 0.08)); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden;}
     .showcase-hero::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%); opacity: 0.5; pointer-events: none; }
     .showcase-hero-top { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap:wrap; gap: 10px; z-index: 1;}
@@ -259,7 +243,6 @@
     .portfolio-title { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 10px 0; line-height: 1.4; }
     .portfolio-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--muted); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 
-    /* ---- PAGE 3: EVALUATION FORM ---- */
     .gform-container { max-width: 770px; margin: 0 auto; padding-top: 10px;}
     .gform-card { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 10px; padding: 26px 32px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: box-shadow 0.3s;}
     .gform-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: var(--primary);}
@@ -279,7 +262,6 @@
     .gform-submit-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px;}
     .admin-dashboard-eval { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 20px; padding: 30px; margin-top: 30px;}
 
-    /* ---- LIGHTBOX MODAL ---- */
     .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
     .lightbox-overlay.open { display: flex; }
     .lightbox-box { width: 100%; max-width: 1100px; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8); animation: modalIn 0.35s cubic-bezier(.16,.84,.44,1); display: grid; grid-template-columns: 1.5fr 1fr; position: relative; }
@@ -293,7 +275,6 @@
     .carousel-prev { left: 16px; } .carousel-next { right: 16px; }
     .carousel-counter { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #fff; z-index: 5; font-weight: 500; letter-spacing: 1px;}
 
-    /* ---- GLOBAL MODALS ---- */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-overlay.open { display: flex; }
     .modal-box { width: 100%; max-width: 440px; border-radius: 24px; padding: 36px; background: var(--panel-solid); border: 1px solid var(--line); position: relative; box-shadow: 0 25px 60px rgba(0,0,0,0.7); }
@@ -318,16 +299,13 @@
     .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
     .thumb-del { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
 
-    /* ---- PROGRESS BARS FOR KPI ---- */
     .kpi-progress-wrap { margin-bottom: 20px; transition: opacity 0.3s ease; }
     .kpi-progress-header { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
     .kpi-progress-bg { width: 100%; height: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
     .kpi-progress-fill { height: 100%; border-radius: 10px; transition: width 1s cubic-bezier(.16,.84,.44,1); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
     
-    /* ---- GRADE CIRCLE ---- */
     .grade-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 800; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 0 auto 15px auto; transition: background 0.3s; }
 
-    /* ---- SMART UPLOAD BUTTON & REVISION BADGE ---- */
     .revision-badge {
         background: rgba(245, 158, 11, 0.15);
         color: var(--video);
@@ -371,7 +349,6 @@
     .evidence-chip:hover { border-color: var(--danger); }
     @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* ---- PRINT STYLES ---- */
     @media print {
         body { background: #fff !important; color: #000 !important; font-size: 12pt; margin: 0; padding: 0; }
         .view-switcher, .theme-switcher, .btn, .icon-btn, .header-right select, .filter-bar, .smart-upload-btn, .evidence-chip { display: none !important; }
@@ -410,15 +387,12 @@
         .gform-card { padding: 20px 20px;}
     }
 
-    /* ---- OCEAN LOADER (ปรับให้โปร่งใสเพื่อโชว์ทะเลด้านหลัง) ---- */
     .ocean-loader-overlay {
         position: fixed; inset: 0; background: rgba(8, 47, 73, 0.75); backdrop-filter: blur(8px); z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         opacity: 0; pointer-events: none; transition: opacity 0.8s ease; overflow: hidden;
     }
     .ocean-loader-overlay.active { opacity: 1; pointer-events: all; }
-
-    /* ส่วนแสดงผลข้อมูลตรงกลาง (Loader) */
     .ocean-loader-content { position: relative; z-index: 10; text-align: center; }
     .ocean-spinner {
         font-size: 5.5rem; animation: spinFloat 4s ease-in-out infinite; margin-bottom: 25px;
@@ -430,7 +404,6 @@
         color: #e0f2fe; font-family: 'Kanit', sans-serif; font-size: 1.5rem; font-weight: 700; 
         letter-spacing: 2px; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
-    
     .ocean-progress-bar {
         width: 350px; height: 16px; background: rgba(0,0,0,0.4); 
         border-radius: 20px; overflow: hidden; position: relative; border: 2px solid rgba(255,255,255,0.2);
@@ -441,15 +414,12 @@
         box-shadow: 0 0 15px #38bdf8; transition: width 0.1s linear; border-radius: 20px;
         position: relative; overflow: hidden;
     }
-    /* ลายน้ำริ้วๆ วิ่งในหลอดโหลด */
     .ocean-progress-fill::after {
         content: ""; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
         background: linear-gradient(45deg, rgba(255,255,255,0.3) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.3) 75%, transparent 75%, transparent);
         background-size: 20px 20px; animation: moveStripes 1s linear infinite;
     }
     @keyframes moveStripes { 0% { background-position: 0 0; } 100% { background-position: 20px 0; } }
-
-    /* เอฟเฟกต์วาร์ปโผล่ขึ้นผิวน้ำ */
     .splash-out { animation: splashOut 1.2s ease-in forwards; }
     @keyframes splashOut {
         0% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
@@ -461,20 +431,17 @@
 <body>
     <!-- ================= GLOBAL BACKGROUND & MARINE LIFE ================= -->
     <div id="ocean-bg">
-        <!-- Bubbles ฟองอากาศ -->
         <div class="bubble" style="left: 15%; width: 18px; height: 18px; animation-duration: 4.5s;"></div>
         <div class="bubble" style="left: 45%; width: 25px; height: 25px; animation-duration: 5.5s; animation-delay: 0.5s;"></div>
         <div class="bubble" style="left: 75%; width: 15px; height: 15px; animation-duration: 3.5s; animation-delay: 2s;"></div>
         <div class="bubble" style="left: 85%; width: 30px; height: 30px; animation-duration: 6s; animation-delay: 0.2s;"></div>
         <div class="bubble" style="left: 25%; width: 12px; height: 12px; animation-duration: 4s; animation-delay: 1.5s;"></div>
         
-        <!-- Sea Creatures สัตว์ทะเลว่ายน้ำไปมา -->
         <div class="creature c1">🐬</div>
         <div class="creature c2">🐋</div>
         <div class="creature c3">🐢</div>
         <div class="creature c4">🦀</div>
         
-        <!-- Waves คลื่นน้ำซ้อนทับด้านล่าง -->
         <div class="ocean-waves">
             <div class="wave wave2"></div>
             <div class="wave wave1"></div>
@@ -784,7 +751,6 @@
                 </div>
             </div>
 
-            <!-- 🏅 Overall Score & AI Insights -->
             <div class="kpi-grid reveal" style="grid-template-columns: 1fr 2.5fr; margin-bottom: 22px; animation-delay: 0.08s;">
                 <div class="chart-box glass" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px;">
                     <div class="grade-circle" id="kpiGradeCircle" style="background: linear-gradient(135deg, var(--muted), #333);">?</div>
@@ -799,16 +765,13 @@
                 </div>
             </div>
 
-            <!-- KPI Metric Progress Bars -->
             <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:22px;">
                 <div class="chart-box glass reveal" style="animation-delay:0.1s;">
-                    <!-- Header พร้อมฟังก์ชัน Toggle ที่ดีขึ้น -->
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 15px;">
                         <h3 style="margin:0; border-bottom:none; padding-bottom:0;">🎯 ตัวชี้วัดผลงานหลัก (5 KPIs)</h3>
                         <button class="btn btn-ghost" onclick="toggleKpiSection(this)" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 8px;">🙈 แสดง</button>
                     </div>
                     
-                    <!-- ส่วนเนื้อหาที่ถูกตั้งให้ซ่อนไว้ตอนแรก เพื่อลดโหลดตอนเปิดหน้า -->
                     <div id="kpiIndicatorsContent" style="display: none;">
                         <div class="kpi-progress-wrap" id="wrapKpi1">
                             <div class="kpi-progress-header">
@@ -870,7 +833,6 @@
                                 <span id="kpiSatVal">0 / 5.0</span>
                             </div>
                             
-                            <!-- ฟังก์ชันใหม่: ปุ่มอัปโหลดไฟล์หลักฐานแทนการกรอกคะแนนดิบ -->
                             <div style="margin-bottom: 12px; margin-top: 8px;">
                                 <label class="smart-upload-btn" for="kpiEvidenceUpload">
                                     <span class="upload-icon">📂</span> 
@@ -887,7 +849,6 @@
                     </div>
                 </div>
 
-                <!-- Competency Radar -->
                 <div class="chart-box glass reveal" style="animation-delay:0.15s;">
                     <h3>🧠 สมรรถนะการปฏิบัติงาน (Job Competencies)</h3>
                     <div class="chart-container" style="display:flex; justify-content:center; height: 320px;"><canvas id="kpiRadarChart"></canvas></div>
@@ -895,13 +856,11 @@
             </div>
 
             <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 22px;">
-                <!-- Target vs Actual Bar Chart -->
                 <div class="chart-box glass reveal" style="animation-delay:0.2s;">
                     <h3 style="margin-bottom: 25px;">📊 เปรียบเทียบปริมาณงาน เป้าหมาย (Target) กับ ทำได้จริง (Actual)</h3>
                     <div class="chart-container" style="height: 350px;"><canvas id="kpiBarChart"></canvas></div>
                 </div>
                 
-                <!-- Detailed Table for the Month -->
                 <div class="table-box glass reveal" style="animation-delay:0.25s">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
                         <h3 style="margin:0; color:var(--text);">📋 เจาะลึกรายโปรเจกต์ (Project Details)</h3>
@@ -964,7 +923,7 @@
         </div>
     </div>
 
-    <!-- LOGIN MODAL (หน้าจอเข้าสู่ระบบ) -->
+    <!-- LOGIN MODAL -->
     <div class="modal-overlay" id="loginOverlay">
         <div class="modal-box" style="border: 1px solid var(--primary-2); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15);">
             <button class="modal-close" onclick="closeLogin()">✕</button>
@@ -988,7 +947,7 @@
         </div>
     </div>
 
-    <!-- ฉากโหลดสุดล้ำตอนเข้าสู่ระบบ (Background ใส โชว์ทะเล) -->
+    <!-- OCEAN LOADER -->
     <div id="oceanLoader" class="ocean-loader-overlay">
         <div class="ocean-loader-content">
             <div class="ocean-spinner">🤿</div>
@@ -1052,23 +1011,46 @@
     const EVAL_KEY = 'MasterPortfolio_EVAL_DB_v10';
     const BASE_DATA = []; 
 
+    // ================== FIREBASE INITIALIZATION ==================
+    let database = null; 
+    
+    try {
+        // ⚠️ โค้ดส่วนนี้ให้คุณนำ Config จากเว็บ Firebase มาแทนที่ในภายหลังได้เลย
+        // ถ้ายากทดสอบการทำงานของเว็บก่อน ก็ยังสามารถอัปขึ้น GitHub ได้ เว็บจะไม่พังแน่นอน
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.asia-southeast1.firebasedatabase.app",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        database = firebase.database();
+        console.log("Firebase initialized successfully!");
+    } catch (error) {
+        console.error("🔥 Firebase Init Error (ข้ามการเชื่อมต่อ):", error);
+    }
+    // ============================================================
+
     let rawData = loadData(); let evalData = loadEvalData();
     let isAdmin = false; let editingId = null; let currentLightboxId = null; let currentLightboxImages = []; let currentLightboxIndex = 0; let editingProjectImages = [];
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
 
-    // ============ MOUSE TRACKER แหวกคลื่นใต้น้ำ (ไร้รอยต่อ & เบาเครื่อง) ============
     let isMouseTicking = false;
     document.addEventListener('mousemove', (e) => {
         if (!isMouseTicking) {
             window.requestAnimationFrame(() => {
                 const bg = document.getElementById('ocean-bg');
                 if(bg) {
-                    // สร้างไฟฉายใต้น้ำ / น้ำแหวก
                     bg.style.setProperty('--mx', e.clientX + 'px');
                     bg.style.setProperty('--my', e.clientY + 'px');
-                    // Parallax ให้คลื่นขยับตามเมาส์
-                    const shiftX = (e.clientX / window.innerWidth - 0.5) * 30; // ขยับ -15px ถึง 15px
+                    const shiftX = (e.clientX / window.innerWidth - 0.5) * 30;
                     bg.style.setProperty('--wave-shift', shiftX + 'px');
                 }
                 isMouseTicking = false;
@@ -1077,7 +1059,6 @@
         }
     });
 
-    // ฟังก์ชันจัดการการเปิด/ปิด KPI แบบไม่หน่วงเครื่อง
     function toggleKpiSection(btnEl) {
         const c = document.getElementById('kpiIndicatorsContent');
         if(c.style.display === 'none') {
@@ -1107,10 +1088,18 @@
 
     function loadData() { const str = safeGetLS(STORAGE_KEY); if (str && str !== "[]") { try { return JSON.parse(str); } catch (e) {} } return JSON.parse(JSON.stringify(BASE_DATA)); }
     function loadEvalData() { const str = safeGetLS(EVAL_KEY); if (str) { try { return JSON.parse(str); } catch (e) {} } return []; }
-    function saveData() { safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); }
-    function saveEvalData() { safeSetLS(EVAL_KEY, JSON.stringify(evalData)); }
+    
+    // ================== SAVE TO FIREBASE ==================
+    function saveData() { 
+        safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); 
+        if(database) database.ref('projects').set(rawData).catch(err => console.error("Firebase save error:", err)); 
+    }
+    function saveEvalData() { 
+        safeSetLS(EVAL_KEY, JSON.stringify(evalData)); 
+        if(database) database.ref('evaluations').set(evalData).catch(err => console.error("Firebase save error:", err)); 
+    }
+    // ======================================================
 
-    // ============ REAL BACKUP / RESTORE ============
     function exportBackup() {
         const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1272,7 +1261,6 @@
         monthlyChart.data.datasets[0].data = sortedMonths.map(k => monthCounts[k]); monthlyChart.update();
     }
     
-    // ================= MONTHLY SUMMARY =================
     function getMonthlyFilteredData(m, y) {
         return rawData.filter(p => {
             if(p['สถานะ'] !== 'เสร็จสิ้น') return false;
@@ -1323,7 +1311,6 @@
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", `Monthly_Report_${y !== "all"?y:"All"}_${m !== "all"?m:"All"}.csv`); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
-    // ================= PERSONAL KPI SCORECARD =================
     function renderPersonalKPI() {
         const m = document.getElementById('kpiFilterMonth').value; const y = document.getElementById('kpiFilterYear').value;
         const filteredWork = getMonthlyFilteredData(m, y);
@@ -1342,7 +1329,6 @@
         const TARGET_PROJECTS = 10;
         let actualProjects = filteredWork.length;
         
-        // คำนวณ KPI ข้อที่ 1-5
         let planPercent = Math.min((actualProjects / TARGET_PROJECTS) * 100, 100);
         
         let onTimeCount = 0;
@@ -1468,7 +1454,6 @@
         });
     }
 
-    // ---- MODERN CSS GANTT CHART ----
     function renderModernGantt() {
         const container = document.getElementById('cssGanttChart'); if(!container) return;
         let validProjects = []; let minTime = Infinity; let maxTime = -Infinity;
@@ -1500,7 +1485,7 @@
     }
 
     function renderTable(data) {
-        if (!data) data = rawData; // Support direct call from switchView
+        if (!data) data = rawData; 
         const tbody = document.getElementById('dataTable'); tbody.innerHTML = '';
         if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:50px; font-size:1.1rem;">ไม่พบข้อมูลที่ค้นหา 🧐</td></tr>`; return; }
         data.forEach((p, i) => {
@@ -1511,7 +1496,6 @@
             let typeHtml = p['ประเภทหลัก'] === "Video" ? `<span class="tag-video">🎬 Video</span>` : (p['ประเภทหลัก'] === "Photography" ? `<span class="tag-photo">📸 Photography</span>` : `<span class="tag-artwork">🎨 ArtWork</span>`);
             let dateStr = `<span style="font-size:0.85rem; color:var(--muted);">เริ่ม: ${formatDateThai(p.dateStart)}<br>เสร็จ: ${formatDateThai(p.dateEnd)}</span>`;
             
-            // Pro Features Rendering
             let campHtml = p['campaign'] ? `<br><span class="tag-campaign">🏷️ ${p['campaign']}</span>` : '';
             let toolsHtml = (p['tools'] || '').split(',').map(t => t.trim() ? `<span class="tool-badge">${t}</span>` : '').join('');
             let subCatHtml = `${p['ประเภทย่อย']}<br>${toolsHtml}`;
@@ -1633,7 +1617,6 @@
     function editCurrentFromLightbox() { if (currentLightboxId !== null) { closeLightbox(); openEditModal(currentLightboxId); } }
     window.prevLightboxImage = prevLightboxImage; window.nextLightboxImage = nextLightboxImage; window.closeLightbox = closeLightbox; window.editCurrentFromLightbox = editCurrentFromLightbox; 
 
-    // ============ SATISFACTION EVALUATION ============
     function getRadioVal(name) { const radios = document.getElementsByName(name); for(let i=0; i<radios.length; i++) { if(radios[i].checked) return radios[i].value; } return null; }
 
     function submitEvaluation() {
@@ -1693,7 +1676,6 @@
     }
     window.clearEvaluations = clearEvaluations;
 
-    // ============ ADMIN LOGIN ============
     function openLogin() { document.getElementById('loginOverlay').classList.add('open'); }
     function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
     function attemptLogin() {
@@ -1705,7 +1687,6 @@
             errorEl.textContent = '';
             closeLogin(); 
             
-            // เปิดฉากโหลดโลกใต้น้ำ
             const loader = document.getElementById('oceanLoader');
             const loaderText = document.getElementById('oceanLoaderText');
             const progress = document.getElementById('oceanProgress');
@@ -1756,7 +1737,6 @@
     function logoutAdmin() { isAdmin = false; document.body.classList.remove('admin-on'); refreshAll(false); }
     window.openLogin = openLogin; window.closeLogin = closeLogin; window.attemptLogin = attemptLogin; window.logoutAdmin = logoutAdmin;
 
-    // ============ Add / Edit Modal Actions ============
     function handleFileUpload(event) {
         const files = event.target.files; if (!files || files.length === 0) return;
         const info = document.getElementById('uploadPreviewInfo'); if(info) info.textContent = `⏳ กำลังบีบอัดและโหลดรูปภาพ...`;
@@ -1842,7 +1822,6 @@
     }
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
-    // ============ SMART EVIDENCE UPLOAD ============
     function handleKpiEvidence(event) {
         const files = event.target.files;
         const container = document.getElementById('kpiEvidenceList');
@@ -1867,7 +1846,6 @@
     }
     window.handleKpiEvidence = handleKpiEvidence;
 
-    // ============ init charts & data ============
     try {
         if (typeof Chart !== 'undefined') {
             const style = getComputedStyle(document.documentElement); function getCSSVar(name, def) { return style.getPropertyValue(name).trim() || def; }
@@ -1897,7 +1875,28 @@
         }
     } catch (err) {}
 
-    setTheme(savedTheme); refreshAll(true);
+    // ================== FETCH FIREBASE ON LOAD ==================
+    if (database) {
+        database.ref('/').once('value').then((snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.projects) rawData = data.projects;
+                if (data.evaluations) evalData = data.evaluations;
+                safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
+                safeSetLS(EVAL_KEY, JSON.stringify(evalData));
+            }
+            setTheme(savedTheme); 
+            refreshAll(true);
+        }).catch((error) => {
+            console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
+            setTheme(savedTheme); 
+            refreshAll(true);
+        });
+    } else {
+        setTheme(savedTheme); 
+        refreshAll(true);
+    }
+    // ============================================================
 </script>
 </body>
 </html>
