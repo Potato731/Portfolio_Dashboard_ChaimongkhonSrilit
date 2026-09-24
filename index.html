@@ -91,7 +91,7 @@
     .reveal { opacity: 0; transform: translateY(14px); animation: revealUp 0.7s cubic-bezier(.16,.84,.44,1) forwards; }
     @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
 
-    .glass { background: linear-gradient(155deg, rgba(27, 30, 47, 0.75), rgba(18, 21, 33, 0.9)); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); transition: background 0.3s, border-color 0.3s; }
+    .glass { background: linear-gradient(155deg, rgba(27, 30, 47, 0.75), rgba(18, 21, 33, 0.9)); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); transition: background 0.3s, border-color 0.3s; border-radius: 20px; padding: 24px 34px; margin-bottom: 22px; }
     [data-theme="light"] .glass { background: rgba(255,255,255,0.85); box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5); }
 
     .theme-switcher { display: flex; gap: 8px; background: var(--panel-solid); border: 1px solid var(--line); padding: 4px; border-radius: 12px; }
@@ -108,34 +108,47 @@
     .view-section.active-view { display: block; animation: viewFadeIn 0.45s cubic-bezier(.16,.84,.44,1); }
     @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    .header { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 34px 44px; border-radius: 22px; margin-bottom: 22px; }
+    /* ================= HOME VIEW STYLES ================= */
     .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--primary-2); font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
     .eyebrow .line { width: 30px; height: 2px; background: var(--primary-2); border-radius: 2px;}
+    
+    /* Multi-Item Carousel */
+    .multi-carousel-wrapper { position: relative; margin: 0 -10px; }
+    .multi-carousel-track { display: flex; overflow-x: auto; scroll-behavior: smooth; gap: 20px; padding: 10px; scrollbar-width: none; -ms-overflow-style: none; }
+    .multi-carousel-track::-webkit-scrollbar { display: none; }
+    .mc-item { flex: 0 0 calc(25% - 15px); min-width: 250px; height: 200px; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
+    .mc-item:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); border-color: var(--primary); }
+    .mc-item img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: opacity 0.3s; }
+    .mc-item:hover img { opacity: 1; }
+    .mc-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s;}
+    .mc-nav:hover { background: var(--primary-2); color: #000; }
+    .mc-prev { left: -15px; } .mc-next { right: -15px; }
+    
+    /* Featured List */
+    .feat-item { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 16px; display: grid; grid-template-columns: 350px 1fr; gap: 24px; padding: 20px; margin-bottom: 20px; transition: 0.3s; }
+    .feat-item:hover { border-color: var(--primary-2); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .feat-img-wrap { width: 100%; height: 220px; border-radius: 12px; overflow: hidden; background: #000; }
+    .feat-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+    .feat-item:hover .feat-img-wrap img { transform: scale(1.05); }
+    .feat-content { display: flex; flex-direction: column; justify-content: center; }
+    .feat-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--video); font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
+    .feat-title { font-size: 1.6rem; margin: 0 0 12px 0; color: var(--text); line-height: 1.2; }
+    .feat-details { font-size: 0.95rem; color: var(--muted); display: flex; flex-direction: column; gap: 8px; line-height: 1.5; }
+    .feat-details strong { color: var(--primary-2); font-weight: 500; }
+
+    .grid-manage-imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
+    .manage-img-item { position: relative; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+    .manage-img-item img { width: 100%; height: 100%; object-fit: cover; }
+    .manage-img-del { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; border: none; border-radius: 4px; width: 24px; height: 24px; cursor: pointer; }
+    .upload-zone { border: 2px dashed var(--primary); padding: 20px; text-align: center; border-radius: 12px; cursor: pointer; background: var(--panel); transition: 0.2s; }
+    .upload-zone:hover { background: var(--panel-2); border-color: var(--primary-2); }
+
+    /* ================= DASHBOARD & REST OF UI ================= */
+    .header { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 34px 44px; border-radius: 22px; margin-bottom: 22px; }
     .header h1 { margin: 0; font-size: 2.5rem; font-weight: 800; position: relative; color: var(--text); letter-spacing: -0.02em;}
     .header p { margin: 10px 0 0 0; color: var(--muted); font-size: 1.1rem; position: relative; line-height: 1.6; }
     .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; position: relative; }
     .badge { background: rgba(56,189,248,0.15); color: var(--primary-2); padding: 10px 22px 10px 18px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(56,189,248,0.35); display: inline-flex; align-items: center; gap: 10px; }
-
-    /* ================= HOME VIEW STYLES ================= */
-    .home-carousel-container { position: relative; overflow: hidden; padding: 20px 45px; border-radius: 24px; margin-bottom: 24px; display: flex; align-items: center; }
-    .home-carousel-track { display: flex; gap: 20px; transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; width: 100%; }
-    .home-carousel-item { flex: 0 0 calc(25% - 15px); min-width: 0; position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
-    .home-carousel-item:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(167, 139, 250, 0.4); border-color: var(--primary); }
-    .home-carousel-img { width: 100%; height: 240px; object-fit: cover; display: block; }
-    
-    .featured-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 26px; margin-bottom: 30px; }
-    .featured-img-wrap { border-radius: 24px; overflow: hidden; position: relative; min-height: 380px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
-    .featured-img-wrap img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; transition: transform 0.5s ease; }
-    .featured-img-wrap:hover img { transform: scale(1.05); }
-    .featured-details { padding: 40px; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; }
-    
-    @media (max-width: 1200px) { .home-carousel-item { flex: 0 0 calc(33.333% - 13.33px); } }
-    @media (max-width: 900px) { 
-        .home-carousel-item { flex: 0 0 calc(50% - 10px); } 
-        .featured-grid { grid-template-columns: 1fr; }
-        .featured-img-wrap { min-height: 250px; }
-    }
-    @media (max-width: 600px) { .home-carousel-item { flex: 0 0 100%; } .home-carousel-container { padding: 20px 30px; } }
 
     .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-bottom: 18px; }
     .kpi-card { position: relative; padding: 24px; border-radius: 18px; text-align: center; overflow: hidden; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
@@ -406,7 +419,11 @@
         .field-row { grid-template-columns: 1fr; } 
         .view-switcher { flex-direction: column; align-items: stretch; } 
         .gform-card { padding: 20px 20px;}
+        .feat-item { grid-template-columns: 1fr; }
+        .feat-img-wrap { height: 250px; }
+        .mc-item { flex: 0 0 calc(50% - 10px); }
     }
+    @media (max-width: 500px) { .mc-item { flex: 0 0 calc(85% - 10px); } }
 
     .ocean-loader-overlay {
         position: fixed; inset: 0; background: rgba(8, 47, 73, 0.75); backdrop-filter: blur(8px); z-index: 9999;
@@ -490,52 +507,44 @@
                 <button class="btn btn-ghost" onclick="triggerImportBackup()" title="นำเข้าไฟล์ JSON ที่เคยสำรองไว้">📂 นำเข้าข้อมูล</button>
                 <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)">
                 <button class="btn btn-ghost guest-inline" onclick="openLogin()">🔒 Admin Login</button>
-                <button class="btn btn-primary admin-inline" onclick="openAddModal()">＋ เพิ่มโปรเจกต์</button>
+                <button class="btn btn-primary admin-inline" id="btnGlobalAdd" onclick="openAddModal()" style="display:none;">＋ เพิ่มโปรเจกต์</button>
                 <button class="btn btn-danger admin-inline" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
             </div>
         </div>
 
-        <!-- ================= VIEW 0: HOME PAGE ================= -->
+        <!-- ================= VIEW 0: HOME (หน้าแรก) ================= -->
         <div id="viewHome" class="view-section active-view">
-            <div class="header glass reveal" style="animation-delay:0.05s">
-                <div>
-                    <div class="eyebrow"><span class="line"></span>PORTFOLIO & CREATIVE HUB</div>
-                    <h1>Welcome to Dashboard by Mr.Yeen</h1>
-                    <p>ยินดีต้อนรับสู่ระบบจัดการผลงานสื่อสารองค์กร สรุปข้อมูล และแกลเลอรีผลงานทั้งหมด</p>
+            <!-- 1. Header Card -->
+            <div class="glass reveal" style="animation-delay:0.05s">
+                <div class="eyebrow"><span class="line"></span>PORTFOLIO & CREATIVE HUB</div>
+                <h1 style="margin: 5px 0 5px 0; font-size: 2.5rem; font-weight: 800;">Welcome to Dashboard by Mr.Yeen</h1>
+                <p style="color: var(--muted); margin: 0; font-size: 1.1rem;">ยินดีต้อนรับสู่ระบบจัดการผลงานสื่อสารองค์กร สรุปข้อมูล และแกลเลอรีผลงานทั้งหมด</p>
+            </div>
+
+            <!-- 2. Multi-Item Carousel -->
+            <div class="glass reveal" style="animation-delay:0.1s">
+                <div style="display:flex; justify-content:flex-end; margin-bottom:10px;" class="admin-inline">
+                    <button class="btn btn-primary" onclick="openManageCarousel()">⚙️ จัดการรูปภาพสไลด์</button>
+                </div>
+                
+                <div class="multi-carousel-wrapper">
+                    <button class="mc-nav mc-prev" onclick="scrollCarousel(-1)">‹</button>
+                    <div class="multi-carousel-track" id="homeCarouselTrack">
+                        <div style="color:var(--muted); padding:20px; width:100%; text-align:center;">กำลังโหลดรูปภาพ...</div>
+                    </div>
+                    <button class="mc-nav mc-next" onclick="scrollCarousel(1)">›</button>
                 </div>
             </div>
 
-            <!-- Auto-scrolling Carousel -->
-            <div class="home-carousel-container glass reveal" style="animation-delay: 0.1s;">
-                <button class="carousel-btn carousel-prev" onclick="moveHomeCarousel(-1)" style="left: 15px; z-index: 10;">‹</button>
-                <div class="home-carousel-track" id="homeCarouselTrack">
-                    <!-- Images will be injected by JavaScript -->
+            <!-- 3. Featured Projects (List) -->
+            <div class="glass reveal" style="animation-delay:0.15s">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
+                    <h2 style="margin:0; font-size: 1.8rem;">🔥 ผลงานไฮไลต์ (Featured Projects)</h2>
+                    <button class="btn btn-success admin-inline" onclick="openAddFeat()">+ เพิ่มผลงานใหม่</button>
                 </div>
-                <button class="carousel-btn carousel-next" onclick="moveHomeCarousel(1)" style="right: 15px; z-index: 10;">›</button>
-            </div>
 
-            <!-- Split Layout for Featured Job -->
-            <div class="featured-grid reveal" style="animation-delay: 0.2s;">
-                <div class="featured-img-wrap glass">
-                    <img src="https://placehold.co/800x600/121521/a78bfa?text=Featured+Project" alt="Featured Work">
-                </div>
-                <div class="featured-details glass">
-                    <div class="eyebrow" style="margin-bottom: 12px; color: var(--success);"><span class="line" style="background: var(--success);"></span>🔥 LATEST HIGHLIGHT</div>
-                    <h2 style="font-size: 2.2rem; margin: 0 0 15px 0; color: var(--text); line-height: 1.2;">Corporate Annual Concept Art 2026</h2>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
-                        <div style="font-size: 1.1rem; color: var(--muted);"><span style="color: var(--primary-2); font-weight: 600;">👤 ผู้มอบหมาย:</span> ผู้บริหารฝ่ายการตลาด (CMO)</div>
-                        <div style="font-size: 1.1rem; color: var(--muted);"><span style="color: var(--primary-2); font-weight: 600;">🏢 บริษัท / แคมเปญ:</span> TechSpace Global / Q1 Launch Event</div>
-                        <div style="font-size: 1.1rem; color: var(--muted);"><span style="color: var(--primary-2); font-weight: 600;">🎨 ประเภทงาน:</span> ArtWork & Motion Graphics</div>
-                    </div>
-                    
-                    <p style="color: var(--muted); line-height: 1.6; font-size: 1.05rem; margin-bottom: 30px;">
-                        ชิ้นงานล่าสุดที่เป็นไฮไลท์ของการสื่อสารแบรนด์ประจำปีนี้ ถูกออกแบบโดยเน้นแนวคิดแห่งอนาคต ผสมผสานโทนสี Cyber-Pastel เข้ากับเอกลักษณ์ดั้งเดิมขององค์กรได้อย่างลงตัว (สามารถคลิกดูผลงานอื่นๆ ได้ในหน้าแกลเลอรี)
-                    </p>
-                    
-                    <div>
-                        <button class="btn btn-primary" onclick="switchView('showcase')" style="padding: 14px 28px; font-size: 1.05rem;">เข้าสู่แกลเลอรีผลงาน (Showcase)</button>
-                    </div>
+                <div id="featuredList">
+                    <div style="color:var(--muted); text-align:center; padding:30px;">กำลังโหลดข้อมูลผลงานไฮไลต์...</div>
                 </div>
             </div>
         </div>
@@ -990,7 +999,17 @@
         </div>
     </div>
 
-    <!-- LOGIN MODAL -->
+    <!-- OCEAN LOADER -->
+    <div id="oceanLoader" class="ocean-loader-overlay">
+        <div class="ocean-loader-content">
+            <div class="ocean-spinner">🤿</div>
+            <div id="oceanLoaderText" class="ocean-loader-text">DUMPING OXYGEN...</div>
+            <div class="ocean-progress-bar"><div class="ocean-progress-fill" id="oceanProgress"></div></div>
+            <div id="oceanPercent" style="color:#bae6fd; font-family:'Kanit', sans-serif; font-weight:600; margin-top:10px; font-size:1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">0%</div>
+        </div>
+    </div>
+
+    <!-- 1. Admin Login Modal -->
     <div class="modal-overlay" id="loginOverlay">
         <div class="modal-box" style="border: 1px solid var(--primary-2); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15);">
             <button class="modal-close" onclick="closeLogin()">✕</button>
@@ -1014,17 +1033,52 @@
         </div>
     </div>
 
-    <!-- OCEAN LOADER -->
-    <div id="oceanLoader" class="ocean-loader-overlay">
-        <div class="ocean-loader-content">
-            <div class="ocean-spinner">🤿</div>
-            <div id="oceanLoaderText" class="ocean-loader-text">DUMPING OXYGEN...</div>
-            <div class="ocean-progress-bar"><div class="ocean-progress-fill" id="oceanProgress"></div></div>
-            <div id="oceanPercent" style="color:#bae6fd; font-family:'Kanit', sans-serif; font-weight:600; margin-top:10px; font-size:1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">0%</div>
+    <!-- 2. Manage Carousel Modal -->
+    <div class="modal-overlay" id="manageCarouselOverlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeManageCarousel()">✕</button>
+            <h2 style="margin-top:0;">⚙️ จัดการรูปภาพสไลด์หน้าแรก</h2>
+            <div class="upload-zone" onclick="document.getElementById('carouselUpload').click()">
+                <div style="font-size:2rem; margin-bottom:10px;">📸</div>
+                <div style="color:var(--primary-2); font-weight:600;">คลิกเพื่ออัปโหลดรูปภาพใหม่ (Base64 Compress)</div>
+                <input type="file" id="carouselUpload" accept="image/*" style="display:none;" onchange="uploadCarouselImage(event)">
+            </div>
+            <div id="carouselUploadStatus" style="color:var(--success); font-size:0.85rem; margin-top:5px; text-align:center;"></div>
+            <h3 style="margin-top:20px; font-size:1.1rem; border-bottom:1px solid var(--line); padding-bottom:8px;">🖼️ รูปภาพปัจจุบัน</h3>
+            <div class="grid-manage-imgs" id="carouselManageList"></div>
         </div>
     </div>
 
-    <!-- ADD/EDIT PROJECT MODAL -->
+    <!-- 3. Add/Edit Featured Modal -->
+    <div class="modal-overlay" id="manageFeatOverlay">
+        <div class="modal-box wide">
+            <button class="modal-close" onclick="closeManageFeat()">✕</button>
+            <h2 style="margin-top:0;" id="featModalTitle">เพิ่มผลงานไฮไลต์หน้าแรก</h2>
+            <div class="field-row">
+                <div class="field"><label>ชื่อผลงาน / หัวข้อ</label><input type="text" id="featTitle"></div>
+                <div class="field"><label>ประเภทงาน</label><input type="text" id="featType"></div>
+            </div>
+            <div class="field-row">
+                <div class="field"><label>ผู้มอบหมายงาน</label><input type="text" id="featAssigner"></div>
+                <div class="field"><label>บริษัท / แคมเปญ</label><input type="text" id="featCompany"></div>
+            </div>
+            <div class="field"><label>รายละเอียดเพิ่มเติม</label><textarea id="featDesc" rows="2"></textarea></div>
+            <div class="field">
+                <label>อัปโหลดรูปภาพปกผลงาน (Resize อัตโนมัติ)</label>
+                <input type="file" accept="image/*" onchange="previewFeatImage(event)">
+                <input type="hidden" id="featImgBase64">
+                <div style="margin-top:10px; height:150px; background:#000; border-radius:8px; overflow:hidden;">
+                    <img id="featImgPreview" src="" style="width:100%; height:100%; object-fit:contain; display:none;">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeManageFeat()">ยกเลิก</button>
+                <button class="btn btn-success" onclick="saveFeat()">บันทึกข้อมูลไฮไลต์</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT PROJECT MODAL (Dashboard) -->
     <div class="modal-overlay" id="projectOverlay">
         <div class="modal-box wide">
             <button class="modal-close" onclick="closeProjectModal()">✕</button>
@@ -1071,6 +1125,7 @@
     </div>
 
 <script>
+    // ================== DATA CONFIGURATION & LOCAL STORAGE ==================
     function safeGetLS(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
     function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); } }
 
@@ -1107,6 +1162,7 @@
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
 
+    // Ocean Background Logic
     let isMouseTicking = false;
     document.addEventListener('mousemove', (e) => {
         if (!isMouseTicking) {
@@ -1124,68 +1180,150 @@
         }
     });
 
-    let homeSlideIdx = 0;
-    let homeSlideTimer = null;
+    // ================== NEW HOME CAROUSEL & FEATURED LOGIC ==================
     
-    function initHomeCarousel() {
-        const track = document.getElementById('homeCarouselTrack');
-        if (!track) return;
-        
-        // Generate 10 placeholder images matching the pastel theme
-        let html = '';
-        for (let i = 1; i <= 10; i++) {
-            html += `
-            <div class="home-carousel-item" onclick="switchView('showcase')">
-                <img src="https://placehold.co/600x400/121521/a78bfa?text=Portfolio+Sample+0${i}" class="home-carousel-img" alt="Sample ${i}">
-            </div>`;
-        }
-        track.innerHTML = html;
-        startHomeCarousel();
+    // บีบอัดรูป Base64
+    function resizeImageFile(file, maxWidth, callback) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width; let height = img.height;
+                if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                canvas.width = width; canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.7)); // Compress to JPEG 70% quality
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 
-    function startHomeCarousel() {
-        if (homeSlideTimer) clearInterval(homeSlideTimer);
-        homeSlideTimer = setInterval(() => { moveHomeCarousel(1); }, 3000); // auto-scroll every 3 seconds
+    // Carousel
+    let carouselImages = [];
+    function scrollCarousel(dir) {
+        const track = document.getElementById('homeCarouselTrack');
+        const scrollAmount = track.clientWidth * 0.8;
+        track.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
     }
 
-    function moveHomeCarousel(step) {
-        const items = document.querySelectorAll('.home-carousel-item');
-        if (!items.length) return;
-        
-        // Calculate max index based on how many items can be visible at once
-        const track = document.getElementById('homeCarouselTrack');
-        const containerWidth = track.parentElement.offsetWidth;
-        const itemWidth = items[0].offsetWidth + 20; // 20px is the gap
-        
-        const visibleItems = Math.floor(containerWidth / itemWidth) || 1;
-        const maxIdx = Math.max(0, items.length - visibleItems);
+    function loadCarousel() {
+        if(!database) return;
+        database.ref('homeCarousel').on('value', (snapshot) => {
+            const data = snapshot.val();
+            carouselImages = data ? Object.entries(data).map(([key, val]) => ({id: key, src: val})) : [];
+            const track = document.getElementById('homeCarouselTrack');
+            track.innerHTML = '';
+            if(carouselImages.length === 0) { 
+                track.innerHTML = '<div style="color:var(--muted); padding:20px; width:100%; text-align:center;">ยังไม่มีรูปภาพในสไลด์ (Admin สามารถเพิ่มได้)</div>'; 
+            } else { 
+                carouselImages.forEach(img => { track.innerHTML += `<div class="mc-item"><img src="${img.src}"></div>`; }); 
+            }
 
-        homeSlideIdx += step;
-        if (homeSlideIdx > maxIdx) homeSlideIdx = 0;
-        if (homeSlideIdx < 0) homeSlideIdx = maxIdx;
-        
-        track.style.transform = `translateX(-${homeSlideIdx * itemWidth}px)`;
-        
-        // Reset timer to avoid immediate jumps after user clicks
-        startHomeCarousel();
+            const manageList = document.getElementById('carouselManageList');
+            manageList.innerHTML = '';
+            carouselImages.forEach(img => { manageList.innerHTML += `<div class="manage-img-item"><img src="${img.src}"><button class="manage-img-del" onclick="deleteCarousel('${img.id}')">✕</button></div>`; });
+        });
     }
 
-    // Re-adjust carousel layout on window resize to prevent empty space bugs
-    window.addEventListener('resize', () => {
-        homeSlideIdx = 0;
-        const track = document.getElementById('homeCarouselTrack');
-        if(track) track.style.transform = `translateX(0px)`;
-    });
+    function openManageCarousel() { document.getElementById('manageCarouselOverlay').classList.add('open'); }
+    function closeManageCarousel() { document.getElementById('manageCarouselOverlay').classList.remove('open'); document.getElementById('carouselUploadStatus').innerText = ''; }
+    
+    function uploadCarouselImage(event) {
+        const file = event.target.files[0]; if(!file) return;
+        const status = document.getElementById('carouselUploadStatus'); status.innerText = '⏳ กำลังอัปโหลด...';
+        resizeImageFile(file, 1000, (base64) => {
+            database.ref('homeCarousel').push(base64).then(() => { status.innerText = '✅ สำเร็จ!'; event.target.value = ''; setTimeout(() => { status.innerText = ''; }, 3000); });
+        });
+    }
+    
+    function deleteCarousel(id) { if(confirm('ต้องการลบรูปภาพนี้ออกจากสไลด์?')) database.ref('homeCarousel/' + id).remove(); }
 
+    // Featured List
+    let featProjects = []; let editingFeatId = null;
+    function loadFeatured() {
+        if(!database) return;
+        database.ref('homeFeatured').on('value', (snapshot) => {
+            const data = snapshot.val();
+            featProjects = data ? Object.entries(data).map(([key, val]) => ({id: key, ...val})).reverse() : [];
+            const list = document.getElementById('featuredList'); list.innerHTML = '';
+            if(featProjects.length === 0) { list.innerHTML = '<div style="color:var(--muted); padding:30px; text-align:center;">ยังไม่มีผลงานไฮไลต์ (Admin สามารถกดเพิ่มผลงานได้)</div>'; return; }
+            
+            featProjects.forEach(f => {
+                list.innerHTML += `
+                    <div class="feat-item">
+                        <div class="feat-img-wrap"><img src="${f.img || ''}" onerror="this.src=''; this.parentElement.style.background='#222';"></div>
+                        <div class="feat-content">
+                            <div><span class="feat-tag">🔥 LATEST HIGHLIGHT</span></div>
+                            <h3 class="feat-title">${f.title}</h3>
+                            <div class="feat-details">
+                                <div><strong>👤 ผู้มอบหมาย:</strong> ${f.assigner}</div>
+                                <div><strong>🏢 บริษัท / แคมเปญ:</strong> ${f.company}</div>
+                                <div><strong>🎨 ประเภทงาน:</strong> ${f.type}</div>
+                            </div>
+                            <p style="color:var(--text); font-size:0.95rem; margin-top:15px; border-top:1px solid var(--line); padding-top:15px; line-height: 1.6;">${f.desc}</p>
+                            <div class="admin-inline" style="margin-top:10px; gap:8px;">
+                                <button class="btn btn-ghost icon-btn" onclick="openEditFeat('${f.id}')" style="width:auto; padding:5px 15px;">✎ แก้ไข</button>
+                                <button class="btn btn-danger icon-btn" onclick="deleteFeat('${f.id}')" style="width:auto; padding:5px 15px;">🗑 ลบ</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            // หาก Admin Login อยู่ ให้ปุ่มแสดง
+            if(isAdmin) {
+                document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
+            }
+        });
+    }
+
+    function previewFeatImage(event) {
+        const file = event.target.files[0]; if(!file) return;
+        resizeImageFile(file, 800, (base64) => {
+            document.getElementById('featImgBase64').value = base64;
+            document.getElementById('featImgPreview').src = base64;
+            document.getElementById('featImgPreview').style.display = 'block';
+        });
+    }
+
+    function openAddFeat() {
+        editingFeatId = null; document.getElementById('featModalTitle').innerText = 'เพิ่มผลงานไฮไลต์';
+        ['featTitle','featAssigner','featCompany','featType','featDesc','featImgBase64'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('featImgPreview').style.display = 'none';
+        document.getElementById('manageFeatOverlay').classList.add('open');
+    }
+
+    function openEditFeat(id) {
+        const f = featProjects.find(x => x.id === id); if(!f) return; editingFeatId = id;
+        document.getElementById('featModalTitle').innerText = 'แก้ไขผลงานไฮไลต์';
+        document.getElementById('featTitle').value = f.title; document.getElementById('featAssigner').value = f.assigner;
+        document.getElementById('featCompany').value = f.company; document.getElementById('featType').value = f.type;
+        document.getElementById('featDesc').value = f.desc; document.getElementById('featImgBase64').value = f.img || '';
+        if(f.img) { document.getElementById('featImgPreview').src = f.img; document.getElementById('featImgPreview').style.display = 'block'; }
+        document.getElementById('manageFeatOverlay').classList.add('open');
+    }
+
+    function closeManageFeat() { document.getElementById('manageFeatOverlay').classList.remove('open'); }
+
+    function saveFeat() {
+        const payload = {
+            title: document.getElementById('featTitle').value.trim(), assigner: document.getElementById('featAssigner').value.trim(),
+            company: document.getElementById('featCompany').value.trim(), type: document.getElementById('featType').value.trim(),
+            desc: document.getElementById('featDesc').value.trim(), img: document.getElementById('featImgBase64').value
+        };
+        if(!payload.title) { alert('กรุณาระบุชื่อผลงาน'); return; }
+        if(editingFeatId) database.ref('homeFeatured/' + editingFeatId).set(payload).then(closeManageFeat);
+        else database.ref('homeFeatured').push(payload).then(closeManageFeat);
+    }
+    
+    function deleteFeat(id) { if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); }
+
+
+    // ================== DASHBOARD ORIGINAL LOGIC ==================
     function toggleKpiSection(btnEl) {
         const c = document.getElementById('kpiIndicatorsContent');
-        if(c.style.display === 'none') {
-            c.style.display = 'block';
-            btnEl.innerHTML = '👁️ ซ่อน';
-        } else {
-            c.style.display = 'none';
-            btnEl.innerHTML = '🙈 แสดง';
-        }
+        if(c.style.display === 'none') { c.style.display = 'block'; btnEl.innerHTML = '👁️ ซ่อน'; } 
+        else { c.style.display = 'none'; btnEl.innerHTML = '🙈 แสดง'; }
     }
     window.toggleKpiSection = toggleKpiSection;
 
@@ -1255,7 +1393,6 @@
         reader.readAsText(file);
     }
     window.importBackup = importBackup;
-    
     function formatDateThai(d) { if (!d) return '-'; const date = new Date(d); if (isNaN(date)) return '-'; return date.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }); }
     
     function getDaysDiff(startStr, endStr) {
@@ -1304,34 +1441,27 @@
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         
-        if (viewName === 'home') { 
+        // จัดการแสดงผลปุ่ม "เพิ่มโปรเจกต์" เฉพาะในหน้า Dashboard เท่านั้น
+        if(viewName === 'home') { 
             document.getElementById('viewHome').classList.add('active-view'); 
             document.querySelector('.nav-tab[onclick*="home"]').classList.add('active'); 
-        }
-        else if (viewName === 'dashboard') { 
-            document.getElementById('viewDashboard').classList.add('active-view'); 
-            document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); 
-            filterTable(); renderModernGantt(); 
-        } 
-        else if (viewName === 'showcase') { 
-            document.getElementById('viewShowcase').classList.add('active-view'); 
-            document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); 
-            renderShowcase(); 
-        } 
-        else if (viewName === 'evaluation') { 
-            document.getElementById('viewEvaluation').classList.add('active-view'); 
-            document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); 
-            renderFeedback(); 
-        } 
-        else if (viewName === 'monthlySummary') { 
-            document.getElementById('viewMonthlySummary').classList.add('active-view'); 
-            document.querySelector('.nav-tab[onclick*="monthlySummary"]').classList.add('active'); 
-            renderMonthlySummary(); 
-        } 
-        else if (viewName === 'personalKPI') { 
-            document.getElementById('viewPersonalKPI').classList.add('active-view'); 
-            document.querySelector('.nav-tab[onclick*="personalKPI"]').classList.add('active'); 
-            renderPersonalKPI(); 
+            document.getElementById('btnGlobalAdd').style.display = 'none';
+        } else {
+            if (isAdmin) document.getElementById('btnGlobalAdd').style.display = 'inline-flex';
+            else document.getElementById('btnGlobalAdd').style.display = 'none';
+
+            if (viewName === 'dashboard') { 
+                document.getElementById('viewDashboard').classList.add('active-view'); 
+                document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); 
+                filterTable(); renderModernGantt(); 
+            } else {
+                document.getElementById('btnGlobalAdd').style.display = 'none'; // ซ่อนปุ่มเพิ่มโปรเจกต์ถ้าไม่ใช่หน้า dashboard
+
+                if (viewName === 'showcase') { document.getElementById('viewShowcase').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); renderShowcase(); } 
+                else if (viewName === 'evaluation') { document.getElementById('viewEvaluation').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); renderFeedback(); } 
+                else if (viewName === 'monthlySummary') { document.getElementById('viewMonthlySummary').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="monthlySummary"]').classList.add('active'); renderMonthlySummary(); } 
+                else if (viewName === 'personalKPI') { document.getElementById('viewPersonalKPI').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="personalKPI"]').classList.add('active'); renderPersonalKPI(); }
+            }
         }
     }
     window.switchView = switchView;
@@ -1818,67 +1948,6 @@
     }
     window.clearEvaluations = clearEvaluations;
 
-    function openLogin() { document.getElementById('loginOverlay').classList.add('open'); }
-    function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
-    function attemptLogin() {
-        const u = document.getElementById('loginUser').value.trim().toLowerCase();
-        const p = document.getElementById('loginPass').value;
-        const errorEl = document.getElementById('loginError');
-
-        if ((u === 'admin') && p === 'Admin') { 
-            errorEl.textContent = '';
-            closeLogin(); 
-            
-            const loader = document.getElementById('oceanLoader');
-            const loaderText = document.getElementById('oceanLoaderText');
-            const progress = document.getElementById('oceanProgress');
-            const percentText = document.getElementById('oceanPercent');
-            
-            loader.classList.add('active');
-            loader.classList.remove('splash-out');
-            
-            let pVal = 0;
-            const messages = ["DUMPING OXYGEN...", "NAVIGATING TO DEEP SERVER...", "TREASURE FOUND!", "SURFACING WORKSPACE..."];
-            let msgIdx = 0;
-            
-            const interval = setInterval(() => {
-                pVal += Math.random() * 5.5; 
-                if(pVal > 100) pVal = 100;
-                
-                progress.style.width = pVal + '%';
-                percentText.textContent = Math.floor(pVal) + '%';
-                
-                if (pVal > 25 && msgIdx === 0) { loaderText.textContent = messages[1]; msgIdx++; }
-                if (pVal > 65 && msgIdx === 1) { loaderText.textContent = messages[2]; loaderText.style.color = '#bae6fd'; loaderText.style.textShadow = '0 0 15px #38bdf8'; msgIdx++; }
-                if (pVal > 88 && msgIdx === 2) { loaderText.textContent = messages[3]; loaderText.style.color = '#e0f2fe'; loaderText.style.textShadow = 'none'; msgIdx++; }
-                
-                if(pVal === 100) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        loader.classList.add('splash-out'); 
-                        setTimeout(() => {
-                            loader.classList.remove('active');
-                            isAdmin = true; 
-                            document.body.classList.add('admin-on'); 
-                            refreshAll(false);
-                            
-                            loaderText.style.color = '#e0f2fe';
-                            loaderText.style.textShadow = '0 4px 10px rgba(0,0,0,0.5)';
-                            loaderText.textContent = messages[0];
-                            progress.style.width = '0%';
-                            percentText.textContent = '0%';
-                        }, 1000); 
-                    }, 500); 
-                }
-            }, 60);
-
-        } else {
-            errorEl.innerHTML = '⚠️ ACCESS DENIED: ระบุข้อมูลไม่ถูกต้อง';
-        }
-    }
-    function logoutAdmin() { isAdmin = false; document.body.classList.remove('admin-on'); refreshAll(false); }
-    window.openLogin = openLogin; window.closeLogin = closeLogin; window.attemptLogin = attemptLogin; window.logoutAdmin = logoutAdmin;
-
     function handleFileUpload(event) {
         const files = event.target.files; if (!files || files.length === 0) return;
         const info = document.getElementById('uploadPreviewInfo'); if(info) info.textContent = `⏳ กำลังบีบอัดและโหลดรูปภาพ...`;
@@ -1912,7 +1981,7 @@
         editingId = null; editingProjectImages = [];
         ['fSub','fName','fCampaign','fOwner','fTools','fAiPrompt','fNote','fDateOrder','fDateStart','fDateEnd','fImageLinks','fVideoLinks','fUpload'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('fRevision').value = 0;
-        document.getElementById('projectModalTitle').textContent = 'เพิ่มโปรเจกต์ใหม่';
+        document.getElementById('projectModalTitle').textContent = 'เพิ่มโปรเจกต์ใหม่ (Dashboard)';
         document.getElementById('fMain').value = 'ArtWork'; document.getElementById('fStatus').value = 'เสร็จสิ้น';
         if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
         renderEditThumbnails(); document.getElementById('projectError').textContent = ''; document.getElementById('projectOverlay').classList.add('open');
@@ -2017,9 +2086,9 @@
         }
     } catch (err) {}
 
-    // ================== FETCH FIREBASE ON LOAD ==================
-    window.onload = function() {
-        initHomeCarousel();
+    // ================== WINDOW ONLOAD ==================
+    window.onload = () => {
+        // Init Original Dashboard logic
         if (database) {
             database.ref('/').once('value').then((snapshot) => {
                 const data = snapshot.val();
@@ -2040,8 +2109,12 @@
             setTheme(savedTheme); 
             refreshAll(true);
         }
-    }
-    // ============================================================
+
+        // Init New Home Logic
+        loadCarousel();
+        loadFeatured();
+    };
+
 </script>
 </body>
 </html>
