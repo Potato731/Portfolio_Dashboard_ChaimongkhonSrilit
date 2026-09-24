@@ -1017,15 +1017,16 @@
     try {
         // ⚠️ โค้ดส่วนนี้ให้คุณนำ Config จากเว็บ Firebase มาแทนที่ในภายหลังได้เลย
         // ถ้ายากทดสอบการทำงานของเว็บก่อน ก็ยังสามารถอัปขึ้น GitHub ได้ เว็บจะไม่พังแน่นอน
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID.asia-southeast1.firebasedatabase.app",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+const firebaseConfig = {
+  apiKey: "AIzaSyDoNJMaHIHW-i_pca1N5u4N67-xD1QRE-g",
+  authDomain: "master-dashborad-by-mhee.firebaseapp.com",
+  databaseURL: "https://master-dashborad-by-mhee-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "master-dashborad-by-mhee",
+  storageBucket: "master-dashborad-by-mhee.firebasestorage.app",
+  messagingSenderId: "491664868659",
+  appId: "1:491664868659:web:a2c3ebece4f6aaa91faa46",
+  measurementId: "G-RC5KT5WV61"
+};
         
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
