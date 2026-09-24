@@ -1042,51 +1042,15 @@
         </div>
     </div>
 
-<!-- นำเข้า Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <script>
+    function safeGetLS(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); } }
+
+    const STORAGE_KEY = 'MasterPortfolio_DB_Ultimate23_Fast'; 
+    const EVAL_KEY = 'MasterPortfolio_EVAL_DB_v10';
     const BASE_DATA = []; 
-    let rawData = []; 
-    let evalData = [];
 
-    // 1. ตั้งค่าเชื่อมต่อ Firebase ของคุณ
-    const firebaseConfig = {
-        apiKey: "AIzaSyDoNJMaHIHW-i_pca1N5u4N67-xD1QRE-g",
-        authDomain: "master-dashborad-by-mhee.firebaseapp.com",
-        databaseURL: "https://master-dashborad-by-mhee-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "master-dashborad-by-mhee",
-        storageBucket: "master-dashborad-by-mhee.firebasestorage.app",
-        messagingSenderId: "491664868659",
-        appId: "1:491664868659:web:a2c3ebece4f6aaa91faa46"
-    };
-
-    // 2. เริ่มต้นเชื่อมต่อ Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // 3. ปรับฟังก์ชันบันทึกข้อมูลให้อัปโหลดขึ้น Firebase
-    function saveData() { 
-        db.ref('portfolioDB/projects').set(rawData); 
-    }
-    function saveEvalData() { 
-        db.ref('portfolioDB/evals').set(evalData); 
-    }
-
-    // 4. ดึงข้อมูลจาก Firebase ตอนเปิดหน้าเว็บ
-    db.ref('portfolioDB').once('value').then(snapshot => {
-        const data = snapshot.val();
-        if(data) {
-            rawData = data.projects || [];
-            evalData = data.evals || [];
-        }
-        refreshAll(true);
-    }).catch(error => {
-        console.error("โหลดข้อมูลไม่สำเร็จ:", error);
-        refreshAll(true);
-    });
-
+    let rawData = loadData(); let evalData = loadEvalData();
     let isAdmin = false; let editingId = null; let currentLightboxId = null; let currentLightboxImages = []; let currentLightboxIndex = 0; let editingProjectImages = [];
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
@@ -1139,6 +1103,11 @@
         ['filterYear', 'scFilterYear', 'msFilterYear', 'kpiFilterYear'].forEach(id => { if(document.getElementById(id) && document.getElementById(id).options.length === 0) document.getElementById(id).innerHTML = yearHtml; });
     }
 
+    function loadData() { const str = safeGetLS(STORAGE_KEY); if (str && str !== "[]") { try { return JSON.parse(str); } catch (e) {} } return JSON.parse(JSON.stringify(BASE_DATA)); }
+    function loadEvalData() { const str = safeGetLS(EVAL_KEY); if (str) { try { return JSON.parse(str); } catch (e) {} } return []; }
+    function saveData() { safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); }
+    function saveEvalData() { safeSetLS(EVAL_KEY, JSON.stringify(evalData)); }
+
     // ============ REAL BACKUP / RESTORE ============
     function exportBackup() {
         const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
@@ -1179,7 +1148,6 @@
         reader.readAsText(file);
     }
     window.importBackup = importBackup;
-    
     function formatDateThai(d) { if (!d) return '-'; const date = new Date(d); if (isNaN(date)) return '-'; return date.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }); }
     
     function getDaysDiff(startStr, endStr) {
@@ -1188,10 +1156,6 @@
         if (isNaN(s) || isNaN(e)) return null;
         let days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)); return days <= 0 ? 1 : days; 
     }
-
-    function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); } }
-    function safeGetLS(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-    const savedTheme = safeGetLS('portfolio_theme') || 'dark';
 
     function setTheme(themeName) {
         document.documentElement.setAttribute('data-theme', themeName);
@@ -1226,7 +1190,7 @@
         
         if(document.getElementById('viewDashboard').classList.contains('active-view')) renderModernGantt();
     }
-    window.setTheme = setTheme;
+    window.setTheme = setTheme; const savedTheme = safeGetLS('portfolio_theme') || 'dark';
 
     function switchView(viewName) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
