@@ -1162,6 +1162,60 @@
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
 
+    // ================== ADMIN LOGIN LOGIC ==================
+    function openLogin() {
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('loginOverlay').classList.add('open');
+    }
+
+    function closeLogin() {
+        document.getElementById('loginOverlay').classList.remove('open');
+    }
+
+    function attemptLogin() {
+        const user = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value.trim();
+        const errorEl = document.getElementById('loginError');
+        
+        // กำหนดรหัสผ่านตรงนี้
+        if (user === 'admin' && pass === '1234') { 
+            isAdmin = true;
+            document.body.classList.add('admin-on');
+            closeLogin();
+            
+            // แสดงปุ่มแอดมินทั้งหมด
+            document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
+            
+            // ตรวจสอบหน้าปัจจุบัน ถ้าอยู่หน้า Dashboard ให้ปุ่ม "เพิ่มโปรเจกต์" แสดงขึ้นมาด้วย
+            const btnGlobalAdd = document.getElementById('btnGlobalAdd');
+            if (btnGlobalAdd && !document.getElementById('viewHome').classList.contains('active-view')) {
+                btnGlobalAdd.style.display = 'inline-flex';
+            }
+            
+            alert('✅ เข้าสู่ระบบแอดมินสำเร็จ');
+        } else {
+            errorEl.textContent = '❌ DIVER ID หรือ SECURITY KEY ไม่ถูกต้อง';
+        }
+    }
+
+    function logoutAdmin() {
+        if (confirm('คุณต้องการออกจากระบบ Admin ใช่หรือไม่?')) {
+            isAdmin = false;
+            document.body.classList.remove('admin-on');
+            
+            // ซ่อนปุ่มแอดมินทั้งหมด
+            document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'none');
+            
+            const btnGlobalAdd = document.getElementById('btnGlobalAdd');
+            if (btnGlobalAdd) btnGlobalAdd.style.display = 'none';
+            
+            alert('🚪 ออกจากระบบเรียบร้อย');
+            switchView('home');
+        }
+    }
+
     // Ocean Background Logic
     let isMouseTicking = false;
     document.addEventListener('mousemove', (e) => {
@@ -1695,7 +1749,7 @@
                 filteredEval.forEach(e => { sCr += (e.q1 + e.q5) / 2; sT += e.q3; sCo += e.q4; sCi += e.q2; sR += (e.q4 + e.q5) / 2; });
                 const n = filteredEval.length; scoreCreativity = sCr/n; scoreTech = sT/n; scoreComm = sCo/n; scoreCi = sCi/n; scoreResp = sR/n;
             } else if(actualProjects > 0) { scoreCreativity = 3; scoreTech = 3; scoreComm = 3; scoreCi = 3; scoreResp = 3; }
-            kpiRadarChart.data.labels = ['ความคิดสร้างสรรค์ (Creativity)', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร & ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'];
+            kpiRadarChart.data.labels = ['ความคิดสร้างสรรค์ (Creativity)', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร &ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'];
             kpiRadarChart.data.datasets[0].data = [scoreCreativity, scoreTech, scoreComm, scoreCi, scoreResp]; kpiRadarChart.update();
         }
 
