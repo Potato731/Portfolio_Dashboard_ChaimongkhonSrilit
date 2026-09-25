@@ -138,7 +138,7 @@
     .feat-img-scroll { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; width: 100%; height: 100%; scrollbar-width: none; -ms-overflow-style: none; }
     .feat-img-scroll::-webkit-scrollbar { display: none; }
     .feat-img-slide { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; position: relative; overflow: hidden; }
-    .feat-img-slide img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s; opacity: 0.9; }
+    .feat-img-slide img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s; opacity: 0.9; cursor: zoom-in; }
     .feat-item:hover .feat-img-slide img { transform: scale(1.05); opacity: 1; }
     .feat-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: 0.3s; opacity: 0; font-size: 1.2rem; padding-bottom: 4px; }
     .feat-img-scroll-wrap:hover .feat-nav-btn { opacity: 1; }
@@ -1023,16 +1023,6 @@
         </div>
     </div>
 
-    <!-- 0. EPIC WATER WAVE LOADER -->
-    <div id="waterLoaderOverlay" class="water-loader-overlay">
-        <div class="water-circle">
-            <div class="water-wave wave-back" id="waterWaveBack"></div>
-            <div class="water-wave wave-front" id="waterWaveFront"></div>
-            <div class="water-percent" id="waterPercent">0%</div>
-        </div>
-        <div class="water-text">AUTHENTICATING...</div>
-    </div>
-
     <!-- 1. Admin Login Modal -->
     <div class="modal-overlay" id="loginOverlay">
         <div class="modal-box" style="border: 1px solid var(--primary-2); box-shadow: 0 0 40px rgba(56, 189, 248, 0.15);">
@@ -1246,7 +1236,7 @@
         const waveFront = document.getElementById('waterWaveFront');
         const percentEl = document.getElementById('waterPercent');
         
-        overlay.classList.add('active');
+        if(overlay) overlay.classList.add('active');
         closeLogin(); 
         
         let progress = 0;
@@ -1258,17 +1248,17 @@
             progress = Math.min(elapsed / duration, 1);
             
             let percentValue = Math.floor(progress * 100);
-            percentEl.textContent = percentValue + '%';
+            if(percentEl) percentEl.textContent = percentValue + '%';
             
             let topValue = 100 - (progress * 150); 
-            waveBack.style.top = (topValue - 5) + '%';
-            waveFront.style.top = topValue + '%';
+            if(waveBack) waveBack.style.top = (topValue - 5) + '%';
+            if(waveFront) waveFront.style.top = topValue + '%';
             
             if (progress < 1) {
                 requestAnimationFrame(updateLoader);
             } else {
                 setTimeout(() => {
-                    overlay.classList.remove('active');
+                    if(overlay) overlay.classList.remove('active');
                     callback();
                 }, 400); 
             }
@@ -1289,7 +1279,7 @@
                 try { loadFeatured(); filterTable(); } catch(e){}
             });
         } else {
-            errorEl.textContent = '❌ DIVER ID หรือ SECURITY KEY ไม่ถูกต้อง';
+            if(errorEl) errorEl.textContent = '❌ DIVER ID หรือ SECURITY KEY ไม่ถูกต้อง';
         }
     }
 
@@ -1473,15 +1463,19 @@
     function updateFeatLightbox() {
         document.getElementById('featLightboxImg').src = currentFeatViewImages[currentFeatViewIndex];
         const counter = document.getElementById('featLightboxCounter');
-        counter.innerText = `${currentFeatViewIndex + 1} / ${currentFeatViewImages.length}`;
+        if(counter) counter.innerText = `${currentFeatViewIndex + 1} / ${currentFeatViewImages.length}`;
 
         const prevBtn = document.querySelector('#featLightboxOverlay .carousel-prev');
         const nextBtn = document.querySelector('#featLightboxOverlay .carousel-next');
 
         if(currentFeatViewImages.length > 1) {
-            prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex'; counter.style.display = 'block';
+            if(prevBtn) prevBtn.style.display = 'flex'; 
+            if(nextBtn) nextBtn.style.display = 'flex'; 
+            if(counter) counter.style.display = 'block';
         } else {
-            prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; counter.style.display = 'none';
+            if(prevBtn) prevBtn.style.display = 'none'; 
+            if(nextBtn) nextBtn.style.display = 'none'; 
+            if(counter) counter.style.display = 'none';
         }
     }
 
@@ -1512,7 +1506,7 @@
                     renderFeatThumbnails(); 
                     event.target.value = ''; 
                     if(info) info.textContent = `✅ อัปโหลดสำเร็จ ${loadedCount} รูป`; 
-                    setTimeout(() => info.textContent='', 3000);
+                    setTimeout(() => { if(info) info.textContent=''; }, 3000);
                 }
             });
         }
@@ -1520,6 +1514,7 @@
 
     function renderFeatThumbnails() {
         const container = document.getElementById('featThumbnailsContainer'); 
+        if(!container) return;
         container.innerHTML = '';
         if (currentFeatImages.length === 0) {
             container.innerHTML = `<span style="font-size:0.9rem; color:var(--muted);">ยังไม่มีรูปภาพ</span>`; return;
@@ -1535,9 +1530,11 @@
 
     function openAddFeat() {
         editingFeatId = null; currentFeatImages = [];
-        document.getElementById('featModalTitle').innerText = 'เพิ่มผลงานไฮไลต์';
-        ['featTitle','featAssigner','featCompany','featType','featDesc'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('featUploadInfo').textContent = '';
+        const t = document.getElementById('featModalTitle'); if(t) t.innerText = 'เพิ่มผลงานไฮไลต์';
+        ['featTitle','featAssigner','featCompany','featType','featDesc'].forEach(id => {
+            const el = document.getElementById(id); if(el) el.value = '';
+        });
+        const info = document.getElementById('featUploadInfo'); if(info) info.textContent = '';
         renderFeatThumbnails();
         document.getElementById('manageFeatOverlay').classList.add('open');
     }
@@ -1545,18 +1542,19 @@
     function openEditFeat(id) {
         const f = featProjects.find(x => x.id === id); if(!f) return; 
         editingFeatId = id;
-        document.getElementById('featModalTitle').innerText = 'แก้ไขผลงานไฮไลต์';
-        document.getElementById('featTitle').value = f.title || ''; 
-        document.getElementById('featAssigner').value = f.assigner || '';
-        document.getElementById('featCompany').value = f.company || ''; 
-        document.getElementById('featType').value = f.type || '';
-        document.getElementById('featDesc').value = f.desc || '';
+        const t = document.getElementById('featModalTitle'); if(t) t.innerText = 'แก้ไขผลงานไฮไลต์';
+        
+        if(document.getElementById('featTitle')) document.getElementById('featTitle').value = f.title || ''; 
+        if(document.getElementById('featAssigner')) document.getElementById('featAssigner').value = f.assigner || '';
+        if(document.getElementById('featCompany')) document.getElementById('featCompany').value = f.company || ''; 
+        if(document.getElementById('featType')) document.getElementById('featType').value = f.type || '';
+        if(document.getElementById('featDesc')) document.getElementById('featDesc').value = f.desc || '';
         
         currentFeatImages = [];
         if (f.images && Array.isArray(f.images)) currentFeatImages = [...f.images.filter(Boolean)];
         else if (f.img) currentFeatImages = [f.img];
         
-        document.getElementById('featUploadInfo').textContent = '';
+        const info = document.getElementById('featUploadInfo'); if(info) info.textContent = '';
         renderFeatThumbnails();
         document.getElementById('manageFeatOverlay').classList.add('open');
     }
@@ -1582,6 +1580,7 @@
     // ================== DASHBOARD ORIGINAL LOGIC ==================
     function toggleKpiSection(btnEl) {
         const c = document.getElementById('kpiIndicatorsContent');
+        if(!c) return;
         if(c.style.display === 'none') { c.style.display = 'block'; btnEl.innerHTML = '👁️ ซ่อน'; } 
         else { c.style.display = 'none'; btnEl.innerHTML = '🙈 แสดง'; }
     }
@@ -1691,7 +1690,8 @@
             }
         } catch(e) {}
         
-        if(document.getElementById('viewDashboard').classList.contains('active-view')) {
+        const vd = document.getElementById('viewDashboard');
+        if(vd && vd.classList.contains('active-view')) {
             try { renderModernGantt(); } catch(e){}
         }
     }
@@ -1701,25 +1701,27 @@
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         
+        const btnGlobalAdd = document.getElementById('btnGlobalAdd');
+        
         if(viewName === 'home') { 
-            document.getElementById('viewHome').classList.add('active-view'); 
-            document.querySelector('.nav-tab[onclick*="home"]').classList.add('active'); 
-            document.getElementById('btnGlobalAdd').style.display = 'none';
+            const el = document.getElementById('viewHome'); if(el) el.classList.add('active-view'); 
+            const tab = document.querySelector('.nav-tab[onclick*="home"]'); if(tab) tab.classList.add('active'); 
+            if(btnGlobalAdd) btnGlobalAdd.style.display = 'none';
         } else {
-            if (isAdmin) document.getElementById('btnGlobalAdd').style.display = 'inline-flex';
-            else document.getElementById('btnGlobalAdd').style.display = 'none';
+            if (isAdmin && btnGlobalAdd) btnGlobalAdd.style.display = 'inline-flex';
+            else if(btnGlobalAdd) btnGlobalAdd.style.display = 'none';
 
             if (viewName === 'dashboard') { 
-                document.getElementById('viewDashboard').classList.add('active-view'); 
-                document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); 
+                const el = document.getElementById('viewDashboard'); if(el) el.classList.add('active-view'); 
+                const tab = document.querySelector('.nav-tab[onclick*="dashboard"]'); if(tab) tab.classList.add('active'); 
                 try { filterTable(); renderModernGantt(); } catch(e){}
             } else {
-                document.getElementById('btnGlobalAdd').style.display = 'none'; 
+                if(btnGlobalAdd) btnGlobalAdd.style.display = 'none'; 
 
-                if (viewName === 'showcase') { document.getElementById('viewShowcase').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); try { renderShowcase(); } catch(e){} } 
-                else if (viewName === 'evaluation') { document.getElementById('viewEvaluation').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); try { renderFeedback(); } catch(e){} } 
-                else if (viewName === 'monthlySummary') { document.getElementById('viewMonthlySummary').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="monthlySummary"]').classList.add('active'); try { renderMonthlySummary(); } catch(e){} } 
-                else if (viewName === 'personalKPI') { document.getElementById('viewPersonalKPI').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="personalKPI"]').classList.add('active'); try { renderPersonalKPI(); } catch(e){} }
+                if (viewName === 'showcase') { const el = document.getElementById('viewShowcase'); if(el) el.classList.add('active-view'); const tab = document.querySelector('.nav-tab[onclick*="showcase"]'); if(tab) tab.classList.add('active'); try { renderShowcase(); } catch(e){} } 
+                else if (viewName === 'evaluation') { const el = document.getElementById('viewEvaluation'); if(el) el.classList.add('active-view'); const tab = document.querySelector('.nav-tab[onclick*="evaluation"]'); if(tab) tab.classList.add('active'); try { renderFeedback(); } catch(e){} } 
+                else if (viewName === 'monthlySummary') { const el = document.getElementById('viewMonthlySummary'); if(el) el.classList.add('active-view'); const tab = document.querySelector('.nav-tab[onclick*="monthlySummary"]'); if(tab) tab.classList.add('active'); try { renderMonthlySummary(); } catch(e){} } 
+                else if (viewName === 'personalKPI') { const el = document.getElementById('viewPersonalKPI'); if(el) el.classList.add('active-view'); const tab = document.querySelector('.nav-tab[onclick*="personalKPI"]'); if(tab) tab.classList.add('active'); try { renderPersonalKPI(); } catch(e){} }
             }
         }
     }
@@ -1761,17 +1763,19 @@
         
         if (initial || !isDefaultSet) {
             const curDate = new Date(); const curMonth = (curDate.getMonth() + 1).toString().padStart(2, '0'); const curYear = curDate.getFullYear().toString();
-            ['msFilterMonth', 'kpiFilterMonth'].forEach(id => { if(document.getElementById(id) && !document.getElementById(id).value) document.getElementById(id).value = curMonth; });
-            ['msFilterYear', 'kpiFilterYear'].forEach(id => { if(document.getElementById(id) && !document.getElementById(id).value) document.getElementById(id).value = curYear; });
+            ['msFilterMonth', 'kpiFilterMonth'].forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = curMonth; });
+            ['msFilterYear', 'kpiFilterYear'].forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = curYear; });
             isDefaultSet = true;
         }
 
         try {
             const s = computeStats(rawData);
             document.querySelectorAll('.kpi-value[data-kpi]').forEach(el => { const key = el.dataset.kpi; const target = s[key] !== undefined ? s[key] : 0; if (initial) { const delay = parseFloat(el.closest('.kpi-card').style.animationDelay || 0) * 1000; setTimeout(() => animateCount(el, target, 900), delay + 150); } else { animateCount(el, target, 500); } });
-            document.getElementById('totalBadge').textContent = `รวมทั้งหมด ${s.total} โปรเจกต์`;
+            const tb = document.getElementById('totalBadge'); if(tb) tb.textContent = `รวมทั้งหมด ${s.total} โปรเจกต์`;
             const overdueCard = document.getElementById('kpiOverdueCard'); if (overdueCard) overdueCard.classList.toggle('has-overdue', s.overdue > 0);
-            const pct = s.total ? Math.round((s.done / s.total) * 100) : 0; document.getElementById('rateValue').textContent = pct + '%'; setTimeout(() => { document.getElementById('rateFill').style.width = pct + '%'; }, initial ? 700 : 50);
+            const pct = s.total ? Math.round((s.done / s.total) * 100) : 0; 
+            const rv = document.getElementById('rateValue'); if(rv) rv.textContent = pct + '%'; 
+            setTimeout(() => { const rf = document.getElementById('rateFill'); if(rf) rf.style.width = pct + '%'; }, initial ? 700 : 50);
 
             if (typeof typeChart !== 'undefined' && typeChart) {
                 typeChart.data.labels = [`🎨 ArtWork (${s.ArtWork})`, `🎬 Video (${s.Video})`, `📸 Photography (${s.Photography})`]; typeChart.data.datasets[0].data = [s.ArtWork, s.Video, s.Photography]; typeChart.update();
@@ -1809,7 +1813,9 @@
     }
 
     function renderMonthlySummary() {
-        const m = document.getElementById('msFilterMonth').value; const y = document.getElementById('msFilterYear').value; const filtered = getMonthlyFilteredData(m, y);
+        const fm = document.getElementById('msFilterMonth'); const m = fm ? fm.value : "all"; 
+        const fy = document.getElementById('msFilterYear'); const y = fy ? fy.value : "all"; 
+        const filtered = getMonthlyFilteredData(m, y);
         let counts = { 'ArtWork': 0, 'Video': 0, 'Photography': 0 }; let totalDays = 0; let projectsWithValidDays = 0;
         filtered.forEach(p => { if (counts[p['ประเภทหลัก']] !== undefined) counts[p['ประเภทหลัก']]++; const startDay = p.dateStart || p.dateOrder; if(startDay && p.dateEnd) { const d = getDaysDiff(startDay, p.dateEnd); if (d !== null) { totalDays += d; projectsWithValidDays++; } } });
 
@@ -1817,10 +1823,14 @@
         let topCatStr = '-';
         if (totalProjects > 0) { let maxCount = -1; for (const [cat, count] of Object.entries(counts)) { if (count > maxCount) { maxCount = count; topCatStr = cat; } } if(topCatStr === 'ArtWork') topCatStr = '🎨 ArtWork'; else if(topCatStr === 'Video') topCatStr = '🎬 Video'; else if(topCatStr === 'Photography') topCatStr = '📸 Photography'; }
 
-        animateCount(document.getElementById('msTotal'), totalProjects, 600); document.getElementById('msTopCat').textContent = topCatStr; animateCount(document.getElementById('msAvgDays'), avgDays, 600);
+        animateCount(document.getElementById('msTotal'), totalProjects, 600); 
+        const tc = document.getElementById('msTopCat'); if(tc) tc.textContent = topCatStr; 
+        animateCount(document.getElementById('msAvgDays'), avgDays, 600);
+        
         if(monthFocusChart) { monthFocusChart.data.datasets[0].data = [counts['ArtWork'], counts['Video'], counts['Photography']]; monthFocusChart.update(); }
 
-        const tbody = document.getElementById('msDataTable'); tbody.innerHTML = '';
+        const tbody = document.getElementById('msDataTable'); if(!tbody) return;
+        tbody.innerHTML = '';
         if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted); font-size:1.1rem;">ยังไม่มีข้อมูลผลงานที่เสร็จสิ้นในช่วงเวลานี้ 📭</td></tr>`; return; }
 
         filtered.sort((a,b) => new Date(b.dateEnd || 0) - new Date(a.dateEnd || 0)).forEach((p, idx) => {
@@ -1848,8 +1858,8 @@
     }
 
     function renderPersonalKPI() {
-        const m = document.getElementById('kpiFilterMonth') ? document.getElementById('kpiFilterMonth').value : "all"; 
-        const y = document.getElementById('kpiFilterYear') ? document.getElementById('kpiFilterYear').value : "all";
+        const fm = document.getElementById('kpiFilterMonth'); const m = fm ? fm.value : "all"; 
+        const fy = document.getElementById('kpiFilterYear'); const y = fy ? fy.value : "all";
         const filteredWork = getMonthlyFilteredData(m, y);
         
         const thaiYearStr = (y && y !== "all" && y !== "nodate") ? (parseInt(y) + 543).toString() : "";
@@ -1944,7 +1954,7 @@
             else if (filteredEval.length > 0) insightsHtml += `<li>✨ <b>คุณภาพงาน:</b> งานสวยเป๊ะ ตรงภาพลักษณ์บริษัท (CI) ได้รับคำชมจากผู้มอบหมายงาน</li>`;
             insightsHtml += `</ul>`;
         }
-        if(document.getElementById('kpiInsightText')) document.getElementById('kpiInsightText').innerHTML = insightsHtml;
+        const kit = document.getElementById('kpiInsightText'); if(kit) kit.innerHTML = insightsHtml;
 
         if(document.getElementById('kpiPlanVal')) {
             document.getElementById('kpiPlanVal').textContent = `${Math.round(planPercent)}% (${actualProjects}/${TARGET_PROJECTS})`; document.getElementById('kpiPlanBar').style.width = `${planPercent}%`;
@@ -1957,13 +1967,14 @@
         ['kpiEnable1', 'kpiEnable2', 'kpiEnable3', 'kpiEnable4', 'kpiEnable5'].forEach((id, idx) => {
             const wrap = document.getElementById(`wrapKpi${idx+1}`);
             if(wrap) {
-                const checked = document.getElementById(id) ? document.getElementById(id).checked : true;
+                const checkEl = document.getElementById(id);
+                const checked = checkEl ? checkEl.checked : true;
                 wrap.style.opacity = checked ? "1" : "0.4";
                 wrap.style.filter = checked ? "none" : "grayscale(100%)";
             }
         });
 
-        // อัปเดตกราฟ Radar แบบโต้ตอบให้ขยับตาม Checkbox (เรียลไทม์) ป้องกันบัก NaN
+        // อัปเดตกราฟ Radar แบบโต้ตอบ
         if(kpiRadarChart) {
             const vCr = en5 ? (Number(satPercent) / 20 || 0) : 0;     
             const vTech = en3 ? (Number(speedPercent) / 20 || 0) : 0; 
@@ -2017,7 +2028,7 @@
         });
         if(validProjects.length === 0) { container.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; height:150px; color:var(--muted); font-size:1.1rem;'>ยังไม่มีข้อมูลวันที่สำหรับสร้างกราฟ Timeline</div>"; return; }
         const paddingTime = (maxTime - minTime) * 0.05; minTime -= paddingTime; maxTime += paddingTime; 
-        const totalDuration = (maxTime - minTime) || 1; // ป้องกันบักหาร 0
+        const totalDuration = (maxTime - minTime) || 1; 
         let headerHtml = `<div class="gantt-header"><div class="gantt-header-label">ชื่อโปรเจกต์</div><div class="gantt-header-timeline">`;
         let currentMonth = new Date(minTime); currentMonth.setDate(1);
         while(currentMonth.getTime() <= maxTime) {
@@ -2083,7 +2094,11 @@
     }
 
     function filterTable() {
-        const search = document.getElementById('searchInput').value.toLowerCase(); const category = document.getElementById('categoryFilter').value; const fDay = document.getElementById('filterDay').value; const fMonth = document.getElementById('filterMonth').value; const fYear = document.getElementById('filterYear').value;
+        const si = document.getElementById('searchInput'); const search = si ? si.value.toLowerCase() : ''; 
+        const cf = document.getElementById('categoryFilter'); const category = cf ? cf.value : 'all'; 
+        const fd = document.getElementById('filterDay'); const fDay = fd ? fd.value : 'all'; 
+        const fm = document.getElementById('filterMonth'); const fMonth = fm ? fm.value : 'all'; 
+        const fy = document.getElementById('filterYear'); const fYear = fy ? fy.value : 'all';
         const filtered = rawData.filter(p => {
             const matchSearch = (p['ชื่อชิ้นงาน / โปรเจกต์'] || '').toLowerCase().includes(search) || (p['ผู้มอบหมาย'] || '').toLowerCase().includes(search) || (p['ประเภทย่อย'] || '').toLowerCase().includes(search) || (p['campaign'] || '').toLowerCase().includes(search);
             const matchCategory = category === "all" || category === "" || p['ประเภทหลัก'] === category;
@@ -2101,8 +2116,18 @@
     window.filterTable = filterTable;
 
     function sanitizeLink(link) {
-        if (!link) return ''; link = link.trim();
-        if (link.includes('drive.google.com')) { let fileId = ''; if (link.includes('/file/d/')) fileId = link.split('/file/d/')[1].split('/')[0]; else if (link.includes('id=')) fileId = new URLSearchParams(link.split('?')[1]).get('id'); if (fileId) return `https://drive.google.com/uc?export=view&id=${fileId}`; }
+        if (!link) return ''; 
+        link = link.trim();
+        // แปลงลิงก์ Google Drive
+        if (link.includes('drive.google.com')) { 
+            let fileId = ''; 
+            if (link.includes('/file/d/')) {
+                fileId = link.split('/file/d/')[1].split('/')[0]; 
+            } else if (link.includes('id=')) {
+                fileId = new URLSearchParams(link.split('?')[1]).get('id'); 
+            }
+            if (fileId) return `https://lh3.googleusercontent.com/d/${fileId}`; 
+        }
         return link;
     }
 
@@ -2115,7 +2140,12 @@
     }
 
     function renderShowcase() {
-        const grid = document.getElementById('showcaseGrid'); const search = document.getElementById('searchShowcase').value.toLowerCase(); const cat = document.getElementById('filterShowcaseCat').value; const fDay = document.getElementById('scFilterDay').value; const fMonth = document.getElementById('scFilterMonth').value; const fYear = document.getElementById('scFilterYear').value;
+        const grid = document.getElementById('showcaseGrid'); if(!grid) return;
+        const si = document.getElementById('searchShowcase'); const search = si ? si.value.toLowerCase() : ''; 
+        const cf = document.getElementById('filterShowcaseCat'); const cat = cf ? cf.value : 'all'; 
+        const fd = document.getElementById('scFilterDay'); const fDay = fd ? fd.value : 'all'; 
+        const fm = document.getElementById('scFilterMonth'); const fMonth = fm ? fm.value : 'all'; 
+        const fy = document.getElementById('scFilterYear'); const fYear = fy ? fy.value : 'all';
         const filtered = [...rawData].sort((a, b) => b['ลำดับ'] - a['ลำดับ']).filter(p => {
             const matchS = (p['ชื่อชิ้นงาน / โปรเจกต์'] || '').toLowerCase().includes(search) || (p['ผู้มอบหมาย'] || '').toLowerCase().includes(search) || (p['ประเภทย่อย'] || '').toLowerCase().includes(search) || (p['campaign'] || '').toLowerCase().includes(search);
             const matchC = cat === "all" || cat === "" || p['ประเภทหลัก'] === cat;
@@ -2152,20 +2182,21 @@
         document.getElementById('lbSub').textContent = p['ประเภทย่อย']; document.getElementById('lbNote').textContent = p['หมายเหตุ'] || '-';
         document.getElementById('lbStatus').textContent = p['สถานะ']; document.getElementById('lbIdBadge').textContent = 'Project ID #' + p['ลำดับ'];
         document.getElementById('lbDateOrder').textContent = formatDateThai(p.dateOrder); document.getElementById('lbDateStart').textContent = formatDateThai(p.dateStart); document.getElementById('lbDateEnd').textContent = formatDateThai(p.dateEnd);
-        updateLightboxSlide(); document.getElementById('lbEditBtn').style.display = isAdmin ? 'inline-flex' : 'none'; document.getElementById('lightboxOverlay').classList.add('open');
+        updateLightboxSlide(); const edBtn = document.getElementById('lbEditBtn'); if(edBtn) edBtn.style.display = isAdmin ? 'inline-flex' : 'none'; 
+        const lo = document.getElementById('lightboxOverlay'); if(lo) lo.classList.add('open');
     }
     window.openLightbox = openLightbox;
 
     function updateLightboxSlide() {
         const container = document.getElementById('lbMediaContainer'); const prevBtn = document.getElementById('lbPrevBtn'); const nextBtn = document.getElementById('lbNextBtn'); const counter = document.getElementById('lbCounter'); const dlBtn = document.getElementById('lbDownloadBtn');
-        if (currentLightboxImages.length === 0 || currentLightboxImages[0].trim() === '') { container.innerHTML = `<div class="portfolio-media-placeholder" style="width:100%; height:100%; min-height:400px;">🖼️<br><span style="font-size:1.2rem;">ไม่มีรูปภาพ/วิดีโอตัวอย่าง</span></div>`; prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; counter.style.display = 'none'; dlBtn.style.display = 'none'; return; }
-        if (currentLightboxImages.length > 1) { prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex'; counter.style.display = 'block'; counter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`; } else { prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; counter.style.display = 'none'; }
-        dlBtn.style.display = 'inline-flex'; let link = sanitizeLink(currentLightboxImages[currentLightboxIndex]); if(link.includes('youtube.com/embed/')) link = link.replace('embed/', 'watch?v='); dlBtn.href = link;
+        if (currentLightboxImages.length === 0 || currentLightboxImages[0].trim() === '') { container.innerHTML = `<div class="portfolio-media-placeholder" style="width:100%; height:100%; min-height:400px;">🖼️<br><span style="font-size:1.2rem;">ไม่มีรูปภาพ/วิดีโอตัวอย่าง</span></div>`; if(prevBtn) prevBtn.style.display = 'none'; if(nextBtn) nextBtn.style.display = 'none'; if(counter) counter.style.display = 'none'; if(dlBtn) dlBtn.style.display = 'none'; return; }
+        if (currentLightboxImages.length > 1) { if(prevBtn) prevBtn.style.display = 'flex'; if(nextBtn) nextBtn.style.display = 'flex'; if(counter) { counter.style.display = 'block'; counter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`; } } else { if(prevBtn) prevBtn.style.display = 'none'; if(nextBtn) nextBtn.style.display = 'none'; if(counter) counter.style.display = 'none'; }
+        if(dlBtn) { dlBtn.style.display = 'inline-flex'; let link = sanitizeLink(currentLightboxImages[currentLightboxIndex]); if(link.includes('youtube.com/embed/')) link = link.replace('embed/', 'watch?v='); dlBtn.href = link; }
         container.innerHTML = getMediaHtml(currentLightboxImages[currentLightboxIndex], 'Project Media');
     }
     function prevLightboxImage(e) { if(e) e.stopPropagation(); if (currentLightboxImages.length > 1) { currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length; updateLightboxSlide(); } }
     function nextLightboxImage(e) { if(e) e.stopPropagation(); if (currentLightboxImages.length > 1) { currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length; updateLightboxSlide(); } }
-    function closeLightbox() { document.getElementById('lightboxOverlay').classList.remove('open'); document.getElementById('lbMediaContainer').innerHTML = ''; }
+    function closeLightbox() { const lo = document.getElementById('lightboxOverlay'); if(lo) lo.classList.remove('open'); const mc = document.getElementById('lbMediaContainer'); if(mc) mc.innerHTML = ''; }
     function editCurrentFromLightbox() { if (currentLightboxId !== null) { closeLightbox(); openEditModal(currentLightboxId); } }
     window.prevLightboxImage = prevLightboxImage; window.nextLightboxImage = nextLightboxImage; window.closeLightbox = closeLightbox; window.editCurrentFromLightbox = editCurrentFromLightbox; 
 
@@ -2196,7 +2227,7 @@
         if(!grid) return;
         
         if (evalData.length === 0) {
-            document.getElementById('evalAvgText').innerHTML = `ยังไม่มีข้อมูลการประเมิน`;
+            const eat = document.getElementById('evalAvgText'); if(eat) eat.innerHTML = `ยังไม่มีข้อมูลการประเมิน`;
             if(tableBox) tableBox.style.display = 'none';
             if(decisionChart) { decisionChart.data.datasets[0].data = [0,0,0]; decisionChart.update(); }
             if(radarChart) { radarChart.data.datasets[0].data = [0,0,0,0,0]; radarChart.update(); }
@@ -2216,7 +2247,7 @@
         });
         
         grid.innerHTML = `<thead><tr style="background: var(--panel);"><th width="15%">ผู้ตรวจรับ</th><th width="20%">ชื่องาน</th><th width="10%">เฉลี่ย</th><th width="15%">สถานะ</th><th width="40%">คอมเมนต์</th></tr></thead><tbody>${tbody}</tbody>`;
-        document.getElementById('evalAvgText').innerHTML = `คะแนนเฉลี่ยรวม: <b>${(totalSum / evalData.length).toFixed(1)} / 5.0</b> <span style="font-size:0.9em; color:var(--muted);">(${evalData.length} รีวิว)</span> <span style="color:var(--ink); margin-left:12px; background:var(--success); padding:6px 12px; border-radius:10px; font-weight:700;">🏆 ประสิทธิภาพ: ${(((totalSum / evalData.length) / 5) * 100).toFixed(1)}%</span>`;
+        const eat = document.getElementById('evalAvgText'); if(eat) eat.innerHTML = `คะแนนเฉลี่ยรวม: <b>${(totalSum / evalData.length).toFixed(1)} / 5.0</b> <span style="font-size:0.9em; color:var(--muted);">(${evalData.length} รีวิว)</span> <span style="color:var(--ink); margin-left:12px; background:var(--success); padding:6px 12px; border-radius:10px; font-weight:700;">🏆 ประสิทธิภาพ: ${(((totalSum / evalData.length) / 5) * 100).toFixed(1)}%</span>`;
 
         if(decisionChart) { decisionChart.data.datasets[0].data = [decCounts['Approve'], decCounts['Minor Edit'], decCounts['Reject']]; decisionChart.update(); }
         if(radarChart) { const n = evalData.length; radarChart.data.datasets[0].data = [radarSums.q1/n, radarSums.q2/n, radarSums.q3/n, radarSums.q4/n, radarSums.q5/n]; radarChart.update(); }
@@ -2247,7 +2278,8 @@
         }
     }
     function renderEditThumbnails() {
-        const container = document.getElementById('editThumbnailsContainer'); container.innerHTML = '';
+        const container = document.getElementById('editThumbnailsContainer'); if(!container) return;
+        container.innerHTML = '';
         if (editingProjectImages.length === 0) { container.innerHTML = `<span style="font-size:0.9rem; color:var(--muted);">ยังไม่มีรูปภาพในโปรเจกต์นี้</span>`; return; }
         editingProjectImages.forEach((img, idx) => {
             const div = document.createElement('div'); div.className = 'thumb-item';
@@ -2343,39 +2375,38 @@
     
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
-    // ================= WINDOW ONLOAD (Crash-Proof) =================
+    // ================= WINDOW ONLOAD (Final Fail-Safe Version) =================
     window.onload = () => {
-        // 1. ดักจับและบังคับให้ข้อมูลเป็น Array ป้องกันบั๊กโหลดค้าง
+        // ดักค่าว่างป้องกันกราฟพัง
         if (!Array.isArray(rawData)) rawData = Object.values(rawData || {}).filter(Boolean);
         if (!Array.isArray(evalData)) evalData = Object.values(evalData || {}).filter(Boolean);
 
+        // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
+        refreshAll(true);
 
-        // 2. แยกโหลดส่วนรูปภาพและกราฟออกจากกัน ถ้าตัวนึงพัง อีกตัวต้องรอด
-        try { loadCarousel(); } catch(e) { console.warn(e); }
-        try { loadFeatured(); } catch(e) { console.warn(e); }
-        
-        try { refreshAll(true); } catch(e) { console.warn("RefreshAll encountered an issue:", e); }
-
-        // 3. ดึงข้อมูล Firebase (แยกการดึง projects และ evaluations)
+        // ถ้าเชื่อมต่อกับ Firebase ได้ ให้โหลดข้อมูลใหม่มาทับแบบ Realtime
         if (database) {
-            database.ref('projects').once('value').then((snapshot) => {
+            database.ref('projects').on('value', (snapshot) => {
                 const pData = snapshot.val();
                 if (pData) {
                     rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
                     safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-                    try { filterTable(); renderModernGantt(); renderMonthlySummary(); renderPersonalKPI(); renderShowcase(); } catch(e){}
+                    refreshAll(false);
                 }
-            }).catch(e => console.error("Firebase Projects Error:", e));
+            });
 
-            database.ref('evaluations').once('value').then((snapshot) => {
+            database.ref('evaluations').on('value', (snapshot) => {
                 const eData = snapshot.val();
                 if (eData) {
                     evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
                     safeSetLS(EVAL_KEY, JSON.stringify(evalData));
-                    try { renderFeedback(); renderPersonalKPI(); } catch(e){}
+                    refreshAll(false);
                 }
-            }).catch(e => console.error("Firebase Evals Error:", e));
+            });
+            
+            try { loadCarousel(); } catch(e){}
+            try { loadFeatured(); } catch(e){}
         }
     };
 
