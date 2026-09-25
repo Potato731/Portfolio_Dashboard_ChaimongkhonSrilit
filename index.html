@@ -1215,6 +1215,119 @@
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
 
+    // ================== 📊 CHART.JS INITIALIZATION (จุดที่หายไป — สร้างกราฟทั้ง 8 ตัว) ==================
+    let chartsInitialized = false;
+    function initCharts() {
+        if (chartsInitialized || typeof Chart === 'undefined') return;
+        chartsInitialized = true;
+
+        const style = getComputedStyle(document.documentElement);
+        const c = (name, fallback) => (style.getPropertyValue(name).trim() || fallback);
+        const artworkColor = c('--artwork', '#f472b6'), videoColor = c('--video', '#fde047'), photoColor = c('--photo', '#5eead4');
+        const successColor = c('--success', '#34d399'), dangerColor = c('--danger', '#fb7185');
+        const primaryColor = c('--primary', '#a78bfa'), primary2Color = c('--primary-2', '#38bdf8');
+        const textColor = c('--text', '#f8fafc'), mutedColor = c('--muted', '#94a3b8'), lineColor = c('--line', 'rgba(255,255,255,0.08)');
+        const panelColor = c('--panel-solid', '#121521');
+
+        if (Chart.defaults && Chart.defaults.font) Chart.defaults.font.family = "'Kanit', sans-serif";
+
+        // ---- 1. โดนัท: สัดส่วนประเภทงานหลัก ----
+        const typeCtx = document.getElementById('typeChart');
+        if (typeCtx) {
+            typeChart = new Chart(typeCtx, {
+                type: 'doughnut',
+                data: { labels: ['🎨 ArtWork (0)', '🎬 Video (0)', '📸 Photography (0)'], datasets: [{ data: [0, 0, 0], backgroundColor: [artworkColor, videoColor, photoColor], borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '72%', animation: { animateRotate: true, duration: 900, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: { color: mutedColor, padding: 14, font: { size: 11 }, boxWidth: 10 } } } }
+            });
+        }
+
+        // ---- 2. โดนัท: สถานะการดำเนินงาน ----
+        const statusCtx = document.getElementById('statusChart');
+        if (statusCtx) {
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: { labels: ['เสร็จสิ้น (0)', 'กำลังดำเนินการ (0)', 'รอดำเนินการ (0)'], datasets: [{ data: [0, 0, 0], backgroundColor: [successColor, videoColor, artworkColor], borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '72%', animation: { animateRotate: true, duration: 900, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: { color: mutedColor, padding: 14, font: { size: 11 }, boxWidth: 10 } } } }
+            });
+        }
+
+        // ---- 3. แท่ง: ปริมาณงานที่แล้วเสร็จรายเดือน ----
+        const monthlyCtx = document.getElementById('monthlyChart');
+        if (monthlyCtx) {
+            const gradient = monthlyCtx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, primary2Color); gradient.addColorStop(1, primaryColor);
+            monthlyChart = new Chart(monthlyCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'งานที่เสร็จสิ้น', data: [], backgroundColor: gradient, borderRadius: 8, maxBarThickness: 44 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { backgroundColor: panelColor, titleColor: textColor, bodyColor: mutedColor, padding: 10, cornerRadius: 8, displayColors: false } },
+                    scales: { x: { ticks: { color: mutedColor }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: mutedColor, precision: 0 }, grid: { color: lineColor } } }
+                }
+            });
+        }
+
+        // ---- 4. โดนัท: สรุปการตัดสินใจ (Feedback) ----
+        const decisionCtx = document.getElementById('decisionChart');
+        if (decisionCtx) {
+            decisionChart = new Chart(decisionCtx, {
+                type: 'doughnut',
+                data: { labels: ['🟢 Approve', '🟡 Minor Edit', '🔴 Reject'], datasets: [{ data: [0, 0, 0], backgroundColor: [successColor, videoColor, dangerColor], borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', animation: { animateRotate: true, duration: 900 }, plugins: { legend: { position: 'bottom', labels: { color: mutedColor, padding: 14, font: { size: 11 } } } } }
+            });
+        }
+
+        // ---- 5. เรดาร์: วิเคราะห์คุณภาพ 5 มิติ (Feedback) ----
+        const radarCtx = document.getElementById('radarChart');
+        if (radarCtx) {
+            radarChart = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Brief & Content', 'Mood/Tone & CI', 'Usability & Export', 'Timeline & Workflow', 'Overall Score'],
+                    datasets: [{ label: 'คะแนนเฉลี่ย', data: [0, 0, 0, 0, 0], backgroundColor: 'rgba(56, 189, 248, 0.4)', borderColor: primary2Color, pointBackgroundColor: primary2Color, borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 5, grid: { color: lineColor }, angleLines: { color: lineColor }, pointLabels: { color: textColor, font: { size: 11 } }, ticks: { backdropColor: 'transparent', color: mutedColor, stepSize: 1 } } } }
+            });
+        }
+
+        // ---- 6. แท่ง: สรุปผลงานตามเดือนที่เลือก (ArtWork/Video/Photography) ----
+        const monthFocusCtx = document.getElementById('monthFocusChart');
+        if (monthFocusCtx) {
+            monthFocusChart = new Chart(monthFocusCtx, {
+                type: 'bar',
+                data: { labels: ['🎨 ArtWork', '🎬 Video', '📸 Photography'], datasets: [{ label: 'จำนวนงาน', data: [0, 0, 0], backgroundColor: [artworkColor, videoColor, photoColor], borderRadius: 10, maxBarThickness: 70 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: mutedColor }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: mutedColor, precision: 0 }, grid: { color: lineColor } } } }
+            });
+        }
+
+        // ---- 7. เรดาร์: สมรรถนะ KPI ส่วนตัว ----
+        const kpiRadarCtx = document.getElementById('kpiRadarChart');
+        if (kpiRadarCtx) {
+            kpiRadarChart = new Chart(kpiRadarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['ความพึงพอใจผู้ใช้', 'ความรวดเร็ว', 'ปริมาณงาน', 'ความถูกต้อง (CI)', 'ตรงเวลา'],
+                    datasets: [{ label: 'สมรรถนะ', data: [0, 0, 0, 0, 0], backgroundColor: 'rgba(167, 139, 250, 0.4)', borderColor: primaryColor, pointBackgroundColor: primaryColor, borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 5, grid: { color: lineColor }, angleLines: { color: lineColor }, pointLabels: { color: textColor, font: { size: 11 } }, ticks: { backdropColor: 'transparent', color: mutedColor, stepSize: 1 } } } }
+            });
+        }
+
+        // ---- 8. แท่ง: เป้าหมาย vs ผลงานจริง (KPI) ----
+        const kpiBarCtx = document.getElementById('kpiBarChart');
+        if (kpiBarCtx) {
+            kpiBarChart = new Chart(kpiBarCtx, {
+                type: 'bar',
+                data: { labels: ['จำนวนโปรเจกต์ (ชิ้น)'], datasets: [
+                    { label: 'เป้าหมาย', data: [0], backgroundColor: lineColor, borderRadius: 8, maxBarThickness: 60 },
+                    { label: 'ผลงานจริง', data: [0], backgroundColor: successColor, borderRadius: 8, maxBarThickness: 60 }
+                ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: mutedColor } } }, scales: { x: { ticks: { color: mutedColor }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: mutedColor, precision: 0 }, grid: { color: lineColor } } } }
+            });
+        }
+    }
+    window.initCharts = initCharts;
+
     let isMouseTicking = false;
     document.addEventListener('mousemove', (e) => {
         if (!isMouseTicking) {
@@ -2484,6 +2597,9 @@
         // ดักค่าว่างป้องกันกราฟพัง
         if (!Array.isArray(rawData)) rawData = Object.values(rawData || {}).filter(Boolean);
         if (!Array.isArray(evalData)) evalData = Object.values(evalData || {}).filter(Boolean);
+
+        // สร้างกราฟทั้งหมดก่อน (ต้องมาก่อน setTheme/refreshAll ไม่งั้นกราฟจะยังเป็น null)
+        initCharts();
 
         // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
