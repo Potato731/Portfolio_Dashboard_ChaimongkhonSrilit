@@ -530,13 +530,14 @@
 
         <!-- ================= VIEW 0: HOME (หน้าแรก) ================= -->
         <div id="viewHome" class="view-section active-view">
+            <!-- 1. Header Card -->
             <div class="glass reveal" style="animation-delay:0.05s">
                 <div class="eyebrow"><span class="line"></span>PORTFOLIO & CREATIVE HUB</div>
                 <h1 style="margin: 5px 0 5px 0; font-size: 2.5rem; font-weight: 800;">Welcome to Dashboard by Mr.Yeen</h1>
                 <p style="color: var(--muted); margin: 0; font-size: 1.1rem;">ยินดีต้อนรับสู่ระบบจัดการผลงานสื่อสารองค์กร สรุปข้อมูล และแกลเลอรีผลงานทั้งหมด</p>
             </div>
 
-            <!-- Multi-Item Carousel -->
+            <!-- 2. Multi-Item Carousel -->
             <div class="glass reveal" style="animation-delay:0.1s">
                 <div style="display:flex; justify-content:flex-end; margin-bottom:10px;" class="admin-inline">
                     <button class="btn btn-primary" onclick="openManageCarousel()">⚙️ จัดการรูปภาพสไลด์หน้าแรก</button>
@@ -550,7 +551,7 @@
                 </div>
             </div>
 
-            <!-- Featured List -->
+            <!-- 3. Featured Projects (List) -->
             <div class="glass reveal" style="animation-delay:0.15s">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
                     <h2 style="margin:0; font-size: 1.8rem;">🔥 ผลงานไฮไลต์ (Featured Projects)</h2>
@@ -1021,6 +1022,16 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- 0. EPIC WATER WAVE LOADER -->
+    <div id="waterLoaderOverlay" class="water-loader-overlay">
+        <div class="water-circle">
+            <div class="water-wave wave-back" id="waterWaveBack"></div>
+            <div class="water-wave wave-front" id="waterWaveFront"></div>
+            <div class="water-percent" id="waterPercent">0%</div>
+        </div>
+        <div class="water-text">AUTHENTICATING...</div>
     </div>
 
     <!-- 1. Admin Login Modal -->
@@ -1576,6 +1587,124 @@
     }
     
     function deleteFeat(id) { if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove().then(() => loadFeatured()); }
+
+    // ================== PROJECT CRUD FUNCTIONS (THE MISSING BLOCK RECOVERED!) ==================
+    
+    function openAddModal() {
+        editingId = null; 
+        editingProjectImages = [];
+        
+        // เคลียร์ค่าฟอร์มทั้งหมด
+        ['fSub','fName','fCampaign','fOwner','fTools','fAiPrompt','fNote','fDateOrder','fDateStart','fDateEnd','fImageLinks','fVideoLinks','fUpload'].forEach(id => {
+            const el = document.getElementById(id); if(el) el.value = '';
+        });
+        
+        const rev = document.getElementById('fRevision'); if(rev) rev.value = 0;
+        const title = document.getElementById('projectModalTitle'); if(title) title.textContent = 'เพิ่มโปรเจกต์ใหม่ (Dashboard)';
+        const fm = document.getElementById('fMain'); if(fm) fm.value = 'ArtWork'; 
+        const fs = document.getElementById('fStatus'); if(fs) fs.value = 'เสร็จสิ้น';
+        
+        const up = document.getElementById('uploadPreviewInfo'); if(up) up.textContent = '';
+        renderEditThumbnails(); 
+        
+        const pe = document.getElementById('projectError'); if(pe) pe.textContent = ''; 
+        const po = document.getElementById('projectOverlay'); if(po) po.classList.add('open');
+    }
+
+    function openEditModal(id) {
+        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
+        if (!p) return;
+        editingId = p['ลำดับ']; 
+        editingProjectImages = p.imageLinks ? [...p.imageLinks] : [];
+        
+        document.getElementById('projectModalTitle').textContent = 'แก้ไขโปรเจกต์ #' + editingId;
+        document.getElementById('fMain').value = p['ประเภทหลัก'] || 'ArtWork'; 
+        document.getElementById('fStatus').value = p['สถานะ'] || 'เสร็จสิ้น';
+        document.getElementById('fSub').value = p['ประเภทย่อย'] || ''; 
+        document.getElementById('fName').value = p['ชื่อชิ้นงาน / โปรเจกต์'] || '';
+        document.getElementById('fCampaign').value = p['campaign'] || '';
+        document.getElementById('fOwner').value = p['ผู้มอบหมาย'] || ''; 
+        document.getElementById('fTools').value = p['tools'] || '';
+        document.getElementById('fAiPrompt').value = p['aiPrompt'] || '';
+        document.getElementById('fRevision').value = p['revision'] || 0;
+        document.getElementById('fNote').value = p['หมายเหตุ'] || '';
+        document.getElementById('fDateOrder').value = p['dateOrder'] || ''; 
+        document.getElementById('fDateStart').value = p['dateStart'] || ''; 
+        document.getElementById('fDateEnd').value = p['dateEnd'] || '';
+        document.getElementById('fImageLinks').value = ''; 
+        document.getElementById('fVideoLinks').value = p.videoLinks ? p.videoLinks.join('\n') : ''; 
+        document.getElementById('fUpload').value = '';
+        
+        if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
+        renderEditThumbnails(); 
+        document.getElementById('projectError').textContent = ''; 
+        document.getElementById('projectOverlay').classList.add('open');
+    }
+
+    function deleteProject(id) { 
+        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
+        if (!p) return; 
+        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ?`)) { 
+            rawData = rawData.filter(x => String(x['ลำดับ']) !== String(id)); 
+            saveData(); 
+            refreshAll(false); 
+        } 
+    }
+
+    function closeProjectModal() { 
+        document.getElementById('projectOverlay').classList.remove('open'); 
+    }
+    
+    function saveProjectData() {
+        const name = document.getElementById('fName').value.trim(); 
+        const owner = document.getElementById('fOwner').value.trim(); 
+        const sub = document.getElementById('fSub').value.trim();
+        if (!name || !owner || !sub) { 
+            document.getElementById('projectError').textContent = '⚠️ กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบถ้วน'; 
+            return; 
+        }
+
+        const record = {
+            'ประเภทหลัก': document.getElementById('fMain').value, 
+            'ประเภทย่อย': sub, 
+            'ชื่อชิ้นงาน / โปรเจกต์': name, 
+            'campaign': document.getElementById('fCampaign').value.trim(),
+            'ผู้มอบหมาย': owner, 
+            'tools': document.getElementById('fTools').value.trim(),
+            'aiPrompt': document.getElementById('fAiPrompt').value.trim(),
+            'revision': parseInt(document.getElementById('fRevision').value) || 0,
+            'หมายเหตุ': document.getElementById('fNote').value.trim() || null, 
+            'สถานะ': document.getElementById('fStatus').value, 
+            'dateOrder': document.getElementById('fDateOrder').value, 
+            'dateStart': document.getElementById('fDateStart').value, 
+            'dateEnd': document.getElementById('fDateEnd').value,
+            'imageLinks': [...editingProjectImages, ...document.getElementById('fImageLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)],
+            'videoLinks': document.getElementById('fVideoLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+        };
+
+        if (editingId === null) { 
+            record['ลำดับ'] = rawData.length > 0 ? Math.max(...rawData.map(p => Number(p['ลำดับ']) || 0)) + 1 : 1; 
+            rawData.push(record); 
+        } else { 
+            record['ลำดับ'] = editingId; 
+            const editIndex = rawData.findIndex(x => String(x['ลำดับ']) === String(editingId));
+            if (editIndex !== -1) {
+                rawData[editIndex] = record;
+            } else {
+                rawData.push(record); 
+            }
+        }
+        saveData(); 
+        closeProjectModal(); 
+        refreshAll(false);
+    }
+    
+    // ผูกฟังก์ชันเข้ากับ Window ให้ HTML มองเห็นและเรียกใช้งานได้
+    window.openAddModal = openAddModal; 
+    window.openEditModal = openEditModal; 
+    window.deleteProject = deleteProject; 
+    window.closeProjectModal = closeProjectModal; 
+    window.saveProjectData = saveProjectData;
 
     // ================== DASHBOARD ORIGINAL LOGIC ==================
     function toggleKpiSection(btnEl) {
@@ -2259,163 +2388,36 @@
     }
     window.clearEvaluations = clearEvaluations;
 
-    function handleFileUpload(event) {
-        const files = event.target.files; if (!files || files.length === 0) return;
-        const info = document.getElementById('uploadPreviewInfo'); if(info) info.textContent = `⏳ กำลังบีบอัดและโหลดรูปภาพ...`;
-        let loadedCount = 0;
-        for (let i = 0; i < files.length; i++) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas'); let width = img.width; let height = img.height;
-                    if (width > height) { if (width > 1200) { height *= 1200 / width; width = 1200; } } else { if (height > 1200) { width *= 1200 / height; height = 1200; } }
-                    canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                    editingProjectImages.push(canvas.toDataURL('image/jpeg', 0.8)); loadedCount++;
-                    if (loadedCount === files.length) { renderEditThumbnails(); const upInput = document.getElementById('fUpload'); if(upInput) upInput.value = ''; if(info) info.textContent = `✅ บีบอัดและโหลดรูปสำเร็จ ${loadedCount} รูปแล้ว`; }
-                }; img.src = e.target.result;
-            }; reader.readAsDataURL(files[i]);
-        }
-    }
-    function renderEditThumbnails() {
-        const container = document.getElementById('editThumbnailsContainer'); if(!container) return;
-        container.innerHTML = '';
-        if (editingProjectImages.length === 0) { container.innerHTML = `<span style="font-size:0.9rem; color:var(--muted);">ยังไม่มีรูปภาพในโปรเจกต์นี้</span>`; return; }
-        editingProjectImages.forEach((img, idx) => {
-            const div = document.createElement('div'); div.className = 'thumb-item';
-            div.innerHTML = `<img src="${sanitizeLink(img)}" alt="thumb" onerror="this.src='';"><button class="thumb-del" type="button" onclick="removeImageAt(${idx})">✕</button>`;
-            container.appendChild(div);
-        });
-    }
-    window.handleFileUpload = handleFileUpload; window.removeImageAt = function(idx) { editingProjectImages.splice(idx, 1); renderEditThumbnails(); };
-
-    function openEditModal(id) {
-        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
-        if (!p) return;
-        editingId = p['ลำดับ']; 
-        editingProjectImages = p.imageLinks ? [...p.imageLinks] : [];
-        document.getElementById('projectModalTitle').textContent = 'แก้ไขโปรเจกต์ #' + editingId;
-        document.getElementById('fMain').value = p['ประเภทหลัก']; 
-        document.getElementById('fStatus').value = p['สถานะ'];
-        document.getElementById('fSub').value = p['ประเภทย่อย']; 
-        document.getElementById('fName').value = p['ชื่อชิ้นงาน / โปรเจกต์'];
-        document.getElementById('fCampaign').value = p['campaign'] || '';
-        document.getElementById('fOwner').value = p['ผู้มอบหมาย']; 
-        document.getElementById('fTools').value = p['tools'] || '';
-        document.getElementById('fAiPrompt').value = p['aiPrompt'] || '';
-        document.getElementById('fRevision').value = p['revision'] || 0;
-        document.getElementById('fNote').value = p['หมายเหตุ'] || '';
-        document.getElementById('fDateOrder').value = p['dateOrder'] || ''; 
-        document.getElementById('fDateStart').value = p['dateStart'] || ''; 
-        document.getElementById('fDateEnd').value = p['dateEnd'] || '';
-        document.getElementById('fImageLinks').value = ''; 
-        document.getElementById('fVideoLinks').value = p.videoLinks ? p.videoLinks.join('\n') : ''; 
-        document.getElementById('fUpload').value = '';
-        if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
-        renderEditThumbnails(); 
-        document.getElementById('projectError').textContent = ''; 
-        document.getElementById('projectOverlay').classList.add('open');
-    }
-
-    function deleteProject(id) { 
-        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
-        if (!p) return; 
-        if (confirm(`ลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ใช่หรือไม่?`)) { 
-            rawData = rawData.filter(x => String(x['ลำดับ']) !== String(id)); 
-            saveData(); 
-            refreshAll(false); 
-        } 
-    }
-
-    function closeProjectModal() { document.getElementById('projectOverlay').classList.remove('open'); }
-    
-    function saveProjectData() {
-        const name = document.getElementById('fName').value.trim(); 
-        const owner = document.getElementById('fOwner').value.trim(); 
-        const sub = document.getElementById('fSub').value.trim();
-        if (!name || !owner || !sub) { 
-            document.getElementById('projectError').textContent = 'กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบ'; 
-            return; 
-        }
-
-        const record = {
-            'ประเภทหลัก': document.getElementById('fMain').value, 
-            'ประเภทย่อย': sub, 
-            'ชื่อชิ้นงาน / โปรเจกต์': name, 
-            'campaign': document.getElementById('fCampaign').value.trim(),
-            'ผู้มอบหมาย': owner, 
-            'tools': document.getElementById('fTools').value.trim(),
-            'aiPrompt': document.getElementById('fAiPrompt').value.trim(),
-            'revision': parseInt(document.getElementById('fRevision').value) || 0,
-            'หมายเหตุ': document.getElementById('fNote').value.trim() || null, 
-            'สถานะ': document.getElementById('fStatus').value, 
-            'dateOrder': document.getElementById('fDateOrder').value, 
-            'dateStart': document.getElementById('fDateStart').value, 
-            'dateEnd': document.getElementById('fDateEnd').value,
-            'imageLinks': [...editingProjectImages, ...document.getElementById('fImageLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)],
-            'videoLinks': document.getElementById('fVideoLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
-        };
-
-        if (editingId === null) { 
-            record['ลำดับ'] = rawData.length > 0 ? Math.max(...rawData.map(p => Number(p['ลำดับ']) || 0)) + 1 : 1; 
-            rawData.push(record); 
-        } else { 
-            record['ลำดับ'] = editingId; 
-            const editIndex = rawData.findIndex(x => String(x['ลำดับ']) === String(editingId));
-            if (editIndex !== -1) {
-                rawData[editIndex] = record;
-            } else {
-                rawData.push(record); 
-            }
-        }
-        saveData(); 
-        closeProjectModal(); 
-        refreshAll(false);
-    }
-    
-    window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
-
-// ================= WINDOW ONLOAD (Super Robust Version) =================
+    // ================= WINDOW ONLOAD (Final Fail-Safe Version) =================
     window.onload = () => {
-        // ดักค่าว่าง
+        // ดักค่าว่างป้องกันกราฟพัง
         if (!Array.isArray(rawData)) rawData = Object.values(rawData || {}).filter(Boolean);
         if (!Array.isArray(evalData)) evalData = Object.values(evalData || {}).filter(Boolean);
 
+        // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
         refreshAll(true);
 
+        // ถ้าเชื่อมต่อกับ Firebase ได้ ให้โหลดข้อมูลใหม่มาทับแบบ Realtime
         if (database) {
-            // 1. ดึงข้อมูลโปรเจกต์แบบ Realtime (พร้อมระบบดักจับการอิมพอร์ตข้อมูลผิดชั้น)
             database.ref('projects').on('value', (snapshot) => {
-                let pData = snapshot.val();
+                const pData = snapshot.val();
                 if (pData) {
-                    // แกะกล่องข้อมูล: เผื่อมีการกด Import ไฟล์ Backup ทับลงไปผิดชั้น
-                    if (pData.projects) pData = pData.projects; 
-                    let arr = Array.isArray(pData) ? pData : Object.values(pData);
-                    // กรองเฉพาะข้อมูลที่เป็นโปรเจกต์จริงๆ ป้องกันค่า Null หรือ Array ซ้อนทับ
-                    rawData = arr.flat(Infinity).filter(item => item && typeof item === 'object' && item['ชื่อชิ้นงาน / โปรเจกต์']);
-                } else {
-                    rawData = []; // ถ้า Firebase ว่างเปล่า ให้เคลียร์ค่า
+                    rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
+                    safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
+                    refreshAll(false);
                 }
-                safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-                try { refreshAll(false); } catch(e){}
             });
 
-            // 2. ดึงข้อมูลแบบประเมิน
             database.ref('evaluations').on('value', (snapshot) => {
-                let eData = snapshot.val();
+                const eData = snapshot.val();
                 if (eData) {
-                    if (eData.evaluations) eData = eData.evaluations;
-                    let arr = Array.isArray(eData) ? eData : Object.values(eData);
-                    evalData = arr.flat(Infinity).filter(item => item && typeof item === 'object' && item.project);
-                } else {
-                    evalData = [];
+                    evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
+                    safeSetLS(EVAL_KEY, JSON.stringify(evalData));
+                    refreshAll(false);
                 }
-                safeSetLS(EVAL_KEY, JSON.stringify(evalData));
-                try { refreshAll(false); } catch(e){}
             });
             
-            // โหลดสไลด์รูปภาพ
             try { loadCarousel(); } catch(e){}
             try { loadFeatured(); } catch(e){}
         }
