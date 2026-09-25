@@ -2367,21 +2367,27 @@
         }
     } catch (err) {}
 
-    // ================== WINDOW ONLOAD ==================
+// ================== WINDOW ONLOAD ==================
     window.onload = () => {
         if (database) {
-            database.ref('/').once('value').then((snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    if (data.projects) {
-                        rawData = Array.isArray(data.projects) ? data.projects : Object.values(data.projects).filter(Boolean);
-                    }
-                    if (data.evaluations) {
-                        evalData = Array.isArray(data.evaluations) ? data.evaluations : Object.values(data.evaluations).filter(Boolean);
-                    }
-                    safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-                    safeSetLS(EVAL_KEY, JSON.stringify(evalData));
+            // โหลดเฉพาะ projects และ evaluations แยกกัน ป้องกันการโหลด Base64 ก้อนใหญ่จาก root
+            Promise.all([
+                database.ref('projects').once('value'),
+                database.ref('evaluations').once('value')
+            ]).then(([projSnapshot, evalSnapshot]) => {
+                const pData = projSnapshot.val();
+                const eData = evalSnapshot.val();
+
+                if (pData) {
+                    rawData = Array.isArray(pData) ? pData : Object.values(pData).filter(Boolean);
                 }
+                if (eData) {
+                    evalData = Array.isArray(eData) ? eData : Object.values(eData).filter(Boolean);
+                }
+                
+                safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
+                safeSetLS(EVAL_KEY, JSON.stringify(evalData));
+                
                 setTheme(savedTheme); 
                 refreshAll(true);
             }).catch((error) => {
