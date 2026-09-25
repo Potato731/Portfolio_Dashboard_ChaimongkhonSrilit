@@ -1927,7 +1927,9 @@
             }
         });
 
-        // อัปเดตกราฟ Radar แบบโต้ตอบเรียลไทม์
+        // --------------------------------------------------------
+        // อัปเดตกราฟ Radar แบบโต้ตอบให้ขยับตาม Checkbox (เรียลไทม์)
+        // --------------------------------------------------------
         if(kpiRadarChart) {
             const vCr = en5 ? (satPercent / 20) : 0;     
             const vTech = en3 ? (speedPercent / 20) : 0; 
@@ -1938,6 +1940,7 @@
             kpiRadarChart.data.datasets[0].data = [vCr, vTech, vComm, vCi, vResp]; 
             kpiRadarChart.update();
         }
+        // --------------------------------------------------------
 
         if(kpiBarChart) { kpiBarChart.data.datasets[0].data = [TARGET_PROJECTS]; kpiBarChart.data.datasets[1].data = [actualProjects]; kpiBarChart.update(); }
 
@@ -2303,48 +2306,61 @@
     
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
+    try {
+        if (typeof Chart !== 'undefined') {
+            const style = getComputedStyle(document.documentElement); function getCSSVar(name, def) { return style.getPropertyValue(name).trim() || def; }
+            const legendLabelStyle = { font: { family: 'Kanit', size: 14 }, color: getCSSVar('--muted', '#aab6cc'), padding: 18, usePointStyle: true, pointStyle: 'circle' };
+            const doughnutOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', animation: { animateRotate: true, animateScale: true, duration: 1200, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: legendLabelStyle } } };
+
+            typeChart = new Chart(document.getElementById('typeChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], borderWidth: 0, hoverOffset: 12 }] }, options: doughnutOptions });
+            statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], borderWidth: 0, hoverOffset: 12 }] }, options: doughnutOptions });
+            monthlyChart = new Chart(document.getElementById('monthlyChart').getContext('2d'), { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนงานที่เสร็จสิ้น (โปรเจกต์)', data: [], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+            decisionChart = new Chart(document.getElementById('decisionChart').getContext('2d'), { type: 'doughnut', data: { labels: ['Approve', 'Minor Edit', 'Reject'], datasets: [{ data: [0,0,0], borderWidth: 0 }] }, options: doughnutOptions });
+            radarChart = new Chart(document.getElementById('radarChart').getContext('2d'), { type: 'radar', data: { labels: ['เนื้อหา (Brief)', 'ความสวยงาม (CI)', 'ใช้งานได้จริง (Usability)', 'ตรงเวลา (Timeline)', 'ภาพรวม (Overall)'], datasets: [{ label: 'คะแนนเฉลี่ย', data: [0,0,0,0,0], fill: true, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+            monthFocusChart = new Chart(document.getElementById('monthFocusChart').getContext('2d'), { type: 'bar', data: { labels: ['🎨 ArtWork', '🎬 Video', '📸 Photography'], datasets: [{ label: 'จำนวนงานที่เสร็จสิ้น', data: [0,0,0], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+            kpiRadarChart = new Chart(document.getElementById('kpiRadarChart').getContext('2d'), { type: 'radar', data: { labels: ['ความคิดสร้างสรรค์', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร & ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'], datasets: [{ label: 'ระดับสมรรถนะประเมิน (เต็ม 5)', data: [0,0,0,0,0], fill: true, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+            
+            kpiBarChart = new Chart(document.getElementById('kpiBarChart').getContext('2d'), { 
+                type: 'bar', 
+                data: { labels: ['ปริมาณงานประจำเดือน (Projects)'], datasets: [{ label: 'เป้าหมายที่ต้องทำ (Target)', data: [10], borderRadius: 6 }, { label: 'ทำได้จริง (Actual)', data: [0], borderRadius: 6 }] }, 
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    scales: { 
+                        x: { ticks: {} }, 
+                        y: { beginAtZero: true, ticks: { stepSize: 2 } } 
+                    }, 
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Kanit' } } } } 
+                } 
+            });
+        }
+    } catch (err) {}
+
     // ================= WINDOW ONLOAD (Optimized) =================
     window.onload = () => {
-        const loader = document.getElementById('waterLoaderOverlay');
-        const percentEl = document.getElementById('waterPercent');
-        if (loader) {
-            loader.classList.add('active');
-            if (percentEl) percentEl.textContent = 'LOADING...';
-        }
-
+        // ไม่มี Loader บังหน้าจอแล้ว โหลดเสร็จเข้าถึงข้อมูลแคชในเครื่องได้ทันที
         if (database) {
-            Promise.all([
-                database.ref('projects').once('value'),
-                database.ref('evaluations').once('value')
-            ]).then(([projSnapshot, evalSnapshot]) => {
-                const pData = projSnapshot.val();
-                const eData = evalSnapshot.val();
-
-                if (pData) {
-                    rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
+            database.ref('/').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if (data.projects) {
+                        rawData = Array.isArray(data.projects) ? data.projects.filter(Boolean) : Object.values(data.projects).filter(Boolean);
+                    }
+                    if (data.evaluations) {
+                        evalData = Array.isArray(data.evaluations) ? data.evaluations.filter(Boolean) : Object.values(data.evaluations).filter(Boolean);
+                    }
+                    safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
+                    safeSetLS(EVAL_KEY, JSON.stringify(evalData));
                 }
-                if (eData) {
-                    evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
-                }
-                
-                safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-                safeSetLS(EVAL_KEY, JSON.stringify(evalData));
-                
                 setTheme(savedTheme); 
                 refreshAll(true);
-                
-                if (loader) loader.classList.remove('active');
-
             }).catch((error) => {
                 console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
                 setTheme(savedTheme); 
                 refreshAll(true);
-                if (loader) loader.classList.remove('active');
             });
         } else {
             setTheme(savedTheme); 
             refreshAll(true);
-            if (loader) loader.classList.remove('active');
         }
 
         loadCarousel();
