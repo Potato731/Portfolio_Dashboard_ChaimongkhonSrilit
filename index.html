@@ -973,6 +973,17 @@
         </div>
     </div>
 
+    <!-- Lightbox สำหรับคลิกดูรูปผลงานไฮไลต์แบบขยายเต็มจอ -->
+    <div class="lightbox-overlay" id="featLightboxOverlay" style="z-index: 10001; background: rgba(0,0,0,0.95);">
+        <button class="lightbox-close" onclick="closeFeatLightbox()">✕</button>
+        <button class="carousel-btn carousel-prev" onclick="prevFeatLightbox(event)">‹</button>
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 20px;">
+            <img id="featLightboxImg" src="" style="max-width: 100%; max-height: 90vh; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-radius: 8px;">
+        </div>
+        <button class="carousel-btn carousel-next" onclick="nextFeatLightbox(event)">›</button>
+        <div class="carousel-counter" id="featLightboxCounter" style="bottom: 30px; font-size: 1.1rem; padding: 8px 24px;">1 / 1</div>
+    </div>
+
     <!-- ================= MODALS ================= -->
     <div class="lightbox-overlay" id="lightboxOverlay">
         <div class="lightbox-box" id="lightboxBox">
@@ -1016,18 +1027,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Lightbox สำหรับคลิกดูรูปผลงานไฮไลต์แบบขยายเต็มจอ -->
-    <div class="lightbox-overlay" id="featLightboxOverlay" style="z-index: 10001; background: rgba(0,0,0,0.95);">
-        <button class="lightbox-close" onclick="closeFeatLightbox()">✕</button>
-        <button class="carousel-btn carousel-prev" onclick="prevFeatLightbox(event)">‹</button>
-        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 20px;">
-            <!-- รูปภาพจะปรับขนาดตามสัดส่วนจริงอัตโนมัติ (object-fit: contain) -->
-            <img id="featLightboxImg" src="" style="max-width: 100%; max-height: 90vh; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-radius: 8px;">
-        </div>
-        <button class="carousel-btn carousel-next" onclick="nextFeatLightbox(event)">›</button>
-        <div class="carousel-counter" id="featLightboxCounter" style="bottom: 30px; font-size: 1.1rem; padding: 8px 24px;">1 / 1</div>
     </div>
 
     <!-- 0. EPIC WATER WAVE LOADER -->
@@ -1095,7 +1094,6 @@
             </div>
             <div class="field"><label>รายละเอียดเพิ่มเติม</label><textarea id="featDesc" rows="2"></textarea></div>
             
-            <!-- ส่วนอัปโหลดรูปภาพใหม่ -->
             <div class="field" style="background: var(--panel); padding: 18px; border-radius: 16px; border: 1px dashed var(--primary-2);">
                 <label style="color: var(--primary-2); font-weight: 700; margin-bottom: 10px;">📸 อัปโหลดรูปภาพผลงาน (เลือกได้มากกว่า 1 รูป)</label>
                 <input type="file" accept="image/*" multiple onchange="handleFeatImagesUpload(event)" style="padding: 8px 0; background: none; border: none; color: var(--text); width: 100%; cursor: pointer;">
@@ -1268,13 +1266,10 @@
         const errorEl = document.getElementById('loginError');
         
         if (user === 'Admin' && pass === 'Admin') { 
-            // เรียกแอนิเมชันคลื่นน้ำ
             playWaterLoader(() => {
                 isAdmin = true;
                 document.body.classList.add('admin-on');
                 document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
-                
-                // รีเฟรชข้อมูลที่แสดงผลแบบ Admin
                 loadFeatured();
                 filterTable();
             });
@@ -1289,14 +1284,12 @@
             document.body.classList.remove('admin-on');
             document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'none');
             switchView('home');
-            
-            loadFeatured(); // รีเฟรชปิดปุ่มแก้ไข
+            loadFeatured(); 
         }
     }
 
     // ================== NEW HOME CAROUSEL & FEATURED LOGIC ==================
     
-    // บีบอัดรูป Base64
     function resizeImageFile(file, maxWidth, callback) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -1307,14 +1300,13 @@
                 if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
                 canvas.width = width; canvas.height = height;
                 canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                callback(canvas.toDataURL('image/jpeg', 0.7)); // Compress to JPEG 70% quality
+                callback(canvas.toDataURL('image/jpeg', 0.7)); 
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    // Carousel
     let carouselImages = [];
     function scrollCarousel(dir) {
         const track = document.getElementById('homeCarouselTrack');
@@ -1359,12 +1351,10 @@
     let editingFeatId = null;
     let currentFeatImages = []; 
     
-    // ตัวแปรสำหรับระบบคลิกดูรูปเต็มจอ
     let currentFeatViewImages = [];
     let currentFeatViewIndex = 0;
 
     function scrollFeatSlide(btn, dir) {
-        // หยุด event ไม่ให้ทะลุไปคลิกโดนรูปภาพด้านหลัง
         if(event) event.stopPropagation();
         const scrollArea = btn.parentElement.querySelector('.feat-img-scroll');
         const scrollAmount = scrollArea.clientWidth;
@@ -1389,7 +1379,6 @@
                     sliderHtml = `<div class="feat-img-slide"><img src="" onerror="this.src=''; this.parentElement.style.background='#222';"></div>`;
                 } else {
                     imgs.forEach(imgSrc => { 
-                        // เปลี่ยนเป็น object-fit: contain เพื่อไม่ให้ภาพโดนตัด และใส่คำสั่ง onclick
                         sliderHtml += `<div class="feat-img-slide"><img src="${imgSrc}" onclick="openFeatLightbox('${f.id}')" style="cursor: zoom-in; object-fit: contain; background: #000;"></div>`; 
                     });
                 }
@@ -1433,7 +1422,6 @@
         });
     }
 
-    // ฟังก์ชันเปิด-ปิด และเลื่อนรูปใน Lightbox แบบเต็มจอ
     function openFeatLightbox(id) {
         const f = featProjects.find(x => x.id === id);
         if(!f) return;
@@ -1484,7 +1472,6 @@
         }
     }
 
-    // อัปเดตตัวเลขแสดงรูปภาพปัจจุบันเมื่อเลื่อนสไลด์ (ในการ์ด)
     function updateFeatBadge(wrap) {
         const scrollArea = wrap.querySelector('.feat-img-scroll');
         const badge = wrap.querySelector('.feat-img-badge');
@@ -1494,7 +1481,6 @@
         badge.innerHTML = `${index} / ${total} 📸`;
     }
 
-    // จัดการอัปโหลดรูปภาพหลายรูป
     function handleFeatImagesUpload(event) {
         const files = event.target.files; if (!files || files.length === 0) return;
         const info = document.getElementById('featUploadInfo'); 
@@ -1553,7 +1539,6 @@
         document.getElementById('featType').value = f.type;
         document.getElementById('featDesc').value = f.desc;
         
-        // โหลดรูปภาพเดิม
         currentFeatImages = [];
         if (f.images && Array.isArray(f.images)) currentFeatImages = [...f.images];
         else if (f.img) currentFeatImages = [f.img];
@@ -1574,7 +1559,7 @@
             company: document.getElementById('featCompany').value.trim(), 
             type: document.getElementById('featType').value.trim(),
             desc: document.getElementById('featDesc').value.trim(), 
-            images: currentFeatImages // บันทึกเป็น Array แล้ว
+            images: currentFeatImages 
         };
         if(!payload.title) { alert('กรุณาระบุชื่อผลงาน'); return; }
         if(editingFeatId) database.ref('homeFeatured/' + editingFeatId).set(payload).then(closeManageFeat);
@@ -1584,7 +1569,6 @@
     function deleteFeat(id) { 
         if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); 
     }
-
 
     // ================== DASHBOARD ORIGINAL LOGIC ==================
     function toggleKpiSection(btnEl) {
@@ -1648,7 +1632,7 @@
                 const replace = confirm(`พบข้อมูล ${incomingProjects.length} โปรเจกต์ในไฟล์สำรอง\n\nกด "ตกลง" เพื่อแทนที่ข้อมูลปัจจุบันทั้งหมด\nกด "ยกเลิก" เพื่อรวมเข้ากับข้อมูลปัจจุบัน (ไม่แทนที่)`);
                 if (replace) { rawData = incomingProjects; evalData = incomingEvals; }
                 else {
-                    const maxId = rawData.length > 0 ? Math.max(...rawData.map(p => p['ลำดับ'] || 0)) : 0;
+                    const maxId = rawData.length > 0 ? Math.max(...rawData.map(p => Number(p['ลำดับ']) || 0)) : 0;
                     incomingProjects.forEach((p, i) => { rawData.push({ ...p, 'ลำดับ': maxId + i + 1 }); });
                     evalData = [...evalData, ...incomingEvals];
                 }
@@ -1660,6 +1644,7 @@
         reader.readAsText(file);
     }
     window.importBackup = importBackup;
+
     function formatDateThai(d) { if (!d) return '-'; const date = new Date(d); if (isNaN(date)) return '-'; return date.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }); }
     
     function getDaysDiff(startStr, endStr) {
@@ -1708,7 +1693,6 @@
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         
-        // จัดการแสดงผลปุ่ม "เพิ่มโปรเจกต์" เฉพาะในหน้า Dashboard เท่านั้น
         if(viewName === 'home') { 
             document.getElementById('viewHome').classList.add('active-view'); 
             document.querySelector('.nav-tab[onclick*="home"]').classList.add('active'); 
@@ -1722,7 +1706,7 @@
                 document.querySelector('.nav-tab[onclick*="dashboard"]').classList.add('active'); 
                 filterTable(); renderModernGantt(); 
             } else {
-                document.getElementById('btnGlobalAdd').style.display = 'none'; // ซ่อนปุ่มเพิ่มโปรเจกต์ถ้าไม่ใช่หน้า dashboard
+                document.getElementById('btnGlobalAdd').style.display = 'none'; 
 
                 if (viewName === 'showcase') { document.getElementById('viewShowcase').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="showcase"]').classList.add('active'); renderShowcase(); } 
                 else if (viewName === 'evaluation') { document.getElementById('viewEvaluation').classList.add('active-view'); document.querySelector('.nav-tab[onclick*="evaluation"]').classList.add('active'); renderFeedback(); } 
@@ -2244,37 +2228,54 @@
     }
     window.handleFileUpload = handleFileUpload; window.removeImageAt = function(idx) { editingProjectImages.splice(idx, 1); renderEditThumbnails(); };
 
-    function openAddModal() {
-        editingId = null; editingProjectImages = [];
-        ['fSub','fName','fCampaign','fOwner','fTools','fAiPrompt','fNote','fDateOrder','fDateStart','fDateEnd','fImageLinks','fVideoLinks','fUpload'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('fRevision').value = 0;
-        document.getElementById('projectModalTitle').textContent = 'เพิ่มโปรเจกต์ใหม่ (Dashboard)';
-        document.getElementById('fMain').value = 'ArtWork'; document.getElementById('fStatus').value = 'เสร็จสิ้น';
-        if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
-        renderEditThumbnails(); document.getElementById('projectError').textContent = ''; document.getElementById('projectOverlay').classList.add('open');
-    }
     function openEditModal(id) {
-        const p = rawData.find(x => x['ลำดับ'] === id); if (!p) return;
-        editingId = id; editingProjectImages = p.imageLinks ? [...p.imageLinks] : [];
-        document.getElementById('projectModalTitle').textContent = 'แก้ไขโปรเจกต์ #' + id;
-        document.getElementById('fMain').value = p['ประเภทหลัก']; document.getElementById('fStatus').value = p['สถานะ'];
-        document.getElementById('fSub').value = p['ประเภทย่อย']; document.getElementById('fName').value = p['ชื่อชิ้นงาน / โปรเจกต์'];
+        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
+        if (!p) return;
+        editingId = p['ลำดับ']; 
+        editingProjectImages = p.imageLinks ? [...p.imageLinks] : [];
+        document.getElementById('projectModalTitle').textContent = 'แก้ไขโปรเจกต์ #' + editingId;
+        document.getElementById('fMain').value = p['ประเภทหลัก']; 
+        document.getElementById('fStatus').value = p['สถานะ'];
+        document.getElementById('fSub').value = p['ประเภทย่อย']; 
+        document.getElementById('fName').value = p['ชื่อชิ้นงาน / โปรเจกต์'];
         document.getElementById('fCampaign').value = p['campaign'] || '';
         document.getElementById('fOwner').value = p['ผู้มอบหมาย']; 
         document.getElementById('fTools').value = p['tools'] || '';
         document.getElementById('fAiPrompt').value = p['aiPrompt'] || '';
         document.getElementById('fRevision').value = p['revision'] || 0;
         document.getElementById('fNote').value = p['หมายเหตุ'] || '';
-        document.getElementById('fDateOrder').value = p['dateOrder'] || ''; document.getElementById('fDateStart').value = p['dateStart'] || ''; document.getElementById('fDateEnd').value = p['dateEnd'] || '';
-        document.getElementById('fImageLinks').value = ''; document.getElementById('fVideoLinks').value = p.videoLinks ? p.videoLinks.join('\n') : ''; document.getElementById('fUpload').value = '';
+        document.getElementById('fDateOrder').value = p['dateOrder'] || ''; 
+        document.getElementById('fDateStart').value = p['dateStart'] || ''; 
+        document.getElementById('fDateEnd').value = p['dateEnd'] || '';
+        document.getElementById('fImageLinks').value = ''; 
+        document.getElementById('fVideoLinks').value = p.videoLinks ? p.videoLinks.join('\n') : ''; 
+        document.getElementById('fUpload').value = '';
         if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
-        renderEditThumbnails(); document.getElementById('projectError').textContent = ''; document.getElementById('projectOverlay').classList.add('open');
+        renderEditThumbnails(); 
+        document.getElementById('projectError').textContent = ''; 
+        document.getElementById('projectOverlay').classList.add('open');
     }
-    function deleteProject(id) { const p = rawData.find(x => x['ลำดับ'] === id); if (!p) return; if (confirm(`ลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ใช่หรือไม่?`)) { rawData = rawData.filter(x => x['ลำดับ'] !== id); saveData(); refreshAll(false); } }
+
+    function deleteProject(id) { 
+        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
+        if (!p) return; 
+        if (confirm(`ลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ใช่หรือไม่?`)) { 
+            rawData = rawData.filter(x => String(x['ลำดับ']) !== String(id)); 
+            saveData(); 
+            refreshAll(false); 
+        } 
+    }
+
     function closeProjectModal() { document.getElementById('projectOverlay').classList.remove('open'); }
+    
     function saveProjectData() {
-        const name = document.getElementById('fName').value.trim(); const owner = document.getElementById('fOwner').value.trim(); const sub = document.getElementById('fSub').value.trim();
-        if (!name || !owner || !sub) { document.getElementById('projectError').textContent = 'กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบ'; return; }
+        const name = document.getElementById('fName').value.trim(); 
+        const owner = document.getElementById('fOwner').value.trim(); 
+        const sub = document.getElementById('fSub').value.trim();
+        if (!name || !owner || !sub) { 
+            document.getElementById('projectError').textContent = 'กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบ'; 
+            return; 
+        }
 
         const record = {
             'ประเภทหลัก': document.getElementById('fMain').value, 
@@ -2294,10 +2295,23 @@
             'videoLinks': document.getElementById('fVideoLinks').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
         };
 
-        if (editingId === null) { record['ลำดับ'] = rawData.length > 0 ? Math.max(...rawData.map(p => p['ลำดับ'])) + 1 : 1; rawData.push(record); } 
-        else { record['ลำดับ'] = editingId; rawData[rawData.findIndex(x => x['ลำดับ'] === editingId)] = record; }
-        saveData(); closeProjectModal(); refreshAll(false);
+        if (editingId === null) { 
+            record['ลำดับ'] = rawData.length > 0 ? Math.max(...rawData.map(p => Number(p['ลำดับ']) || 0)) + 1 : 1; 
+            rawData.push(record); 
+        } else { 
+            record['ลำดับ'] = editingId; 
+            const editIndex = rawData.findIndex(x => String(x['ลำดับ']) === String(editingId));
+            if (editIndex !== -1) {
+                rawData[editIndex] = record;
+            } else {
+                rawData.push(record); 
+            }
+        }
+        saveData(); 
+        closeProjectModal(); 
+        refreshAll(false);
     }
+    
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
     function handleKpiEvidence(event) {
@@ -2359,8 +2373,12 @@
             database.ref('/').once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if (data.projects) rawData = data.projects;
-                    if (data.evaluations) evalData = data.evaluations;
+                    if (data.projects) {
+                        rawData = Array.isArray(data.projects) ? data.projects : Object.values(data.projects).filter(Boolean);
+                    }
+                    if (data.evaluations) {
+                        evalData = Array.isArray(data.evaluations) ? data.evaluations : Object.values(data.evaluations).filter(Boolean);
+                    }
                     safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
                     safeSetLS(EVAL_KEY, JSON.stringify(evalData));
                 }
