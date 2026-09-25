@@ -127,9 +127,6 @@
     /* Featured List */
     .feat-item { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 16px; display: grid; grid-template-columns: 350px 1fr; gap: 24px; padding: 20px; margin-bottom: 20px; transition: 0.3s; }
     .feat-item:hover { border-color: var(--primary-2); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .feat-img-wrap { width: 100%; height: 220px; border-radius: 12px; overflow: hidden; background: #000; }
-    .feat-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
-    .feat-item:hover .feat-img-wrap img { transform: scale(1.05); }
     .feat-content { display: flex; flex-direction: column; justify-content: center; }
     .feat-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--video); font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
     .feat-title { font-size: 1.6rem; margin: 0 0 12px 0; color: var(--text); line-height: 1.2; }
@@ -1079,7 +1076,7 @@
         </div>
     </div>
 
-    <!-- 3. Add/Edit Featured Modal (รองรับหลายรูปภาพ) -->
+    <!-- 3. Add/Edit Featured Modal -->
     <div class="modal-overlay" id="manageFeatOverlay">
         <div class="modal-box wide">
             <button class="modal-close" onclick="closeManageFeat()">✕</button>
@@ -1222,7 +1219,6 @@
         document.getElementById('loginOverlay').classList.remove('open');
     }
 
-    // Epic Water Loader Logic
     function playWaterLoader(callback) {
         const overlay = document.getElementById('waterLoaderOverlay');
         const waveBack = document.getElementById('waterWaveBack');
@@ -1243,7 +1239,6 @@
             let percentValue = Math.floor(progress * 100);
             percentEl.textContent = percentValue + '%';
             
-            // Map progress 0->1 to top 100% -> -50%
             let topValue = 100 - (progress * 150); 
             waveBack.style.top = (topValue - 5) + '%';
             waveFront.style.top = topValue + '%';
@@ -1254,7 +1249,7 @@
                 setTimeout(() => {
                     overlay.classList.remove('active');
                     callback();
-                }, 400); // ดีเลย์ให้ค้างหน้า 100% เล็กน้อย
+                }, 400); 
             }
         }
         requestAnimationFrame(updateLoader);
@@ -1310,6 +1305,7 @@
     let carouselImages = [];
     function scrollCarousel(dir) {
         const track = document.getElementById('homeCarouselTrack');
+        if(!track) return;
         const scrollAmount = track.clientWidth * 0.8;
         track.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
     }
@@ -1317,19 +1313,31 @@
     function loadCarousel() {
         if(!database) return;
         database.ref('homeCarousel').on('value', (snapshot) => {
-            const data = snapshot.val();
-            carouselImages = data ? Object.entries(data).map(([key, val]) => ({id: key, src: val})) : [];
-            const track = document.getElementById('homeCarouselTrack');
-            track.innerHTML = '';
-            if(carouselImages.length === 0) { 
-                track.innerHTML = '<div style="color:var(--muted); padding:20px; width:100%; text-align:center;">ยังไม่มีรูปภาพในสไลด์ (Admin สามารถเพิ่มได้)</div>'; 
-            } else { 
-                carouselImages.forEach(img => { track.innerHTML += `<div class="mc-item"><img src="${img.src}"></div>`; }); 
-            }
+            try {
+                const data = snapshot.val();
+                carouselImages = [];
+                if (data) {
+                    Object.entries(data).forEach(([key, val]) => {
+                        if (val) carouselImages.push({id: key, src: val});
+                    });
+                }
+                
+                const track = document.getElementById('homeCarouselTrack');
+                if(!track) return;
+                track.innerHTML = '';
+                
+                if(carouselImages.length === 0) { 
+                    track.innerHTML = '<div style="color:var(--muted); padding:20px; width:100%; text-align:center;">ยังไม่มีรูปภาพในสไลด์ (Admin สามารถเพิ่มได้)</div>'; 
+                } else { 
+                    carouselImages.forEach(img => { track.innerHTML += `<div class="mc-item"><img src="${img.src}"></div>`; }); 
+                }
 
-            const manageList = document.getElementById('carouselManageList');
-            manageList.innerHTML = '';
-            carouselImages.forEach(img => { manageList.innerHTML += `<div class="manage-img-item"><img src="${img.src}"><button class="manage-img-del" onclick="deleteCarousel('${img.id}')">✕</button></div>`; });
+                const manageList = document.getElementById('carouselManageList');
+                if(manageList) {
+                    manageList.innerHTML = '';
+                    carouselImages.forEach(img => { manageList.innerHTML += `<div class="manage-img-item"><img src="${img.src}"><button class="manage-img-del" onclick="deleteCarousel('${img.id}')">✕</button></div>`; });
+                }
+            } catch(err) { console.error("Error loading Carousel:", err); }
         });
     }
 
@@ -1350,7 +1358,6 @@
     let featProjects = []; 
     let editingFeatId = null;
     let currentFeatImages = []; 
-    
     let currentFeatViewImages = [];
     let currentFeatViewIndex = 0;
 
@@ -1364,68 +1371,77 @@
     function loadFeatured() {
         if(!database) return;
         database.ref('homeFeatured').on('value', (snapshot) => {
-            const data = snapshot.val();
-            featProjects = data ? Object.entries(data).map(([key, val]) => ({id: key, ...val})).reverse() : [];
-            const list = document.getElementById('featuredList'); list.innerHTML = '';
-            if(featProjects.length === 0) { list.innerHTML = '<div style="color:var(--muted); padding:30px; text-align:center;">ยังไม่มีผลงานไฮไลต์ (Admin สามารถกดเพิ่มผลงานได้)</div>'; return; }
-            
-            featProjects.forEach(f => {
-                let imgs = [];
-                if (f.images && Array.isArray(f.images)) imgs = f.images;
-                else if (f.img) imgs = [f.img];
-                
-                let sliderHtml = '';
-                if (imgs.length === 0) {
-                    sliderHtml = `<div class="feat-img-slide"><img src="" onerror="this.src=''; this.parentElement.style.background='#222';"></div>`;
-                } else {
-                    imgs.forEach(imgSrc => { 
-                        sliderHtml += `<div class="feat-img-slide"><img src="${imgSrc}" onclick="openFeatLightbox('${f.id}')" style="cursor: zoom-in; object-fit: contain; background: #000;"></div>`; 
+            try {
+                const data = snapshot.val();
+                featProjects = [];
+                if (data) {
+                    Object.entries(data).forEach(([key, val]) => {
+                        if(val) featProjects.push({id: key, ...val});
                     });
-                }
-                
-                let navHtml = '';
-                let badgeHtml = '';
-                if (imgs.length > 1) {
-                    badgeHtml = `<div class="feat-img-badge">1 / ${imgs.length} 📸</div>`;
-                    navHtml = `
-                        <button class="feat-nav-btn feat-nav-prev" onclick="scrollFeatSlide(this, -1)">‹</button>
-                        <button class="feat-nav-btn feat-nav-next" onclick="scrollFeatSlide(this, 1)">›</button>
-                    `;
+                    featProjects.reverse();
                 }
 
-                list.innerHTML += `
-                    <div class="feat-item">
-                        <div class="feat-img-scroll-wrap" onscroll="updateFeatBadge(this)">
-                            ${badgeHtml}
-                            <div class="feat-img-scroll">
-                                ${sliderHtml}
+                const list = document.getElementById('featuredList'); 
+                if(!list) return;
+                list.innerHTML = '';
+                
+                if(featProjects.length === 0) { list.innerHTML = '<div style="color:var(--muted); padding:30px; text-align:center;">ยังไม่มีผลงานไฮไลต์ (Admin สามารถกดเพิ่มผลงานได้)</div>'; return; }
+                
+                featProjects.forEach(f => {
+                    let imgs = [];
+                    if (f.images && Array.isArray(f.images)) imgs = f.images.filter(Boolean);
+                    else if (f.img) imgs = [f.img];
+                    
+                    let sliderHtml = '';
+                    if (imgs.length === 0) {
+                        sliderHtml = `<div class="feat-img-slide"><img src="" onerror="this.src=''; this.parentElement.style.background='#222';"></div>`;
+                    } else {
+                        imgs.forEach(imgSrc => { 
+                            sliderHtml += `<div class="feat-img-slide"><img src="${imgSrc}" onclick="openFeatLightbox('${f.id}')" style="cursor: zoom-in; object-fit: contain; background: #000;"></div>`; 
+                        });
+                    }
+                    
+                    let navHtml = ''; let badgeHtml = '';
+                    if (imgs.length > 1) {
+                        badgeHtml = `<div class="feat-img-badge">1 / ${imgs.length} 📸</div>`;
+                        navHtml = `
+                            <button class="feat-nav-btn feat-nav-prev" onclick="scrollFeatSlide(this, -1)">‹</button>
+                            <button class="feat-nav-btn feat-nav-next" onclick="scrollFeatSlide(this, 1)">›</button>
+                        `;
+                    }
+
+                    list.innerHTML += `
+                        <div class="feat-item">
+                            <div class="feat-img-scroll-wrap" onscroll="updateFeatBadge(this)">
+                                ${badgeHtml}
+                                <div class="feat-img-scroll">${sliderHtml}</div>
+                                ${navHtml}
                             </div>
-                            ${navHtml}
-                        </div>
-                        <div class="feat-content">
-                            <div><span class="feat-tag">🔥 LATEST HIGHLIGHT</span></div>
-                            <h3 class="feat-title">${f.title}</h3>
-                            <div class="feat-details">
-                                <div><strong>👤 ผู้มอบหมาย:</strong> ${f.assigner}</div>
-                                <div><strong>🏢 บริษัท / แคมเปญ:</strong> ${f.company}</div>
-                                <div><strong>🎨 ประเภทงาน:</strong> ${f.type}</div>
+                            <div class="feat-content">
+                                <div><span class="feat-tag">🔥 LATEST HIGHLIGHT</span></div>
+                                <h3 class="feat-title">${f.title || 'Untitled'}</h3>
+                                <div class="feat-details">
+                                    <div><strong>👤 ผู้มอบหมาย:</strong> ${f.assigner || '-'}</div>
+                                    <div><strong>🏢 บริษัท / แคมเปญ:</strong> ${f.company || '-'}</div>
+                                    <div><strong>🎨 ประเภทงาน:</strong> ${f.type || '-'}</div>
+                                </div>
+                                <p style="color:var(--text); font-size:0.95rem; margin-top:15px; border-top:1px solid var(--line); padding-top:15px; line-height: 1.6;">${f.desc || ''}</p>
+                                <div class="admin-inline" style="margin-top:10px; gap:8px;">
+                                    <button class="btn btn-ghost icon-btn" onclick="openEditFeat('${f.id}')" style="width:auto; padding:5px 15px;">✎ แก้ไข</button>
+                                    <button class="btn btn-danger icon-btn" onclick="deleteFeat('${f.id}')" style="width:auto; padding:5px 15px;">🗑 ลบ</button>
+                                </div>
                             </div>
-                            <p style="color:var(--text); font-size:0.95rem; margin-top:15px; border-top:1px solid var(--line); padding-top:15px; line-height: 1.6;">${f.desc}</p>
-                            <div class="admin-inline" style="margin-top:10px; gap:8px;">
-                                <button class="btn btn-ghost icon-btn" onclick="openEditFeat('${f.id}')" style="width:auto; padding:5px 15px;">✎ แก้ไข</button>
-                                <button class="btn btn-danger icon-btn" onclick="deleteFeat('${f.id}')" style="width:auto; padding:5px 15px;">🗑 ลบ</button>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            if(isAdmin) document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
+                        </div>`;
+                });
+                if(isAdmin) document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
+            } catch(err) { console.error("Error rendering Featured:", err); }
         });
     }
 
     function openFeatLightbox(id) {
         const f = featProjects.find(x => x.id === id);
         if(!f) return;
-        currentFeatViewImages = f.images && Array.isArray(f.images) ? f.images : (f.img ? [f.img] : []);
+        currentFeatViewImages = f.images && Array.isArray(f.images) ? f.images.filter(Boolean) : (f.img ? [f.img] : []);
         if(currentFeatViewImages.length === 0) return;
 
         currentFeatViewIndex = 0;
@@ -1442,35 +1458,15 @@
         const nextBtn = document.querySelector('#featLightboxOverlay .carousel-next');
 
         if(currentFeatViewImages.length > 1) {
-            prevBtn.style.display = 'flex';
-            nextBtn.style.display = 'flex';
-            counter.style.display = 'block';
+            prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex'; counter.style.display = 'block';
         } else {
-            prevBtn.style.display = 'none';
-            nextBtn.style.display = 'none';
-            counter.style.display = 'none';
+            prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; counter.style.display = 'none';
         }
     }
 
-    function closeFeatLightbox() {
-        document.getElementById('featLightboxOverlay').classList.remove('open');
-    }
-
-    function prevFeatLightbox(e) {
-        e.stopPropagation();
-        if(currentFeatViewImages.length > 1) {
-            currentFeatViewIndex = (currentFeatViewIndex - 1 + currentFeatViewImages.length) % currentFeatViewImages.length;
-            updateFeatLightbox();
-        }
-    }
-
-    function nextFeatLightbox(e) {
-        e.stopPropagation();
-        if(currentFeatViewImages.length > 1) {
-            currentFeatViewIndex = (currentFeatViewIndex + 1) % currentFeatViewImages.length;
-            updateFeatLightbox();
-        }
-    }
+    function closeFeatLightbox() { document.getElementById('featLightboxOverlay').classList.remove('open'); }
+    function prevFeatLightbox(e) { e.stopPropagation(); if(currentFeatViewImages.length > 1) { currentFeatViewIndex = (currentFeatViewIndex - 1 + currentFeatViewImages.length) % currentFeatViewImages.length; updateFeatLightbox(); } }
+    function nextFeatLightbox(e) { e.stopPropagation(); if(currentFeatViewImages.length > 1) { currentFeatViewIndex = (currentFeatViewIndex + 1) % currentFeatViewImages.length; updateFeatLightbox(); } }
 
     function updateFeatBadge(wrap) {
         const scrollArea = wrap.querySelector('.feat-img-scroll');
@@ -1514,14 +1510,10 @@
         });
     }
     
-    function removeFeatImageAt(idx) { 
-        currentFeatImages.splice(idx, 1); 
-        renderFeatThumbnails(); 
-    }
+    function removeFeatImageAt(idx) { currentFeatImages.splice(idx, 1); renderFeatThumbnails(); }
 
     function openAddFeat() {
-        editingFeatId = null; 
-        currentFeatImages = [];
+        editingFeatId = null; currentFeatImages = [];
         document.getElementById('featModalTitle').innerText = 'เพิ่มผลงานไฮไลต์';
         ['featTitle','featAssigner','featCompany','featType','featDesc'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('featUploadInfo').textContent = '';
@@ -1533,14 +1525,14 @@
         const f = featProjects.find(x => x.id === id); if(!f) return; 
         editingFeatId = id;
         document.getElementById('featModalTitle').innerText = 'แก้ไขผลงานไฮไลต์';
-        document.getElementById('featTitle').value = f.title; 
-        document.getElementById('featAssigner').value = f.assigner;
-        document.getElementById('featCompany').value = f.company; 
-        document.getElementById('featType').value = f.type;
-        document.getElementById('featDesc').value = f.desc;
+        document.getElementById('featTitle').value = f.title || ''; 
+        document.getElementById('featAssigner').value = f.assigner || '';
+        document.getElementById('featCompany').value = f.company || ''; 
+        document.getElementById('featType').value = f.type || '';
+        document.getElementById('featDesc').value = f.desc || '';
         
         currentFeatImages = [];
-        if (f.images && Array.isArray(f.images)) currentFeatImages = [...f.images];
+        if (f.images && Array.isArray(f.images)) currentFeatImages = [...f.images.filter(Boolean)];
         else if (f.img) currentFeatImages = [f.img];
         
         document.getElementById('featUploadInfo').textContent = '';
@@ -1548,9 +1540,7 @@
         document.getElementById('manageFeatOverlay').classList.add('open');
     }
 
-    function closeManageFeat() { 
-        document.getElementById('manageFeatOverlay').classList.remove('open'); 
-    }
+    function closeManageFeat() { document.getElementById('manageFeatOverlay').classList.remove('open'); }
 
     function saveFeat() {
         const payload = {
@@ -1566,9 +1556,7 @@
         else database.ref('homeFeatured').push(payload).then(closeManageFeat);
     }
     
-    function deleteFeat(id) { 
-        if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); 
-    }
+    function deleteFeat(id) { if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); }
 
     // ================== DASHBOARD ORIGINAL LOGIC ==================
     function toggleKpiSection(btnEl) {
@@ -2023,7 +2011,7 @@
             let toolsHtml = (p['tools'] || '').split(',').map(t => t.trim() ? `<span class="tool-badge">${t}</span>` : '').join('');
             let subCatHtml = `${p['ประเภทย่อย']}<br>${toolsHtml}`;
 
-            tr.innerHTML = `<td>${p['ลำดับ']}</td><td>${typeHtml}</td><td>${subCatHtml}</td><td style="color:var(--text);"><strong>${p['ชื่อชิ้นงาน / โปรเจกต์']}</strong>${campHtml}</td><td style="color:var(--primary-2); font-weight:500;">👤 ${p['ผู้มอบหมาย']}</td><td>${dateStr}</td><td style="font-size:0.94rem; color:var(--muted);">${p['หมายเหตุ'] || '-'}</td><td>${statusHtml}</td><td class="admin-col"><div class="row-actions admin-inline"><button class="icon-btn" title="แก้ไข" onclick="openEditModal(${p['ลำดับ']})">✎</button><button class="icon-btn del" title="ลบ" onclick="deleteProject(${p['ลำดับ']})">🗑</button></div></td>`;
+            tr.innerHTML = `<td>${p['ลำดับ']}</td><td>${typeHtml}</td><td>${subCatHtml}</td><td style="color:var(--text);"><strong>${p['ชื่อชิ้นงาน / โปรเจกต์']}</strong>${campHtml}</td><td style="color:var(--primary-2); font-weight:500;">👤 ${p['ผู้มอบหมาย']}</td><td>${dateStr}</td><td style="font-size:0.94rem; color:var(--muted);">${p['หมายเหตุ'] || '-'}</td><td>${statusHtml}</td><td class="admin-col"><div class="row-actions admin-inline"><button class="icon-btn" title="แก้ไข" onclick="openEditModal('${p['ลำดับ']}')">✎</button><button class="icon-btn del" title="ลบ" onclick="deleteProject('${p['ลำดับ']}')">🗑</button></div></td>`;
             tbody.appendChild(tr);
         });
     }
@@ -2109,8 +2097,8 @@
     window.renderShowcase = renderShowcase;
 
     function openLightbox(id) {
-        const p = rawData.find(x => x['ลำดับ'] === id); if (!p) return;
-        currentLightboxId = id; currentLightboxImages = [...(p.imageLinks || []), ...(p.videoLinks || [])]; currentLightboxIndex = 0;
+        const p = rawData.find(x => String(x['ลำดับ']) === String(id)); if (!p) return;
+        currentLightboxId = p['ลำดับ']; currentLightboxImages = [...(p.imageLinks || []), ...(p.videoLinks || [])]; currentLightboxIndex = 0;
         let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
         document.getElementById('lbCategory').innerHTML = `<span class="${tagClass}" style="padding:4px 10px; margin-right:8px; border-radius:8px;">${p['ประเภทหลัก']}</span>`;
         document.getElementById('lbTitle').textContent = p['ชื่อชิ้นงาน / โปรเจกต์']; 
@@ -2314,30 +2302,6 @@
     
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
-    function handleKpiEvidence(event) {
-        const files = event.target.files;
-        const container = document.getElementById('kpiEvidenceList');
-        if(!files || files.length === 0) return;
-        
-        Array.from(files).forEach(file => {
-            let icon = '📄';
-            if(file.type.includes('image')) icon = '🖼️';
-            else if(file.name.toLowerCase().includes('.xls')) icon = '📊';
-            else if(file.name.toLowerCase().includes('.doc')) icon = '📝';
-            else if(file.type.includes('pdf')) icon = '📕';
-            
-            const chip = document.createElement('div');
-            chip.className = 'evidence-chip';
-            chip.innerHTML = `${icon} <span style="max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</span> 
-            <span style="color:var(--danger); cursor:pointer; font-weight:bold; margin-left:4px;" onclick="this.parentElement.remove()" title="ลบไฟล์นี้">✕</span>`;
-            
-            container.appendChild(chip);
-        });
-        
-        event.target.value = ''; 
-    }
-    window.handleKpiEvidence = handleKpiEvidence;
-
     try {
         if (typeof Chart !== 'undefined') {
             const style = getComputedStyle(document.documentElement); function getCSSVar(name, def) { return style.getPropertyValue(name).trim() || def; }
@@ -2367,10 +2331,9 @@
         }
     } catch (err) {}
 
-// ================== WINDOW ONLOAD ==================
+    // ================== WINDOW ONLOAD ==================
     window.onload = () => {
         if (database) {
-            // โหลดเฉพาะ projects และ evaluations แยกกัน ป้องกันการโหลด Base64 ก้อนใหญ่จาก root
             Promise.all([
                 database.ref('projects').once('value'),
                 database.ref('evaluations').once('value')
@@ -2379,10 +2342,10 @@
                 const eData = evalSnapshot.val();
 
                 if (pData) {
-                    rawData = Array.isArray(pData) ? pData : Object.values(pData).filter(Boolean);
+                    rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
                 }
                 if (eData) {
-                    evalData = Array.isArray(eData) ? eData : Object.values(eData).filter(Boolean);
+                    evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
                 }
                 
                 safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
