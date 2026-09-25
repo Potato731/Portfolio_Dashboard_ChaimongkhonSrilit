@@ -2331,8 +2331,16 @@
         }
     } catch (err) {}
 
-    // ================== WINDOW ONLOAD ==================
+// ================== WINDOW ONLOAD ==================
     window.onload = () => {
+        // 1. เรียกหน้าต่าง Loading คลื่นน้ำขึ้นมาทันทีที่เปิดเว็บ
+        const loader = document.getElementById('waterLoaderOverlay');
+        const percentEl = document.getElementById('waterPercent');
+        if (loader) {
+            loader.classList.add('active');
+            if (percentEl) percentEl.textContent = 'LOADING...';
+        }
+
         if (database) {
             Promise.all([
                 database.ref('projects').once('value'),
@@ -2353,14 +2361,20 @@
                 
                 setTheme(savedTheme); 
                 refreshAll(true);
+                
+                // 2. ปิดหน้าต่าง Loading เมื่อข้อมูลโหลดเสร็จสมบูรณ์
+                if (loader) loader.classList.remove('active');
+
             }).catch((error) => {
                 console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
                 setTheme(savedTheme); 
                 refreshAll(true);
+                if (loader) loader.classList.remove('active');
             });
         } else {
             setTheme(savedTheme); 
             refreshAll(true);
+            if (loader) loader.classList.remove('active');
         }
 
         loadCarousel();
