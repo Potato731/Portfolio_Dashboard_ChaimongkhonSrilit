@@ -2375,36 +2375,47 @@
     
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
-    // ================= WINDOW ONLOAD (Final Fail-Safe Version) =================
+// ================= WINDOW ONLOAD (Super Robust Version) =================
     window.onload = () => {
-        // ดักค่าว่างป้องกันกราฟพัง
+        // ดักค่าว่าง
         if (!Array.isArray(rawData)) rawData = Object.values(rawData || {}).filter(Boolean);
         if (!Array.isArray(evalData)) evalData = Object.values(evalData || {}).filter(Boolean);
 
-        // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
         refreshAll(true);
 
-        // ถ้าเชื่อมต่อกับ Firebase ได้ ให้โหลดข้อมูลใหม่มาทับแบบ Realtime
         if (database) {
+            // 1. ดึงข้อมูลโปรเจกต์แบบ Realtime (พร้อมระบบดักจับการอิมพอร์ตข้อมูลผิดชั้น)
             database.ref('projects').on('value', (snapshot) => {
-                const pData = snapshot.val();
+                let pData = snapshot.val();
                 if (pData) {
-                    rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
-                    safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
-                    refreshAll(false);
+                    // แกะกล่องข้อมูล: เผื่อมีการกด Import ไฟล์ Backup ทับลงไปผิดชั้น
+                    if (pData.projects) pData = pData.projects; 
+                    let arr = Array.isArray(pData) ? pData : Object.values(pData);
+                    // กรองเฉพาะข้อมูลที่เป็นโปรเจกต์จริงๆ ป้องกันค่า Null หรือ Array ซ้อนทับ
+                    rawData = arr.flat(Infinity).filter(item => item && typeof item === 'object' && item['ชื่อชิ้นงาน / โปรเจกต์']);
+                } else {
+                    rawData = []; // ถ้า Firebase ว่างเปล่า ให้เคลียร์ค่า
                 }
+                safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
+                try { refreshAll(false); } catch(e){}
             });
 
+            // 2. ดึงข้อมูลแบบประเมิน
             database.ref('evaluations').on('value', (snapshot) => {
-                const eData = snapshot.val();
+                let eData = snapshot.val();
                 if (eData) {
-                    evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
-                    safeSetLS(EVAL_KEY, JSON.stringify(evalData));
-                    refreshAll(false);
+                    if (eData.evaluations) eData = eData.evaluations;
+                    let arr = Array.isArray(eData) ? eData : Object.values(eData);
+                    evalData = arr.flat(Infinity).filter(item => item && typeof item === 'object' && item.project);
+                } else {
+                    evalData = [];
                 }
+                safeSetLS(EVAL_KEY, JSON.stringify(evalData));
+                try { refreshAll(false); } catch(e){}
             });
             
+            // โหลดสไลด์รูปภาพ
             try { loadCarousel(); } catch(e){}
             try { loadFeatured(); } catch(e){}
         }
