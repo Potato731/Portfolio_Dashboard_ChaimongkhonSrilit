@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ultimate Master Portfolio & Creative Scorecard</title>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- ใช้งาน Chart.js สำหรับกราฟทั้งหมด (เปลี่ยนไปใช้ cdnjs เพื่อป้องกันการถูกบล็อก) -->
+<!-- 🌟 เปลี่ยนลิงก์ดึง Chart.js มาใช้ cdnjs ป้องกันการถูกบล็อกเครือข่าย 100% -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -859,10 +859,11 @@
                 <div class="chart-box glass reveal" style="animation-delay:0.1s;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 15px;">
                         <h3 style="margin:0; border-bottom:none; padding-bottom:0;">🎯 ตัวชี้วัดผลงานหลัก (5 KPIs)</h3>
-                        <button class="btn btn-ghost" onclick="toggleKpiSection(this)" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 8px;">🙈 แสดง</button>
+                        <button class="btn btn-ghost" onclick="toggleKpiSection(this)" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 8px;">🙈 ซ่อน</button>
                     </div>
                     
-                    <div id="kpiIndicatorsContent" style="display: none;">
+                    <!-- เปิดโชว์ค่าเริ่มต้นให้เห็นชัดๆ เลย -->
+                    <div id="kpiIndicatorsContent" style="display: block;">
                         <div class="kpi-progress-wrap" id="wrapKpi1">
                             <div class="kpi-progress-header">
                                 <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
@@ -1333,7 +1334,7 @@
 
     function loadCarousel() {
         if(!database) return;
-        database.ref('homeCarousel').once('value').then((snapshot) => {
+        database.ref('homeCarousel').on('value', (snapshot) => {
             try {
                 const data = snapshot.val();
                 carouselImages = [];
@@ -1369,11 +1370,11 @@
         const file = event.target.files[0]; if(!file) return;
         const status = document.getElementById('carouselUploadStatus'); status.innerText = '⏳ กำลังอัปโหลด...';
         resizeImageFile(file, 1000, (base64) => {
-            database.ref('homeCarousel').push(base64).then(() => { status.innerText = '✅ สำเร็จ!'; event.target.value = ''; setTimeout(() => { status.innerText = ''; }, 3000); loadCarousel();});
+            database.ref('homeCarousel').push(base64).then(() => { status.innerText = '✅ สำเร็จ!'; event.target.value = ''; setTimeout(() => { status.innerText = ''; }, 3000); });
         });
     }
     
-    function deleteCarousel(id) { if(confirm('ต้องการลบรูปภาพนี้ออกจากสไลด์?')) database.ref('homeCarousel/' + id).remove().then(() => loadCarousel()); }
+    function deleteCarousel(id) { if(confirm('ต้องการลบรูปภาพนี้ออกจากสไลด์?')) database.ref('homeCarousel/' + id).remove(); }
 
     // ================== FEATURED LIST & LIGHTBOX ==================
     let featProjects = []; 
@@ -1392,7 +1393,7 @@
 
     function loadFeatured() {
         if(!database) return;
-        database.ref('homeFeatured').once('value').then((snapshot) => {
+        database.ref('homeFeatured').on('value', (snapshot) => {
             try {
                 const data = snapshot.val();
                 featProjects = [];
@@ -1582,19 +1583,18 @@
             images: currentFeatImages 
         };
         if(!payload.title) { alert('กรุณาระบุชื่อผลงาน'); return; }
-        if(editingFeatId) database.ref('homeFeatured/' + editingFeatId).set(payload).then(() => { closeManageFeat(); loadFeatured(); });
-        else database.ref('homeFeatured').push(payload).then(() => { closeManageFeat(); loadFeatured(); });
+        if(editingFeatId) database.ref('homeFeatured/' + editingFeatId).set(payload).then(() => { closeManageFeat(); });
+        else database.ref('homeFeatured').push(payload).then(() => { closeManageFeat(); });
     }
     
-    function deleteFeat(id) { if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove().then(() => loadFeatured()); }
+    function deleteFeat(id) { if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); }
 
-    // ================== PROJECT CRUD FUNCTIONS (THE MISSING BLOCK RECOVERED!) ==================
+    // ================== PROJECT CRUD FUNCTIONS ==================
     
     function openAddModal() {
         editingId = null; 
         editingProjectImages = [];
         
-        // เคลียร์ค่าฟอร์มทั้งหมด
         ['fSub','fName','fCampaign','fOwner','fTools','fAiPrompt','fNote','fDateOrder','fDateStart','fDateEnd','fImageLinks','fVideoLinks','fUpload'].forEach(id => {
             const el = document.getElementById(id); if(el) el.value = '';
         });
@@ -1647,7 +1647,7 @@
         if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ?`)) { 
             rawData = rawData.filter(x => String(x['ลำดับ']) !== String(id)); 
             saveData(); 
-            refreshAll(false); 
+            try { refreshAll(false); } catch(e){}
         } 
     }
 
@@ -1696,10 +1696,9 @@
         }
         saveData(); 
         closeProjectModal(); 
-        refreshAll(false);
+        try { refreshAll(false); } catch(e){}
     }
     
-    // ผูกฟังก์ชันเข้ากับ Window ให้ HTML มองเห็นและเรียกใช้งานได้
     window.openAddModal = openAddModal; 
     window.openEditModal = openEditModal; 
     window.deleteProject = deleteProject; 
@@ -1710,8 +1709,8 @@
     function toggleKpiSection(btnEl) {
         const c = document.getElementById('kpiIndicatorsContent');
         if(!c) return;
-        if(c.style.display === 'none') { c.style.display = 'block'; btnEl.innerHTML = '👁️ ซ่อน'; } 
-        else { c.style.display = 'none'; btnEl.innerHTML = '🙈 แสดง'; }
+        if(c.style.display === 'none') { c.style.display = 'block'; btnEl.innerHTML = '🙈 ซ่อน'; } 
+        else { c.style.display = 'none'; btnEl.innerHTML = '👁️ แสดง'; }
     }
     window.toggleKpiSection = toggleKpiSection;
 
@@ -1770,7 +1769,8 @@
                     incomingProjects.forEach((p, i) => { rawData.push({ ...p, 'ลำดับ': maxId + i + 1 }); });
                     evalData = [...evalData, ...incomingEvals];
                 }
-                saveData(); saveEvalData(); refreshAll(true);
+                saveData(); saveEvalData(); 
+                try { refreshAll(true); } catch(e){}
                 alert('นำเข้าข้อมูลเรียบร้อยแล้ว ✅');
             } catch (err) { alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาตรวจสอบว่าเป็นไฟล์ JSON ที่ถูกต้อง'); }
             event.target.value = '';
@@ -1881,14 +1881,16 @@
         if (startVal === target) { el.innerHTML = (Number.isInteger(target) ? target : target.toFixed(1)) + suffix; return; }
         const start = performance.now();
         function tick(now) {
-            const progress = Math.min((now - start) / duration, 1); const eased = 1 - Math.pow(1 - progress, 3); const val = startVal + (target - startVal) * eased;
-            el.innerHTML = (Number.isInteger(target) ? Math.round(val) : val.toFixed(1)) + suffix; if (progress < 1) requestAnimationFrame(tick);
+            const progress = Math.min((now - start) / Math.max(duration, 1), 1); 
+            const eased = 1 - Math.pow(1 - progress, 3); const val = startVal + (target - startVal) * eased;
+            el.innerHTML = (Number.isInteger(target) ? Math.round(val) : val.toFixed(1)) + suffix; 
+            if (progress < 1) requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
     }
 
     function refreshAll(initial) {
-        populateDateFilters(); 
+        try { populateDateFilters(); } catch(e) { console.error(e); }
         
         if (initial || !isDefaultSet) {
             const curDate = new Date(); const curMonth = (curDate.getMonth() + 1).toString().padStart(2, '0'); const curYear = curDate.getFullYear().toString();
@@ -1897,23 +1899,40 @@
             isDefaultSet = true;
         }
 
+        const s = computeStats(rawData);
+
         try {
-            const s = computeStats(rawData);
-            document.querySelectorAll('.kpi-value[data-kpi]').forEach(el => { const key = el.dataset.kpi; const target = s[key] !== undefined ? s[key] : 0; if (initial) { const delay = parseFloat(el.closest('.kpi-card').style.animationDelay || 0) * 1000; setTimeout(() => animateCount(el, target, 900), delay + 150); } else { animateCount(el, target, 500); } });
+            document.querySelectorAll('.kpi-value[data-kpi]').forEach(el => { 
+                const key = el.dataset.kpi; 
+                const target = s[key] !== undefined ? s[key] : 0; 
+                animateCount(el, target, initial ? 900 : 500); 
+            });
             const tb = document.getElementById('totalBadge'); if(tb) tb.textContent = `รวมทั้งหมด ${s.total} โปรเจกต์`;
             const overdueCard = document.getElementById('kpiOverdueCard'); if (overdueCard) overdueCard.classList.toggle('has-overdue', s.overdue > 0);
             const pct = s.total ? Math.round((s.done / s.total) * 100) : 0; 
             const rv = document.getElementById('rateValue'); if(rv) rv.textContent = pct + '%'; 
             setTimeout(() => { const rf = document.getElementById('rateFill'); if(rf) rf.style.width = pct + '%'; }, initial ? 700 : 50);
-
-            if (typeof typeChart !== 'undefined' && typeChart) {
-                typeChart.data.labels = [`🎨 ArtWork (${s.ArtWork})`, `🎬 Video (${s.Video})`, `📸 Photography (${s.Photography})`]; typeChart.data.datasets[0].data = [s.ArtWork, s.Video, s.Photography]; typeChart.update();
-                statusChart.data.labels = [`เสร็จสิ้น (${s.done})`, `กำลังดำเนินการ (${s.prog})`, `รอดำเนินการ (${s.pend})`]; statusChart.data.datasets[0].data = [s.done, s.prog, s.pend]; statusChart.update();
-                animateCount(document.getElementById('typeCenterNum'), s.total, initial ? 900 : 500); animateCount(document.getElementById('statusCenterNum'), s.done, initial ? 900 : 500); 
-                updateMonthlyChart();
-            }
         } catch(e) { console.error("Stats Render Error:", e); }
 
+        try {
+            if (typeof typeChart !== 'undefined' && typeChart) {
+                typeChart.data.labels = [`🎨 ArtWork (${s.ArtWork})`, `🎬 Video (${s.Video})`, `📸 Photography (${s.Photography})`]; 
+                typeChart.data.datasets[0].data = [s.ArtWork, s.Video, s.Photography]; 
+                typeChart.update();
+                animateCount(document.getElementById('typeCenterNum'), s.total, initial ? 900 : 500); 
+            }
+        } catch(e) { console.error("TypeChart Error:", e); }
+
+        try {
+            if (typeof statusChart !== 'undefined' && statusChart) {
+                statusChart.data.labels = [`เสร็จสิ้น (${s.done})`, `กำลังดำเนินการ (${s.prog})`, `รอดำเนินการ (${s.pend})`]; 
+                statusChart.data.datasets[0].data = [s.done, s.prog, s.pend]; 
+                statusChart.update();
+                animateCount(document.getElementById('statusCenterNum'), s.done, initial ? 900 : 500); 
+            }
+        } catch(e) { console.error("StatusChart Error:", e); }
+
+        try { updateMonthlyChart(); } catch(e) { console.error("MonthlyChart Error:", e); }
         try { filterTable(); } catch(e) { console.error("Table Error:", e); }
         try { renderShowcase(); } catch(e) { console.error("Showcase Error:", e); }
         try { renderFeedback(); } catch(e) { console.error("Feedback Error:", e); }
@@ -2103,7 +2122,6 @@
             }
         });
 
-        // อัปเดตกราฟ Radar แบบโต้ตอบ
         if(kpiRadarChart) {
             const vCr = en5 ? (Number(satPercent) / 20 || 0) : 0;     
             const vTech = en3 ? (Number(speedPercent) / 20 || 0) : 0; 
@@ -2396,26 +2414,38 @@
 
         // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
-        refreshAll(true);
+        try { refreshAll(true); } catch(e){ console.error(e); }
 
         // ถ้าเชื่อมต่อกับ Firebase ได้ ให้โหลดข้อมูลใหม่มาทับแบบ Realtime
         if (database) {
             database.ref('projects').on('value', (snapshot) => {
-                const pData = snapshot.val();
-                if (pData) {
-                    rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
+                try {
+                    let pData = snapshot.val();
+                    if (pData) {
+                        if (pData.projects) pData = pData.projects; // ดักการ import ซ้อน
+                        let arr = Array.isArray(pData) ? pData : Object.values(pData);
+                        rawData = arr.flat(Infinity).filter(item => item && typeof item === 'object' && item['ชื่อชิ้นงาน / โปรเจกต์']);
+                    } else {
+                        rawData = [];
+                    }
                     safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
                     refreshAll(false);
-                }
+                } catch(e) { console.error("Firebase Projects Data Error:", e); }
             });
 
             database.ref('evaluations').on('value', (snapshot) => {
-                const eData = snapshot.val();
-                if (eData) {
-                    evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
+                try {
+                    let eData = snapshot.val();
+                    if (eData) {
+                        if (eData.evaluations) eData = eData.evaluations; // ดักการ import ซ้อน
+                        let arr = Array.isArray(eData) ? eData : Object.values(eData);
+                        evalData = arr.flat(Infinity).filter(item => item && typeof item === 'object' && item.project);
+                    } else {
+                        evalData = [];
+                    }
                     safeSetLS(EVAL_KEY, JSON.stringify(evalData));
                     refreshAll(false);
-                }
+                } catch(e) { console.error("Firebase Evals Data Error:", e); }
             });
             
             try { loadCarousel(); } catch(e){}
