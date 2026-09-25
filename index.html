@@ -1927,15 +1927,16 @@
             }
         });
 
+        // อัปเดตกราฟ Radar แบบโต้ตอบเรียลไทม์
         if(kpiRadarChart) {
-            let scoreCreativity = 0, scoreTech = 0, scoreComm = 0, scoreCi = 0, scoreResp = 0;
-            if (filteredEval.length > 0) {
-                let sCr=0, sT=0, sCo=0, sCi=0, sR=0;
-                filteredEval.forEach(e => { sCr += (e.q1 + e.q5) / 2; sT += e.q3; sCo += e.q4; sCi += e.q2; sR += (e.q4 + e.q5) / 2; });
-                const n = filteredEval.length; scoreCreativity = sCr/n; scoreTech = sT/n; scoreComm = sCo/n; scoreCi = sCi/n; scoreResp = sR/n;
-            } else if(actualProjects > 0) { scoreCreativity = 3; scoreTech = 3; scoreComm = 3; scoreCi = 3; scoreResp = 3; }
-            kpiRadarChart.data.labels = ['ความคิดสร้างสรรค์ (Creativity)', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร & ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'];
-            kpiRadarChart.data.datasets[0].data = [scoreCreativity, scoreTech, scoreComm, scoreCi, scoreResp]; kpiRadarChart.update();
+            const vCr = en5 ? (satPercent / 20) : 0;     
+            const vTech = en3 ? (speedPercent / 20) : 0; 
+            const vComm = en1 ? (planPercent / 20) : 0;  
+            const vCi = en4 ? (ciPercent / 20) : 0;      
+            const vResp = en2 ? (timePercent / 20) : 0;  
+
+            kpiRadarChart.data.datasets[0].data = [vCr, vTech, vComm, vCi, vResp]; 
+            kpiRadarChart.update();
         }
 
         if(kpiBarChart) { kpiBarChart.data.datasets[0].data = [TARGET_PROJECTS]; kpiBarChart.data.datasets[1].data = [actualProjects]; kpiBarChart.update(); }
@@ -2216,17 +2217,6 @@
     }
     window.handleFileUpload = handleFileUpload; window.removeImageAt = function(idx) { editingProjectImages.splice(idx, 1); renderEditThumbnails(); };
 
-    // --- ฟังก์ชันที่หายไปได้ถูกเพิ่มกลับมาแล้วครับ! ---
-    function openAddModal() {
-        editingId = null; editingProjectImages = [];
-        ['fSub','fName','fCampaign','fOwner','fTools','fAiPrompt','fNote','fDateOrder','fDateStart','fDateEnd','fImageLinks','fVideoLinks','fUpload'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('fRevision').value = 0;
-        document.getElementById('projectModalTitle').textContent = 'เพิ่มโปรเจกต์ใหม่ (Dashboard)';
-        document.getElementById('fMain').value = 'ArtWork'; document.getElementById('fStatus').value = 'เสร็จสิ้น';
-        if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
-        renderEditThumbnails(); document.getElementById('projectError').textContent = ''; document.getElementById('projectOverlay').classList.add('open');
-    }
-
     function openEditModal(id) {
         const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
         if (!p) return;
@@ -2313,37 +2303,15 @@
     
     window.openAddModal = openAddModal; window.openEditModal = openEditModal; window.deleteProject = deleteProject; window.closeProjectModal = closeProjectModal; window.saveProjectData = saveProjectData;
 
-    try {
-        if (typeof Chart !== 'undefined') {
-            const style = getComputedStyle(document.documentElement); function getCSSVar(name, def) { return style.getPropertyValue(name).trim() || def; }
-            const legendLabelStyle = { font: { family: 'Kanit', size: 14 }, color: getCSSVar('--muted', '#aab6cc'), padding: 18, usePointStyle: true, pointStyle: 'circle' };
-            const doughnutOptions = { responsive: true, maintainAspectRatio: false, cutout: '75%', animation: { animateRotate: true, animateScale: true, duration: 1200, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: legendLabelStyle } } };
-
-            typeChart = new Chart(document.getElementById('typeChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], borderWidth: 0, hoverOffset: 12 }] }, options: doughnutOptions });
-            statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets: [{ data: [], borderWidth: 0, hoverOffset: 12 }] }, options: doughnutOptions });
-            monthlyChart = new Chart(document.getElementById('monthlyChart').getContext('2d'), { type: 'bar', data: { labels: [], datasets: [{ label: 'จำนวนงานที่เสร็จสิ้น (โปรเจกต์)', data: [], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
-            decisionChart = new Chart(document.getElementById('decisionChart').getContext('2d'), { type: 'doughnut', data: { labels: ['Approve', 'Minor Edit', 'Reject'], datasets: [{ data: [0,0,0], borderWidth: 0 }] }, options: doughnutOptions });
-            radarChart = new Chart(document.getElementById('radarChart').getContext('2d'), { type: 'radar', data: { labels: ['เนื้อหา (Brief)', 'ความสวยงาม (CI)', 'ใช้งานได้จริง (Usability)', 'ตรงเวลา (Timeline)', 'ภาพรวม (Overall)'], datasets: [{ label: 'คะแนนเฉลี่ย', data: [0,0,0,0,0], fill: true, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
-            monthFocusChart = new Chart(document.getElementById('monthFocusChart').getContext('2d'), { type: 'bar', data: { labels: ['🎨 ArtWork', '🎬 Video', '📸 Photography'], datasets: [{ label: 'จำนวนงานที่เสร็จสิ้น', data: [0,0,0], borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
-            kpiRadarChart = new Chart(document.getElementById('kpiRadarChart').getContext('2d'), { type: 'radar', data: { labels: ['ความคิดสร้างสรรค์', 'ทักษะทำสื่อ & เทคโนโลยี', 'การสื่อสาร & ประสานงาน', 'ความละเอียดรอบคอบ (CI)', 'ความรับผิดชอบ & ตรงเวลา'], datasets: [{ label: 'ระดับสมรรถนะประเมิน (เต็ม 5)', data: [0,0,0,0,0], fill: true, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
-            
-            kpiBarChart = new Chart(document.getElementById('kpiBarChart').getContext('2d'), { 
-                type: 'bar', 
-                data: { labels: ['ปริมาณงานประจำเดือน (Projects)'], datasets: [{ label: 'เป้าหมายที่ต้องทำ (Target)', data: [10], borderRadius: 6 }, { label: 'ทำได้จริง (Actual)', data: [0], borderRadius: 6 }] }, 
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    scales: { 
-                        x: { ticks: {} }, 
-                        y: { beginAtZero: true, ticks: { stepSize: 2 } } 
-                    }, 
-                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Kanit' } } } } 
-                } 
-            });
-        }
-    } catch (err) {}
-
-    // ================== WINDOW ONLOAD ==================
+    // ================= WINDOW ONLOAD (Optimized) =================
     window.onload = () => {
+        const loader = document.getElementById('waterLoaderOverlay');
+        const percentEl = document.getElementById('waterPercent');
+        if (loader) {
+            loader.classList.add('active');
+            if (percentEl) percentEl.textContent = 'LOADING...';
+        }
+
         if (database) {
             Promise.all([
                 database.ref('projects').once('value'),
@@ -2364,14 +2332,19 @@
                 
                 setTheme(savedTheme); 
                 refreshAll(true);
+                
+                if (loader) loader.classList.remove('active');
+
             }).catch((error) => {
                 console.error("โหลดข้อมูลจาก Firebase ไม่สำเร็จ ใช้ข้อมูลในเครื่องแทน", error);
                 setTheme(savedTheme); 
                 refreshAll(true);
+                if (loader) loader.classList.remove('active');
             });
         } else {
             setTheme(savedTheme); 
             refreshAll(true);
+            if (loader) loader.classList.remove('active');
         }
 
         loadCarousel();
