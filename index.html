@@ -136,6 +136,20 @@
     .feat-details { font-size: 0.95rem; color: var(--muted); display: flex; flex-direction: column; gap: 8px; line-height: 1.5; }
     .feat-details strong { color: var(--primary-2); font-weight: 500; }
 
+    /* ---- Featured Image Slider ---- */
+    .feat-img-scroll-wrap { position: relative; width: 100%; height: 220px; border-radius: 12px; overflow: hidden; background: #000; }
+    .feat-img-scroll { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; width: 100%; height: 100%; scrollbar-width: none; -ms-overflow-style: none; }
+    .feat-img-scroll::-webkit-scrollbar { display: none; }
+    .feat-img-slide { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; position: relative; overflow: hidden; }
+    .feat-img-slide img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.5s; opacity: 0.9; }
+    .feat-item:hover .feat-img-slide img { transform: scale(1.05); opacity: 1; }
+    .feat-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: 0.3s; opacity: 0; font-size: 1.2rem; padding-bottom: 4px; }
+    .feat-img-scroll-wrap:hover .feat-nav-btn { opacity: 1; }
+    .feat-nav-btn:hover { background: var(--primary-2); color: #000; }
+    .feat-nav-prev { left: 8px; } .feat-nav-next { right: 8px; }
+    .feat-img-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; z-index: 10; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
+    @media (max-width: 768px) { .feat-img-scroll-wrap { height: 250px; } }
+
     .grid-manage-imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
     .manage-img-item { position: relative; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
     .manage-img-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -420,7 +434,6 @@
         .view-switcher { flex-direction: column; align-items: stretch; } 
         .gform-card { padding: 20px 20px;}
         .feat-item { grid-template-columns: 1fr; }
-        .feat-img-wrap { height: 250px; }
         .mc-item { flex: 0 0 calc(50% - 10px); }
     }
     @media (max-width: 500px) { .mc-item { flex: 0 0 calc(85% - 10px); } }
@@ -1005,6 +1018,18 @@
         </div>
     </div>
 
+    <!-- Lightbox สำหรับคลิกดูรูปผลงานไฮไลต์แบบขยายเต็มจอ -->
+    <div class="lightbox-overlay" id="featLightboxOverlay" style="z-index: 10001; background: rgba(0,0,0,0.95);">
+        <button class="lightbox-close" onclick="closeFeatLightbox()">✕</button>
+        <button class="carousel-btn carousel-prev" onclick="prevFeatLightbox(event)">‹</button>
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 20px;">
+            <!-- รูปภาพจะปรับขนาดตามสัดส่วนจริงอัตโนมัติ (object-fit: contain) -->
+            <img id="featLightboxImg" src="" style="max-width: 100%; max-height: 90vh; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-radius: 8px;">
+        </div>
+        <button class="carousel-btn carousel-next" onclick="nextFeatLightbox(event)">›</button>
+        <div class="carousel-counter" id="featLightboxCounter" style="bottom: 30px; font-size: 1.1rem; padding: 8px 24px;">1 / 1</div>
+    </div>
+
     <!-- 0. EPIC WATER WAVE LOADER -->
     <div id="waterLoaderOverlay" class="water-loader-overlay">
         <div class="water-circle">
@@ -1055,28 +1080,29 @@
         </div>
     </div>
 
-    <!-- 3. Add/Edit Featured Modal -->
+    <!-- 3. Add/Edit Featured Modal (รองรับหลายรูปภาพ) -->
     <div class="modal-overlay" id="manageFeatOverlay">
         <div class="modal-box wide">
             <button class="modal-close" onclick="closeManageFeat()">✕</button>
             <h2 style="margin-top:0;" id="featModalTitle">เพิ่มผลงานไฮไลต์หน้าแรก</h2>
             <div class="field-row">
                 <div class="field"><label>ชื่อผลงาน / หัวข้อ</label><input type="text" id="featTitle"></div>
-                <div class="field"><label>ประเภทงาน</label><input type="text" id="featType"></div>
+                <div class="field"><label>ประเภทงาน</label><input type="text" id="featType" placeholder="เช่น 3D Animation, Branding"></div>
             </div>
             <div class="field-row">
                 <div class="field"><label>ผู้มอบหมายงาน</label><input type="text" id="featAssigner"></div>
                 <div class="field"><label>บริษัท / แคมเปญ</label><input type="text" id="featCompany"></div>
             </div>
             <div class="field"><label>รายละเอียดเพิ่มเติม</label><textarea id="featDesc" rows="2"></textarea></div>
-            <div class="field">
-                <label>อัปโหลดรูปภาพปกผลงาน (Resize อัตโนมัติ)</label>
-                <input type="file" accept="image/*" onchange="previewFeatImage(event)">
-                <input type="hidden" id="featImgBase64">
-                <div style="margin-top:10px; height:150px; background:#000; border-radius:8px; overflow:hidden;">
-                    <img id="featImgPreview" src="" style="width:100%; height:100%; object-fit:contain; display:none;">
-                </div>
+            
+            <!-- ส่วนอัปโหลดรูปภาพใหม่ -->
+            <div class="field" style="background: var(--panel); padding: 18px; border-radius: 16px; border: 1px dashed var(--primary-2);">
+                <label style="color: var(--primary-2); font-weight: 700; margin-bottom: 10px;">📸 อัปโหลดรูปภาพผลงาน (เลือกได้มากกว่า 1 รูป)</label>
+                <input type="file" accept="image/*" multiple onchange="handleFeatImagesUpload(event)" style="padding: 8px 0; background: none; border: none; color: var(--text); width: 100%; cursor: pointer;">
+                <div id="featUploadInfo" style="font-size:0.9rem; color:var(--success); margin-top:5px;"></div>
+                <div class="thumb-manager" id="featThumbnailsContainer" style="margin-top:10px;"></div>
             </div>
+
             <div class="modal-actions">
                 <button class="btn btn-ghost" onclick="closeManageFeat()">ยกเลิก</button>
                 <button class="btn btn-success" onclick="saveFeat()">บันทึกข้อมูลไฮไลต์</button>
@@ -1328,8 +1354,23 @@
     
     function deleteCarousel(id) { if(confirm('ต้องการลบรูปภาพนี้ออกจากสไลด์?')) database.ref('homeCarousel/' + id).remove(); }
 
-    // Featured List
-    let featProjects = []; let editingFeatId = null;
+    // ================== FEATURED LIST & LIGHTBOX ==================
+    let featProjects = []; 
+    let editingFeatId = null;
+    let currentFeatImages = []; 
+    
+    // ตัวแปรสำหรับระบบคลิกดูรูปเต็มจอ
+    let currentFeatViewImages = [];
+    let currentFeatViewIndex = 0;
+
+    function scrollFeatSlide(btn, dir) {
+        // หยุด event ไม่ให้ทะลุไปคลิกโดนรูปภาพด้านหลัง
+        if(event) event.stopPropagation();
+        const scrollArea = btn.parentElement.querySelector('.feat-img-scroll');
+        const scrollAmount = scrollArea.clientWidth;
+        scrollArea.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+    }
+
     function loadFeatured() {
         if(!database) return;
         database.ref('homeFeatured').on('value', (snapshot) => {
@@ -1339,9 +1380,39 @@
             if(featProjects.length === 0) { list.innerHTML = '<div style="color:var(--muted); padding:30px; text-align:center;">ยังไม่มีผลงานไฮไลต์ (Admin สามารถกดเพิ่มผลงานได้)</div>'; return; }
             
             featProjects.forEach(f => {
+                let imgs = [];
+                if (f.images && Array.isArray(f.images)) imgs = f.images;
+                else if (f.img) imgs = [f.img];
+                
+                let sliderHtml = '';
+                if (imgs.length === 0) {
+                    sliderHtml = `<div class="feat-img-slide"><img src="" onerror="this.src=''; this.parentElement.style.background='#222';"></div>`;
+                } else {
+                    imgs.forEach(imgSrc => { 
+                        // เปลี่ยนเป็น object-fit: contain เพื่อไม่ให้ภาพโดนตัด และใส่คำสั่ง onclick
+                        sliderHtml += `<div class="feat-img-slide"><img src="${imgSrc}" onclick="openFeatLightbox('${f.id}')" style="cursor: zoom-in; object-fit: contain; background: #000;"></div>`; 
+                    });
+                }
+                
+                let navHtml = '';
+                let badgeHtml = '';
+                if (imgs.length > 1) {
+                    badgeHtml = `<div class="feat-img-badge">1 / ${imgs.length} 📸</div>`;
+                    navHtml = `
+                        <button class="feat-nav-btn feat-nav-prev" onclick="scrollFeatSlide(this, -1)">‹</button>
+                        <button class="feat-nav-btn feat-nav-next" onclick="scrollFeatSlide(this, 1)">›</button>
+                    `;
+                }
+
                 list.innerHTML += `
                     <div class="feat-item">
-                        <div class="feat-img-wrap"><img src="${f.img || ''}" onerror="this.src=''; this.parentElement.style.background='#222';"></div>
+                        <div class="feat-img-scroll-wrap" onscroll="updateFeatBadge(this)">
+                            ${badgeHtml}
+                            <div class="feat-img-scroll">
+                                ${sliderHtml}
+                            </div>
+                            ${navHtml}
+                        </div>
                         <div class="feat-content">
                             <div><span class="feat-tag">🔥 LATEST HIGHLIGHT</span></div>
                             <h3 class="feat-title">${f.title}</h3>
@@ -1358,53 +1429,161 @@
                         </div>
                     </div>`;
             });
-            // หาก Admin Login อยู่ ให้ปุ่มแสดง
-            if(isAdmin) {
-                document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
-            }
+            if(isAdmin) document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
         });
     }
 
-    function previewFeatImage(event) {
-        const file = event.target.files[0]; if(!file) return;
-        resizeImageFile(file, 800, (base64) => {
-            document.getElementById('featImgBase64').value = base64;
-            document.getElementById('featImgPreview').src = base64;
-            document.getElementById('featImgPreview').style.display = 'block';
+    // ฟังก์ชันเปิด-ปิด และเลื่อนรูปใน Lightbox แบบเต็มจอ
+    function openFeatLightbox(id) {
+        const f = featProjects.find(x => x.id === id);
+        if(!f) return;
+        currentFeatViewImages = f.images && Array.isArray(f.images) ? f.images : (f.img ? [f.img] : []);
+        if(currentFeatViewImages.length === 0) return;
+
+        currentFeatViewIndex = 0;
+        updateFeatLightbox();
+        document.getElementById('featLightboxOverlay').classList.add('open');
+    }
+
+    function updateFeatLightbox() {
+        document.getElementById('featLightboxImg').src = currentFeatViewImages[currentFeatViewIndex];
+        const counter = document.getElementById('featLightboxCounter');
+        counter.innerText = `${currentFeatViewIndex + 1} / ${currentFeatViewImages.length}`;
+
+        const prevBtn = document.querySelector('#featLightboxOverlay .carousel-prev');
+        const nextBtn = document.querySelector('#featLightboxOverlay .carousel-next');
+
+        if(currentFeatViewImages.length > 1) {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+            counter.style.display = 'block';
+        } else {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            counter.style.display = 'none';
+        }
+    }
+
+    function closeFeatLightbox() {
+        document.getElementById('featLightboxOverlay').classList.remove('open');
+    }
+
+    function prevFeatLightbox(e) {
+        e.stopPropagation();
+        if(currentFeatViewImages.length > 1) {
+            currentFeatViewIndex = (currentFeatViewIndex - 1 + currentFeatViewImages.length) % currentFeatViewImages.length;
+            updateFeatLightbox();
+        }
+    }
+
+    function nextFeatLightbox(e) {
+        e.stopPropagation();
+        if(currentFeatViewImages.length > 1) {
+            currentFeatViewIndex = (currentFeatViewIndex + 1) % currentFeatViewImages.length;
+            updateFeatLightbox();
+        }
+    }
+
+    // อัปเดตตัวเลขแสดงรูปภาพปัจจุบันเมื่อเลื่อนสไลด์ (ในการ์ด)
+    function updateFeatBadge(wrap) {
+        const scrollArea = wrap.querySelector('.feat-img-scroll');
+        const badge = wrap.querySelector('.feat-img-badge');
+        if(!badge || !scrollArea) return;
+        const index = Math.round(scrollArea.scrollLeft / scrollArea.clientWidth) + 1;
+        const total = scrollArea.children.length;
+        badge.innerHTML = `${index} / ${total} 📸`;
+    }
+
+    // จัดการอัปโหลดรูปภาพหลายรูป
+    function handleFeatImagesUpload(event) {
+        const files = event.target.files; if (!files || files.length === 0) return;
+        const info = document.getElementById('featUploadInfo'); 
+        if(info) info.textContent = `⏳ กำลังบีบอัดรูปภาพ...`;
+        
+        let loadedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            resizeImageFile(files[i], 1000, (base64) => {
+                currentFeatImages.push(base64);
+                loadedCount++;
+                if (loadedCount === files.length) { 
+                    renderFeatThumbnails(); 
+                    event.target.value = ''; 
+                    if(info) info.textContent = `✅ อัปโหลดสำเร็จ ${loadedCount} รูป`; 
+                    setTimeout(() => info.textContent='', 3000);
+                }
+            });
+        }
+    }
+
+    function renderFeatThumbnails() {
+        const container = document.getElementById('featThumbnailsContainer'); 
+        container.innerHTML = '';
+        if (currentFeatImages.length === 0) {
+            container.innerHTML = `<span style="font-size:0.9rem; color:var(--muted);">ยังไม่มีรูปภาพ</span>`; return;
+        }
+        currentFeatImages.forEach((img, idx) => {
+            const div = document.createElement('div'); div.className = 'thumb-item';
+            div.innerHTML = `<img src="${img}" alt="thumb" onerror="this.src='';"><button class="thumb-del" type="button" onclick="removeFeatImageAt(${idx})">✕</button>`;
+            container.appendChild(div);
         });
+    }
+    
+    function removeFeatImageAt(idx) { 
+        currentFeatImages.splice(idx, 1); 
+        renderFeatThumbnails(); 
     }
 
     function openAddFeat() {
-        editingFeatId = null; document.getElementById('featModalTitle').innerText = 'เพิ่มผลงานไฮไลต์';
-        ['featTitle','featAssigner','featCompany','featType','featDesc','featImgBase64'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('featImgPreview').style.display = 'none';
+        editingFeatId = null; 
+        currentFeatImages = [];
+        document.getElementById('featModalTitle').innerText = 'เพิ่มผลงานไฮไลต์';
+        ['featTitle','featAssigner','featCompany','featType','featDesc'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('featUploadInfo').textContent = '';
+        renderFeatThumbnails();
         document.getElementById('manageFeatOverlay').classList.add('open');
     }
 
     function openEditFeat(id) {
-        const f = featProjects.find(x => x.id === id); if(!f) return; editingFeatId = id;
+        const f = featProjects.find(x => x.id === id); if(!f) return; 
+        editingFeatId = id;
         document.getElementById('featModalTitle').innerText = 'แก้ไขผลงานไฮไลต์';
-        document.getElementById('featTitle').value = f.title; document.getElementById('featAssigner').value = f.assigner;
-        document.getElementById('featCompany').value = f.company; document.getElementById('featType').value = f.type;
-        document.getElementById('featDesc').value = f.desc; document.getElementById('featImgBase64').value = f.img || '';
-        if(f.img) { document.getElementById('featImgPreview').src = f.img; document.getElementById('featImgPreview').style.display = 'block'; }
+        document.getElementById('featTitle').value = f.title; 
+        document.getElementById('featAssigner').value = f.assigner;
+        document.getElementById('featCompany').value = f.company; 
+        document.getElementById('featType').value = f.type;
+        document.getElementById('featDesc').value = f.desc;
+        
+        // โหลดรูปภาพเดิม
+        currentFeatImages = [];
+        if (f.images && Array.isArray(f.images)) currentFeatImages = [...f.images];
+        else if (f.img) currentFeatImages = [f.img];
+        
+        document.getElementById('featUploadInfo').textContent = '';
+        renderFeatThumbnails();
         document.getElementById('manageFeatOverlay').classList.add('open');
     }
 
-    function closeManageFeat() { document.getElementById('manageFeatOverlay').classList.remove('open'); }
+    function closeManageFeat() { 
+        document.getElementById('manageFeatOverlay').classList.remove('open'); 
+    }
 
     function saveFeat() {
         const payload = {
-            title: document.getElementById('featTitle').value.trim(), assigner: document.getElementById('featAssigner').value.trim(),
-            company: document.getElementById('featCompany').value.trim(), type: document.getElementById('featType').value.trim(),
-            desc: document.getElementById('featDesc').value.trim(), img: document.getElementById('featImgBase64').value
+            title: document.getElementById('featTitle').value.trim(), 
+            assigner: document.getElementById('featAssigner').value.trim(),
+            company: document.getElementById('featCompany').value.trim(), 
+            type: document.getElementById('featType').value.trim(),
+            desc: document.getElementById('featDesc').value.trim(), 
+            images: currentFeatImages // บันทึกเป็น Array แล้ว
         };
         if(!payload.title) { alert('กรุณาระบุชื่อผลงาน'); return; }
         if(editingFeatId) database.ref('homeFeatured/' + editingFeatId).set(payload).then(closeManageFeat);
         else database.ref('homeFeatured').push(payload).then(closeManageFeat);
     }
     
-    function deleteFeat(id) { if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); }
+    function deleteFeat(id) { 
+        if(confirm('ต้องการลบผลงานไฮไลต์นี้?')) database.ref('homeFeatured/' + id).remove(); 
+    }
 
 
     // ================== DASHBOARD ORIGINAL LOGIC ==================
