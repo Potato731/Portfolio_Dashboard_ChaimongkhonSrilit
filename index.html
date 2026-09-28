@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- ใช้งาน Chart.js สำหรับกราฟทั้งหมด (เปลี่ยนไปใช้ cdnjs เพื่อป้องกันการถูกบล็อก) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>window.Chart||document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"><\/script>');</script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
@@ -481,6 +482,49 @@
         animation: pulseText 1.5s infinite;
     }
     @keyframes pulseText { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+
+    /* ================= MODERN UI LAYER (v2) — ปรับหน้าตาให้อ่านง่ายขึ้น ไม่แตะฟังก์ชัน ================= */
+    html { font-size: 16px; }
+    body { line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    #ocean-bg::before { content:''; position:absolute; inset:0; z-index:5; background: linear-gradient(180deg, rgba(4,20,38,.35), rgba(4,20,38,.62)); }
+    .creature { opacity: .45; }
+    [data-theme="light"] #ocean-bg::before { background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.35)); }
+    .glass, .chart-box, .table-box, .kpi-card, .rate-box {
+        background: color-mix(in srgb, var(--panel-solid) 86%, transparent) !important;
+        border: 1px solid var(--line) !important; border-radius: 18px;
+        box-shadow: 0 8px 30px rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    }
+    .view-switcher { position: sticky; top: 8px; z-index: 200; padding: 10px 14px; margin-bottom: 20px; border-radius: 16px;
+        background: color-mix(in srgb, var(--panel-solid) 92%, transparent); border: 1px solid var(--line); backdrop-filter: blur(16px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .nav-tabs { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+    .nav-tabs::-webkit-scrollbar { display:none; }
+    .nav-tab { white-space:nowrap; padding: 10px 16px; border-radius: 12px; font-weight: 500; border: 1px solid transparent; transition: background .2s, color .2s; }
+    .nav-tab:hover { background: var(--panel); }
+    .nav-tab.active { background: var(--primary); color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+    .btn { min-height: 40px; border-radius: 12px; font-weight: 500; }
+    .btn:focus-visible, .nav-tab:focus-visible, .theme-btn:focus-visible, .icon-btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--primary-2); outline-offset: 2px; }
+    .search-input, .field input, .field select, .field textarea { border-radius: 12px; min-height: 42px; }
+    h1 { letter-spacing: -.01em; line-height: 1.25; }
+    .kpi-card { padding: 20px 22px; }
+    .kpi-title { font-size: .95rem; color: var(--muted); font-weight: 500; }
+    .kpi-value { font-size: 2.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .chart-box h3, .table-box h3 { font-size: 1.15rem; }
+    .chart-container { min-height: 300px; }
+    table { border-collapse: separate; border-spacing: 0; width: 100%; }
+    thead th { position: sticky; top: 0; z-index: 2; background: var(--panel-solid); font-size: .88rem; color: var(--muted); font-weight: 600; padding: 14px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+    tbody td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--text) 3%, transparent); }
+    tbody tr:hover td { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .chart-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; color: var(--muted); font-size: 1rem; z-index: 3; pointer-events:none; }
+    .chart-empty span { font-size: 2.4rem; opacity: .7; }
+    .toast-host { position: fixed; right: 18px; bottom: 18px; z-index: 20000; display:flex; flex-direction:column; gap:10px; max-width: min(420px, calc(100vw - 36px)); }
+    .toast { padding: 12px 16px; border-radius: 12px; color:#fff; font-size:.95rem; box-shadow: 0 10px 30px rgba(0,0,0,.35); animation: toastIn .25s ease-out; }
+    .toast.out { opacity:0; transform: translateY(8px); transition: .3s; }
+    .toast-ok { background:#0f9d58; } .toast-warn { background:#b45309; } .toast-err { background:#c62828; }
+    @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
+    @media (max-width: 768px) { body { padding: 1.5vh 3vw; } .kpi-value { font-size: 2.1rem; } .view-switcher { top: 4px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } .creature, .bubble { display:none; } }
 
 </style>
 </head>
@@ -1154,7 +1198,13 @@
 <script>
     // ================== DATA CONFIGURATION & LOCAL STORAGE ==================
     function safeGetLS(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-    function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); } }
+    function safeSetLS(key, value) { try { localStorage.setItem(key, value); } catch (e) { console.warn("เบราว์เซอร์บล็อกการบันทึก"); try { toast('พื้นที่เก็บข้อมูลในเบราว์เซอร์เต็มหรือถูกบล็อก (รูปภาพอาจใหญ่เกินไป)', 'warn'); } catch(_){} } }
+    function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function toast(msg, type) {
+        const host = document.getElementById('toastHost'); if (!host) return;
+        const el = document.createElement('div'); el.className = 'toast toast-' + (type || 'ok'); el.textContent = msg; host.appendChild(el);
+        setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, type === 'err' ? 8000 : 3200);
+    }
 
     const STORAGE_KEY = 'MasterPortfolio_DB_Ultimate23_Fast'; 
     const EVAL_KEY = 'MasterPortfolio_EVAL_DB_v10';
@@ -1804,7 +1854,7 @@
     function deleteProject(id) { 
         const p = rawData.find(x => String(x['ลำดับ']) === String(id)); 
         if (!p) return; 
-        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบโปรเจกต์ "${p['ชื่อชิ้นงาน / โปรเจกต์']}" ?`)) { 
+        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบโปรเจกต์ "${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}" ?`)) { 
             rawData = rawData.filter(x => String(x['ลำดับ']) !== String(id)); 
             saveData(); 
             refreshAll(false); 
@@ -1890,14 +1940,18 @@
         ['filterYear', 'scFilterYear', 'msFilterYear', 'kpiFilterYear'].forEach(id => { if(document.getElementById(id) && document.getElementById(id).options.length === 0) document.getElementById(id).innerHTML = yearHtml; });
     }
     
-    function saveData() { 
-        safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); 
-        if(database) database.ref('projects').set(rawData).catch(err => console.error("Firebase save error:", err)); 
+    let pendingWrites = 0; const cloudFailed = { projects: false, evaluations: false };
+    function cloudSet(path, data, label) {
+        if (!database) { toast('ยังไม่ได้เชื่อมต่อ Firebase — บันทึกไว้ในเครื่องนี้เท่านั้น', 'warn'); return; }
+        let clean = data; try { clean = JSON.parse(JSON.stringify(data)); } catch (e) {}
+        pendingWrites++;
+        const done = () => { pendingWrites = Math.max(0, pendingWrites - 1); };
+        database.ref(path).set(clean).then(() => { cloudFailed[path] = false; done(); toast('บันทึก' + label + 'ขึ้นคลาวด์แล้ว ✅', 'ok'); },
+            (err) => { cloudFailed[path] = true; done(); console.error('Firebase save error:', err);
+                toast('บันทึกขึ้นคลาวด์ไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') — ข้อมูลที่แก้ยังอยู่ในเครื่องนี้ ตรวจสอบ Firebase Rules หรือลดขนาดรูปภาพ', 'err'); });
     }
-    function saveEvalData() { 
-        safeSetLS(EVAL_KEY, JSON.stringify(evalData)); 
-        if(database) database.ref('evaluations').set(evalData).catch(err => console.error("Firebase save error:", err)); 
-    }
+    function saveData() { safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); cloudSet('projects', rawData, 'โปรเจกต์'); }
+    function saveEvalData() { safeSetLS(EVAL_KEY, JSON.stringify(evalData)); cloudSet('evaluations', evalData, 'ผลประเมิน'); }
 
     function exportBackup() {
         const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
@@ -2126,7 +2180,7 @@
             const tr = document.createElement('tr'); tr.className = 'row-in'; tr.style.animationDelay = (Math.min(idx, 20) * 0.03) + 's';
             let tagClass = p['ประเภทหลัก'] === "Video" ? 'tag-video' : (p['ประเภทหลัก'] === "Photography" ? 'tag-photo' : 'tag-artwork');
             const startDay = p.dateStart || p.dateOrder; const leadTime = (startDay && p.dateEnd) ? getDaysDiff(startDay, p.dateEnd) + ' วัน' : '-';
-            tr.innerHTML = `<td style="color:var(--muted);">#${p['ลำดับ']}</td><td><span class="${tagClass}">${p['ประเภทหลัก']}</span></td><td style="color:var(--text); font-weight:600;">${p['ชื่อชิ้นงาน / โปรเจกต์']}</td><td>👤 ${p['ผู้มอบหมาย']}</td><td>${formatDateThai(p.dateEnd)}</td><td style="color:var(--success); font-weight:700;">⏱️ ${leadTime}</td>`; tbody.appendChild(tr);
+            tr.innerHTML = `<td style="color:var(--muted);">#${p['ลำดับ']}</td><td><span class="${tagClass}">${p['ประเภทหลัก']}</span></td><td style="color:var(--text); font-weight:600;">${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</td><td>👤 ${esc(p['ผู้มอบหมาย'])}</td><td>${formatDateThai(p.dateEnd)}</td><td style="color:var(--success); font-weight:700;">⏱️ ${leadTime}</td>`; tbody.appendChild(tr);
         });
     }
 
@@ -2343,7 +2397,7 @@
                 satText = `<span style="color:var(--text); font-weight:700;">${relatedEval.avgScore}</span>`; ciText = `<span style="color:var(--text); font-weight:700;">${relatedEval.q2}</span>`;
                 if(relatedEval.decision === 'Approve') evalBadge = `<span class="status-done" style="font-size:0.75rem;">ผ่านฉลุย</span>`; else if(relatedEval.decision === 'Minor Edit') evalBadge = `<span class="status-prog" style="font-size:0.75rem;">ขอแก้ไข</span>`; else evalBadge = `<span class="status-danger" style="font-size:0.75rem;">รื้อใหม่</span>`;
             }
-            tr.innerHTML = `<td><div style="color:var(--primary-2); font-size:0.8rem;">#${p['ลำดับ']} · ${p['ประเภทหลัก']}</div><strong style="color:var(--text);">${p['ชื่อชิ้นงาน / โปรเจกต์']}</strong></td><td>👤 ${p['ผู้มอบหมาย']}</td><td style="text-align:center; color:${timeColor}; font-weight:600;">${timeText}</td><td style="text-align:center;">${satText}</td><td style="text-align:center;">${ciText}</td><td>${evalBadge}</td>`;
+            tr.innerHTML = `<td><div style="color:var(--primary-2); font-size:0.8rem;">#${p['ลำดับ']} · ${p['ประเภทหลัก']}</div><strong style="color:var(--text);">${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</strong></td><td>👤 ${esc(p['ผู้มอบหมาย'])}</td><td style="text-align:center; color:${timeColor}; font-weight:600;">${timeText}</td><td style="text-align:center;">${satText}</td><td style="text-align:center;">${ciText}</td><td>${evalBadge}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -2366,7 +2420,7 @@
         let currentMonth = new Date(minTime); currentMonth.setDate(1);
         while(currentMonth.getTime() <= maxTime) {
             let leftPct = ((currentMonth.getTime() - minTime) / totalDuration) * 100;
-            if(leftPct >= 0 && leftPct <= 100) { let mLabel = currentMonth.toLocaleDateString('th-TH', {month:'short', year:'2-digit'}); headerHtml += `<div style="position:absolute; left:${leftPct}%; transform:translateX(-50%); border-left:1px dashed var(--line); padding-left:4px; height:100vh; z-index:0;">${mLabel}</div>`; }
+            if(leftPct >= 0 && leftPct <= 100) { let mLabel = currentMonth.toLocaleDateString('th-TH', {month:'short', year:'2-digit'}); headerHtml += `<div style="position:absolute; left:${leftPct}%; transform:translateX(-50%); border-left:1px dashed var(--line); padding-left:4px; height:100%; z-index:0;">${mLabel}</div>`; }
             currentMonth.setMonth(currentMonth.getMonth() + 1);
         }
         headerHtml += `</div></div>`;
@@ -2374,7 +2428,7 @@
         validProjects.sort((a,b) => a.sTime - b.sTime).forEach(p => {
             let leftPct = ((p.sTime - minTime) / totalDuration) * 100; let widthPct = ((p.eTime - p.sTime) / totalDuration) * 100;
             let colorClass = 'gb-artwork'; let icon = '🎨'; if(p['ประเภทหลัก'] === 'Video') { colorClass = 'gb-video'; icon = '🎬'; } else if(p['ประเภทหลัก'] === 'Photography') { colorClass = 'gb-photo'; icon = '📸'; }
-            rowsHtml += `<div class="gantt-row"><div class="gantt-label" title="${p['ชื่อชิ้นงาน / โปรเจกต์']}">${icon} ${p['ชื่อชิ้นงาน / โปรเจกต์']}</div><div class="gantt-track"><div class="gantt-bar ${colorClass}" style="left:${leftPct}%; width:${widthPct}%;" title="${formatDateThai(p.dateStart)} - ${formatDateThai(p.dateEnd)}">${p['ชื่อชิ้นงาน / โปรเจกต์']}</div></div></div>`;
+            rowsHtml += `<div class="gantt-row"><div class="gantt-label" title="${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}">${icon} ${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</div><div class="gantt-track"><div class="gantt-bar ${colorClass}" style="left:${leftPct}%; width:${widthPct}%;" title="${formatDateThai(p.dateStart)} - ${formatDateThai(p.dateEnd)}">${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</div></div></div>`;
         });
         container.innerHTML = headerHtml + rowsHtml;
     }
@@ -2392,11 +2446,11 @@
             let typeHtml = p['ประเภทหลัก'] === "Video" ? `<span class="tag-video">🎬 Video</span>` : (p['ประเภทหลัก'] === "Photography" ? `<span class="tag-photo">📸 Photography</span>` : `<span class="tag-artwork">🎨 ArtWork</span>`);
             let dateStr = `<span style="font-size:0.85rem; color:var(--muted);">เริ่ม: ${formatDateThai(p.dateStart)}<br>เสร็จ: ${formatDateThai(p.dateEnd)}</span>`;
             
-            let campHtml = p['campaign'] ? `<br><span class="tag-campaign">🏷️ ${p['campaign']}</span>` : '';
+            let campHtml = p['campaign'] ? `<br><span class="tag-campaign">🏷️ ${esc(p['campaign'])}</span>` : '';
             let toolsHtml = (p['tools'] || '').split(',').map(t => t.trim() ? `<span class="tool-badge">${t}</span>` : '').join('');
-            let subCatHtml = `${p['ประเภทย่อย']}<br>${toolsHtml}`;
+            let subCatHtml = `${esc(p['ประเภทย่อย'])}<br>${toolsHtml}`;
 
-            tr.innerHTML = `<td>${p['ลำดับ']}</td><td>${typeHtml}</td><td>${subCatHtml}</td><td style="color:var(--text);"><strong>${p['ชื่อชิ้นงาน / โปรเจกต์']}</strong>${campHtml}</td><td style="color:var(--primary-2); font-weight:500;">👤 ${p['ผู้มอบหมาย']}</td><td>${dateStr}</td><td style="font-size:0.94rem; color:var(--muted);">${p['หมายเหตุ'] || '-'}</td><td>${statusHtml}</td><td class="admin-col"><div class="row-actions admin-inline"><button class="icon-btn" title="แก้ไข" onclick="openEditModal('${p['ลำดับ']}')">✎</button><button class="icon-btn del" title="ลบ" onclick="deleteProject('${p['ลำดับ']}')">🗑</button></div></td>`;
+            tr.innerHTML = `<td>${p['ลำดับ']}</td><td>${typeHtml}</td><td>${subCatHtml}</td><td style="color:var(--text);"><strong>${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</strong>${campHtml}</td><td style="color:var(--primary-2); font-weight:500;">👤 ${esc(p['ผู้มอบหมาย'])}</td><td>${dateStr}</td><td style="font-size:0.94rem; color:var(--muted);">${esc(p['หมายเหตุ'] || '-')}</td><td>${statusHtml}</td><td class="admin-col"><div class="row-actions admin-inline"><button class="icon-btn" title="แก้ไข" onclick="openEditModal('${p['ลำดับ']}')">✎</button><button class="icon-btn del" title="ลบ" onclick="deleteProject('${p['ลำดับ']}')">🗑</button></div></td>`;
             tbody.appendChild(tr);
         });
     }
@@ -2492,9 +2546,9 @@
             const card = document.createElement('div'); card.className = 'portfolio-card reveal'; card.style.animationDelay = (Math.min(idx, 15) * 0.04) + 's'; card.onclick = () => openLightbox(p['ลำดับ']);
             let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
             const links = [...(p.imageLinks || []), ...(p.videoLinks || [])];
-            let mediaHtml = (links.length > 0 && links[0].trim() !== '') ? getMediaHtml(links[0], p['ชื่อชิ้นงาน / โปรเจกต์']) : `<div class="portfolio-media-placeholder">✨<br><span style="font-size:0.9rem">#${p['ลำดับ']} · ${p['ประเภทย่อย']}</span></div>`;
+            let mediaHtml = (links.length > 0 && links[0].trim() !== '') ? getMediaHtml(links[0], p['ชื่อชิ้นงาน / โปรเจกต์']) : `<div class="portfolio-media-placeholder">✨<br><span style="font-size:0.9rem">#${p['ลำดับ']} · ${esc(p['ประเภทย่อย'])}</span></div>`;
             let countBadge = links.length > 1 ? `<span style="position:absolute; bottom:14px; right:14px; z-index:2; background:rgba(0,0,0,0.8); padding:4px 10px; border-radius:8px; font-size:0.75rem; color:#fff; font-weight:600;">สื่อ ${links.length} รายการ</span>` : '';
-            card.innerHTML = `<div class="portfolio-media"><span class="portfolio-badge ${tagClass}">${p['ประเภทหลัก']}</span>${mediaHtml}${countBadge}</div><div class="portfolio-content"><div><div style="font-size:0.85rem; color:var(--primary-2); margin-bottom:6px; font-weight:600;">${p['ประเภทย่อย']}</div><h3 class="portfolio-title">${p['ชื่อชิ้นงาน / โปรเจกต์']}</h3></div><div class="portfolio-meta"><span>👤 ${p['ผู้มอบหมาย']}</span><span>#${p['ลำดับ']}</span></div></div>`;
+            card.innerHTML = `<div class="portfolio-media"><span class="portfolio-badge ${tagClass}">${p['ประเภทหลัก']}</span>${mediaHtml}${countBadge}</div><div class="portfolio-content"><div><div style="font-size:0.85rem; color:var(--primary-2); margin-bottom:6px; font-weight:600;">${esc(p['ประเภทย่อย'])}</div><h3 class="portfolio-title">${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</h3></div><div class="portfolio-meta"><span>👤 ${esc(p['ผู้มอบหมาย'])}</span><span>#${p['ลำดับ']}</span></div></div>`;
             grid.appendChild(card);
         });
     }
@@ -2506,7 +2560,7 @@
         let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
         document.getElementById('lbCategory').innerHTML = `<span class="${tagClass}" style="padding:4px 10px; margin-right:8px; border-radius:8px;">${p['ประเภทหลัก']}</span>`;
         document.getElementById('lbTitle').textContent = p['ชื่อชิ้นงาน / โปรเจกต์']; 
-        document.getElementById('lbCampaign').innerHTML = p['campaign'] ? `<span class="tag-campaign">🏷️ ${p['campaign']}</span>` : '';
+        document.getElementById('lbCampaign').innerHTML = p['campaign'] ? `<span class="tag-campaign">🏷️ ${esc(p['campaign'])}</span>` : '';
         document.getElementById('lbTools').innerHTML = (p['tools'] || '-').split(',').map(t => t.trim() ? `<span class="tool-badge">${t}</span>` : '-').join('');
         document.getElementById('lbAiPrompt').textContent = p['aiPrompt'] || '-';
         document.getElementById('lbRevision').textContent = p['revision'] || 0;
@@ -2576,7 +2630,7 @@
             radarSums.q1 += item.q1; radarSums.q2 += item.q2; radarSums.q3 += item.q3; radarSums.q4 += item.q4; radarSums.q5 += item.q5;
             let badgeClass = item.decision === 'Minor Edit' ? 'status-prog' : (item.decision === 'Reject' ? 'status-danger' : 'status-done');
             let icon = item.decision === 'Minor Edit' ? '🟡' : (item.decision === 'Reject' ? '🔴' : '🟢');
-            tbody += `<tr><td style="color:var(--primary-2); font-weight:500;">${item.owner}</td><td style="color:var(--text);"><b>${item.project}</b><br><span style="font-size:0.8rem; color:var(--muted);">${item.mediaType}</span></td><td style="color:var(--text); font-weight:bold; font-size:1.1rem;">${score.toFixed(1)}</td><td><span class="${badgeClass}">${icon} ${item.decision}</span></td><td style="color:var(--muted); font-size:0.9rem;">${item.comment || '-'}</td></tr>`;
+            tbody += `<tr><td style="color:var(--primary-2); font-weight:500;">${esc(item.owner)}</td><td style="color:var(--text);"><b>${esc(item.project)}</b><br><span style="font-size:0.8rem; color:var(--muted);">${item.mediaType}</span></td><td style="color:var(--text); font-weight:bold; font-size:1.1rem;">${score.toFixed(1)}</td><td><span class="${badgeClass}">${icon} ${item.decision}</span></td><td style="color:var(--muted); font-size:0.9rem;">${esc(item.comment || '-')}</td></tr>`;
         });
         
         grid.innerHTML = `<thead><tr style="background: var(--panel);"><th width="15%">ผู้ตรวจรับ</th><th width="20%">ชื่องาน</th><th width="10%">เฉลี่ย</th><th width="15%">สถานะ</th><th width="40%">คอมเมนต์</th></tr></thead><tbody>${tbody}</tbody>`;
@@ -2592,6 +2646,24 @@
     }
     window.clearEvaluations = clearEvaluations;
 
+    // ================== CHART HELPERS (resize เมื่อสลับหน้า + empty state) ==================
+    function allCharts() { return [typeChart, statusChart, monthlyChart, decisionChart, radarChart, monthFocusChart, kpiRadarChart, kpiBarChart]; }
+    function resizeCharts() { allCharts().forEach(c => { if (c) { try { c.resize(); c.update('none'); } catch (e) {} } }); }
+    function syncChartEmptyStates() {
+        allCharts().forEach(c => {
+            if (!c || !c.canvas || !c.canvas.parentElement) return;
+            const box = c.canvas.parentElement;
+            const empty = c.data.datasets.every(ds => ds.data.every(v => !v));
+            let el = box.querySelector(':scope > .chart-empty');
+            if (empty && !el) { el = document.createElement('div'); el.className = 'chart-empty'; el.innerHTML = '<span>📊</span>ยังไม่มีข้อมูลสำหรับแสดงกราฟ'; box.appendChild(el); }
+            else if (!empty && el) el.remove();
+        });
+    }
+    const _switchViewCore = window.switchView;
+    window.switchView = function (v) { _switchViewCore(v); requestAnimationFrame(() => requestAnimationFrame(() => { resizeCharts(); syncChartEmptyStates(); })); setTimeout(() => { resizeCharts(); syncChartEmptyStates(); }, 520); };
+    ['renderMonthlySummary', 'renderPersonalKPI', 'renderFeedback'].forEach(n => { const f = window[n] || eval(n); window[n] = function () { const r = f.apply(this, arguments); syncChartEmptyStates(); return r; }; });
+    window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(resizeCharts, 150); });
+
     // ================= WINDOW ONLOAD (Final Fail-Safe Version) =================
     window.onload = () => {
         // ดักค่าว่างป้องกันกราฟพัง
@@ -2603,13 +2675,14 @@
 
         // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
-        refreshAll(true);
+        refreshAll(true); syncChartEmptyStates();
+        if (typeof Chart === 'undefined') toast('โหลดไลบรารีกราฟไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้า', 'err');
 
         // ถ้าเชื่อมต่อกับ Firebase ได้ ให้โหลดข้อมูลใหม่มาทับแบบ Realtime
         if (database) {
             database.ref('projects').on('value', (snapshot) => {
                 const pData = snapshot.val();
-                if (pData) {
+                if (pData && pendingWrites === 0 && !cloudFailed.projects) {
                     rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
                     safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
                     refreshAll(false);
@@ -2618,7 +2691,7 @@
 
             database.ref('evaluations').on('value', (snapshot) => {
                 const eData = snapshot.val();
-                if (eData) {
+                if (eData && pendingWrites === 0 && !cloudFailed.evaluations) {
                     evalData = Array.isArray(eData) ? eData.filter(Boolean) : Object.values(eData).filter(Boolean);
                     safeSetLS(EVAL_KEY, JSON.stringify(evalData));
                     refreshAll(false);
@@ -2631,5 +2704,6 @@
     };
 
 </script>
+<div id="toastHost" class="toast-host" aria-live="polite"></div>
 </body>
 </html>
