@@ -522,6 +522,8 @@
     .toast { padding: 12px 16px; border-radius: 12px; color:#fff; font-size:.95rem; box-shadow: 0 10px 30px rgba(0,0,0,.35); animation: toastIn .25s ease-out; }
     .toast.out { opacity:0; transform: translateY(8px); transition: .3s; }
     .toast-ok { background:#0f9d58; } .toast-warn { background:#b45309; } .toast-err { background:#c62828; }
+    .req-star { color: var(--danger); font-weight:700; }
+    .field input.field-invalid, .field select.field-invalid, .field textarea.field-invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent); }
     @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
     @media (max-width: 768px) { body { padding: 1.5vh 3vw; } .kpi-value { font-size: 2.1rem; } .view-switcher { top: 4px; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } .creature, .bubble { display:none; } }
@@ -1160,18 +1162,18 @@
             </div>
             
             <div class="field-row">
-                <div class="field"><label>หมวดหมู่ย่อย</label><input type="text" id="fSub"></div>
+                <div class="field"><label>หมวดหมู่ย่อย <span class="req-star">*</span></label><input type="text" id="fSub"></div>
                 <div class="field"><label>แคมเปญ / งานกิจกรรม (Tags)</label><input type="text" id="fCampaign" placeholder="เช่น Outing 2026"></div>
             </div>
             
-            <div class="field"><label>ชื่อชิ้นงาน / โปรเจกต์</label><input type="text" id="fName"></div>
+            <div class="field"><label>ชื่อชิ้นงาน / โปรเจกต์ <span class="req-star">*</span></label><input type="text" id="fName"></div>
             
             <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
                 <div class="field"><label>📅 วันที่รับบรีฟ</label><input type="date" id="fDateOrder"></div><div class="field"><label>⏳ วันเริ่มทำ</label><input type="date" id="fDateStart"></div><div class="field"><label>✅ วันที่เสร็จ</label><input type="date" id="fDateEnd"></div>
             </div>
             
             <div class="field-row">
-                <div class="field"><label>ผู้มอบหมายงาน</label><input type="text" id="fOwner"></div>
+                <div class="field"><label>ผู้มอบหมายงาน <span class="req-star">*</span></label><input type="text" id="fOwner"></div>
                 <div class="field"><label>ซอฟต์แวร์ที่ใช้ (Tools)</label><input type="text" id="fTools" placeholder="เช่น Illustrator, CapCut"></div>
             </div>
 
@@ -1818,6 +1820,7 @@
         renderEditThumbnails(); 
         
         const pe = document.getElementById('projectError'); if(pe) pe.textContent = ''; 
+        ['fSub','fName','fOwner'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('field-invalid'); });
         const po = document.getElementById('projectOverlay'); if(po) po.classList.add('open');
     }
 
@@ -1848,6 +1851,7 @@
         if(document.getElementById('uploadPreviewInfo')) document.getElementById('uploadPreviewInfo').textContent = '';
         renderEditThumbnails(); 
         document.getElementById('projectError').textContent = ''; 
+        ['fSub','fName','fOwner'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('field-invalid'); });
         document.getElementById('projectOverlay').classList.add('open');
     }
 
@@ -1866,13 +1870,26 @@
     }
     
     function saveProjectData() {
+        ['fSub','fName','fOwner'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('field-invalid'); });
+
         const name = document.getElementById('fName').value.trim(); 
         const owner = document.getElementById('fOwner').value.trim(); 
         const sub = document.getElementById('fSub').value.trim();
         if (!name || !owner || !sub) { 
-            document.getElementById('projectError').textContent = '⚠️ กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบถ้วน'; 
+            const missing = [];
+            if (!sub) missing.push('fSub');
+            if (!name) missing.push('fName');
+            if (!owner) missing.push('fOwner');
+            missing.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('field-invalid'); });
+            const msg = '⚠️ กรุณากรอกหมวดหมู่ย่อย, ชื่อชิ้นงาน และผู้มอบหมายให้ครบถ้วน (ช่องที่มีกรอบสีแดง)';
+            const pe = document.getElementById('projectError'); if (pe) pe.textContent = msg;
+            toast(msg, 'err');
+            const firstBad = document.getElementById(missing[0]);
+            if (firstBad) { if (typeof firstBad.scrollIntoView === 'function') firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' }); firstBad.focus(); }
             return; 
         }
+
+        try {
 
         const record = {
             'ประเภทหลัก': document.getElementById('fMain').value, 
@@ -1907,6 +1924,13 @@
         saveData(); 
         closeProjectModal(); 
         refreshAll(false);
+        toast(editingId === null ? 'เพิ่มโปรเจกต์เรียบร้อยแล้ว ✅' : 'บันทึกการแก้ไขเรียบร้อยแล้ว ✅', 'ok');
+
+        } catch (err) {
+            console.error('saveProjectData error:', err);
+            const pe = document.getElementById('projectError'); if (pe) pe.textContent = '❌ เกิดข้อผิดพลาดขณะบันทึก: ' + (err && err.message ? err.message : err);
+            toast('บันทึกโปรเจกต์ไม่สำเร็จ: ' + (err && err.message ? err.message : err), 'err');
+        }
     }
     
     // ผูกฟังก์ชันเข้ากับ Window ให้ HTML มองเห็นและเรียกใช้งานได้
@@ -2671,7 +2695,7 @@
         if (!Array.isArray(evalData)) evalData = Object.values(evalData || {}).filter(Boolean);
 
         // สร้างกราฟทั้งหมดก่อน (ต้องมาก่อน setTheme/refreshAll ไม่งั้นกราฟจะยังเป็น null)
-        initCharts();
+        try { initCharts(); } catch (e) { console.error('initCharts error:', e); toast('สร้างกราฟไม่สำเร็จ บางส่วนของหน้ารายงานอาจแสดงไม่ครบ', 'err'); }
 
         // โหลดข้อมูลเก่าที่เคยเซฟในเครื่องมาโชว์ก่อนทันที
         setTheme(savedTheme); 
