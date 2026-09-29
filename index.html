@@ -1965,10 +1965,22 @@
         ['filterYear', 'scFilterYear', 'msFilterYear', 'kpiFilterYear'].forEach(id => { if(document.getElementById(id) && document.getElementById(id).options.length === 0) document.getElementById(id).innerHTML = yearHtml; });
     }
     
+    // Firebase Realtime Database ห้ามใช้ ".", "#", "$", "/", "[", "]" เป็นชื่อคีย์ของอ็อบเจ็กต์
+    // ชื่อฟิลด์ในแอปนี้บางตัว (เช่น 'ชื่อชิ้นงาน / โปรเจกต์') มี "/" อยู่ จึงต้องเข้ารหัส/ถอดรหัสเฉพาะตอนส่งขึ้น-ดึงจาก Firebase เท่านั้น
+    // ข้อมูลในเครื่อง (localStorage) และตัวแปรในหน่วยความจำยังใช้ชื่อฟิลด์เดิมทุกที่ ไม่ต้องแก้โค้ดจุดอื่น
+    function fbEncodeKey(k) { return String(k).replace(/[.#$\/\[\]~]/g, ch => '~' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')); }
+    function fbDecodeKey(k) { return String(k).replace(/~([0-9A-F]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16))); }
+    function fbEncodeRecord(obj) { if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj; const out = {}; Object.keys(obj).forEach(k => { out[fbEncodeKey(k)] = obj[k]; }); return out; }
+    function fbDecodeRecord(obj) { if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj; const out = {}; Object.keys(obj).forEach(k => { out[fbDecodeKey(k)] = obj[k]; }); return out; }
+
     let pendingWrites = 0; const cloudFailed = { projects: false, evaluations: false };
     function cloudSet(path, data, label) {
         if (!database) { toast('ยังไม่ได้เชื่อมต่อ Firebase — บันทึกไว้ในเครื่องนี้เท่านั้น', 'warn'); return; }
-        let clean = data; try { clean = JSON.parse(JSON.stringify(data)); } catch (e) {}
+        let clean = data;
+        try {
+            clean = JSON.parse(JSON.stringify(data));
+            if (Array.isArray(clean)) clean = clean.map(fbEncodeRecord);
+        } catch (e) {}
         pendingWrites++;
         const done = () => { pendingWrites = Math.max(0, pendingWrites - 1); };
         database.ref(path).set(clean).then(() => { cloudFailed[path] = false; done(); toast('บันทึก' + label + 'ขึ้นคลาวด์แล้ว ✅', 'ok'); },
@@ -2708,7 +2720,7 @@
             database.ref('projects').on('value', (snapshot) => {
                 const pData = snapshot.val();
                 if (pData && pendingWrites === 0 && !cloudFailed.projects) {
-                    rawData = Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean);
+                    rawData = (Array.isArray(pData) ? pData.filter(Boolean) : Object.values(pData).filter(Boolean)).map(fbDecodeRecord);
                     safeSetLS(STORAGE_KEY, JSON.stringify(rawData));
                     refreshAll(false);
                 }
