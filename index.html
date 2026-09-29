@@ -523,6 +523,7 @@
     .toast.out { opacity:0; transform: translateY(8px); transition: .3s; }
     .toast-ok { background:#0f9d58; } .toast-warn { background:#b45309; } .toast-err { background:#c62828; }
     .req-star { color: var(--danger); font-weight:700; }
+    .error-msg:not(:empty) { background: color-mix(in srgb, var(--danger) 16%, transparent); border: 1px solid var(--danger); padding: 10px 14px; border-radius: 10px; margin-top: 4px; }
     .field input.field-invalid, .field select.field-invalid, .field textarea.field-invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent); }
     @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
     @media (max-width: 768px) { body { padding: 1.5vh 3vw; } .kpi-value { font-size: 2.1rem; } .view-switcher { top: 4px; } }
