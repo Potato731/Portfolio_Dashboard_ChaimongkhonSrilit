@@ -550,7 +550,7 @@
     .hero-eq span { width: 10px; height: 40px; border-radius: 6px; background: var(--primary-2); animation: heroEq 1s ease-in-out infinite; transform-origin: bottom; }
     .hero-eq span:nth-child(2n) { animation-duration: 0.7s; } .hero-eq span:nth-child(3n) { animation-duration: 1.3s; } .hero-eq span:nth-child(4n) { animation-delay: .2s; }
     @keyframes heroEq { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(2.2); } }
-    .hero-mixer { position: absolute; top: 18px; right: 18px; z-index: 4; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .hero-mixer { position: fixed; left: 18px; bottom: 18px; z-index: 500; display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 8px; }
     .hero-mixer-toggle { padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.55); color: #fff; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); }
     .hero-mixer-toggle:hover { background: var(--primary-2); color: #000; }
     .hero-mixer-panel { width: min(320px, 80vw); padding: 12px; border-radius: 16px; background: rgba(5,8,15,0.82); border: 1px solid var(--line); backdrop-filter: blur(12px); color: #fff; }
@@ -565,7 +565,14 @@
     .hero-aud-top { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
     .hero-aud-opts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
     .hero-aud-opts label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    @media (max-width: 700px) { .hero-mixer { top: 10px; right: 10px; } }
+    @media (max-width: 700px) { .hero-mixer { left: 10px; bottom: 10px; } }
+
+    /* ===== HERO: ข้อความวิ่งซ้าย → ขวา ===== */
+    .hero-marquee { overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
+    .hero-marquee-track { display: inline-flex; width: max-content; animation: heroMarq 20s linear infinite; will-change: transform; }
+    .hero-marquee-track span { white-space: pre; font-size: clamp(1.4rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.25; }
+    @keyframes heroMarq { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+    @media (prefers-reduced-motion: reduce) { .hero-marquee-track { animation: none; } .hero-marquee-track span:nth-child(2) { display: none; } }
 </style>
 </head>
 <body>
@@ -625,10 +632,6 @@
                 <div class="hero-video-overlay"></div>
                 <div id="heroVideoCaption" class="hero-video-caption"></div>
                 <button id="heroSoundBtn" class="hero-sound-btn" onclick="toggleHeroSound()" style="display:none;">🔇 เปิดเสียง</button>
-                <div id="heroMixer" class="hero-mixer" style="display:none;">
-                    <button id="heroMixerToggle" class="hero-mixer-toggle" onclick="toggleHeroMixer()">🎚️ เสียง</button>
-                    <div id="heroMixerPanel" class="hero-mixer-panel" style="display:none;"></div>
-                </div>
             </div>
 
             <!-- 1. Header Card -->
@@ -1191,11 +1194,19 @@
                 </div>
                 <div class="field"><label>ข้อความบนวิดีโอ (ไม่ใส่ก็ได้)</label><input type="text" id="heroTitle" placeholder="เช่น Showreel 2026"></div>
             </div>
-            <div style="margin:6px 0 10px; font-weight:700; color:var(--primary-2);">🎵 เสียงเสริม (เล่นซ้อนกันได้ สูงสุด 6 รายการ)</div>
+            <div class="field-row">
+                <div class="field"><label>การแสดงข้อความ</label>
+                    <select id="heroScroll"><option value="scroll">➡️ วิ่งจากซ้ายไปขวา วนต่อเนื่อง</option><option value="static">ข้อความนิ่ง</option></select>
+                </div>
+                <div class="field"><label>ความเร็วข้อความ</label>
+                    <select id="heroSpeed"><option value="slow">ช้า</option><option value="normal" selected>ปกติ</option><option value="fast">เร็ว</option></select>
+                </div>
+            </div>
+            <div style="margin:6px 0 10px; font-weight:700; color:var(--primary-2);">🎵 เพลงพื้นหลัง / เสียงเสริม (เล่นต่อเนื่องทุกหน้า ซ้อนกันได้ สูงสุด 6 รายการ)</div>
             <div id="heroAudioList"></div>
             <button type="button" class="btn btn-ghost" onclick="addHeroAudioRow()" style="margin-bottom:14px;">＋ เพิ่มเสียง</button>
             <div style="font-size:0.85rem; color:var(--muted); line-height:1.6;">
-                • ผู้ชมกดปุ่ม 🔊/🔇 ที่วิดีโอ และเปิดแผง 🎚️ เสียง เพื่อเล่น/หยุด/ปรับระดับเสียงแต่ละแทร็กเองได้เสมอ<br>
+                • เพลงที่เพิ่มไว้จะเล่นต่อเนื่องเป็นเพลงพื้นหลัง แม้ผู้ชมเปลี่ยนไปหน้าอื่น ผู้ชมกดปุ่ม 🎵 มุมซ้ายล่างเพื่อเล่น/หยุด/ปรับระดับเสียงได้เสมอ<br>
                 • เสียงเสริมที่ติ๊ก "เริ่มเล่นเอง" จะเริ่มเมื่อผู้ชมแตะหรือคลิกหน้าเว็บครั้งแรก (กฎของเบราว์เซอร์ เล่นเสียงทันทีไม่ได้)<br>
                 • ลิงก์ Drive: ระบบลองเล่นแบบปกติก่อน ถ้าไม่ได้จะสลับเป็นตัวเล่นของ Drive ซึ่งควบคุมเสียงไม่ได้ ไฟล์เสียงเสริมจาก Drive อาจเล่นไม่ได้ ควรใช้ลิงก์ไฟล์ตรงถ้าเป็นไปได้
             </div>
@@ -1656,6 +1667,17 @@
             loop: x.loop !== false, auto: x.auto !== false
         }));
     }
+    function heroCaptionHtml(cfg) {
+        if (!cfg || !cfg.title) return '';
+        const raw = String(cfg.title); const t = esc(raw);
+        if (cfg.scroll === false) return '<div class="hero-eyebrow">SHOWREEL</div><div class="hero-title">' + t + '</div>';
+        const mult = cfg.speed === 'fast' ? 0.55 : (cfg.speed === 'slow' ? 1.7 : 1);
+        const unit = t + '   ✦   ';
+        const n = Math.max(2, Math.ceil(70 / (raw.length + 7)));
+        const half = unit.repeat(n);
+        const dur = Math.max(10, Math.round((raw.length + 7) * n * 0.32 * mult));
+        return '<div class="hero-eyebrow">SHOWREEL</div><div class="hero-marquee"><div class="hero-marquee-track" style="animation-duration:' + dur + 's;"><span>' + half + '</span><span>' + half + '</span></div></div>';
+    }
     function heroAudioSrc(url) { const id = driveId(url); return id ? 'https://drive.google.com/uc?export=download&id=' + id : url; }
     function loadHeroVideo() {
         if (!database) return;
@@ -1713,7 +1735,6 @@
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
     function heroAutoStartTracks() {
-        if (!heroHomeVisible()) return;
         heroTracks.forEach(t => { if (t.cfg.auto && t.el.paused && !t.userPaused && !t.failed) heroPlayTrack(t); });
     }
     function heroBindGesture() {
@@ -1765,7 +1786,7 @@
         if (!heroCfg || !heroCfg.url) { wrap.style.display = 'none'; heroRenderMixer(); return; }
         wrap.style.display = 'block';
         const url = String(heroCfg.url).trim(); const wantSound = heroCfg.muted === false;
-        if (cap) cap.innerHTML = heroCfg.title ? '<div class="hero-eyebrow">SHOWREEL</div><div class="hero-title">' + esc(heroCfg.title) + '</div>' : '';
+        if (cap) cap.innerHTML = heroCaptionHtml(heroCfg);
         const yt = heroYouTubeId(url); const did = driveId(url); let mainAudio = '';
         if (yt) { heroIsYT = yt; heroShowIframe(stage, heroYouTubeSrc(yt, !wantSound), true, !wantSound); }
         else if (did) {
@@ -1795,10 +1816,7 @@
             if (show) { if (f.dataset.src && f.getAttribute('src') === 'about:blank') f.src = f.dataset.src; }
             else { if (!f.dataset.src) f.dataset.src = f.src; f.src = 'about:blank'; }
         }
-        heroTracks.forEach(t => {
-            if (show) { if (t.resume) { t.resume = false; if (!t.userPaused) heroPlayTrack(t); } }
-            else if (!t.el.paused) { t.resume = true; t.el.pause(); }
-        });
+        // เพลงพื้นหลัง (heroTracks) เล่นต่อเนื่องทุกหน้า จึงไม่หยุดตามการสลับหน้า
     }
 
     // ---------- หน้าตั้งค่า (Admin) ----------
@@ -1821,6 +1839,8 @@
         document.getElementById('heroUrl').value = heroCfg && heroCfg.url ? heroCfg.url : '';
         document.getElementById('heroMuted').value = heroCfg && heroCfg.muted === false ? 'sound' : 'muted';
         document.getElementById('heroTitle').value = heroCfg && heroCfg.title ? heroCfg.title : '';
+        document.getElementById('heroScroll').value = heroCfg && heroCfg.scroll === false ? 'static' : 'scroll';
+        document.getElementById('heroSpeed').value = heroCfg && heroCfg.speed ? heroCfg.speed : 'normal';
         const list = document.getElementById('heroAudioList'); list.innerHTML = '';
         heroNormAudios(heroCfg).forEach(a => addHeroAudioRow(a));
         document.getElementById('heroVideoOverlay').classList.add('open');
@@ -1839,7 +1859,7 @@
                 loop: row.querySelector('.ha-loop').checked, auto: row.querySelector('.ha-auto').checked });
         });
         if (bad) { alert('ลิงก์เสียงเสริมต้องขึ้นต้นด้วย http:// หรือ https:// (หรือเว้นว่างเพื่อไม่ใช้แถวนั้น)'); return; }
-        const payload = { url: url, muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(), audios: audios, updatedAt: Date.now() };
+        const payload = { url: url, muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(), scroll: document.getElementById('heroScroll').value !== 'static', speed: document.getElementById('heroSpeed').value, audios: audios, updatedAt: Date.now() };
         database.ref('homeHero').set(payload).then(() => {
             heroCfg = payload; renderHeroVideo(); closeHeroVideoModal(); toast('บันทึกวิดีโอหน้าแรกแล้ว ✅', 'ok');
         }).catch(err => toast('บันทึกไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') ตรวจสอบ Firebase Rules', 'err'));
@@ -3114,6 +3134,10 @@
     };
 
 </script>
+<div id="heroMixer" class="hero-mixer" style="display:none;">
+    <button id="heroMixerToggle" class="hero-mixer-toggle" onclick="toggleHeroMixer()">🎵 เพลงพื้นหลัง</button>
+    <div id="heroMixerPanel" class="hero-mixer-panel" style="display:none;"></div>
+</div>
 <div id="toastHost" class="toast-host" aria-live="polite"></div>
 </body>
 </html>
