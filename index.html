@@ -1192,7 +1192,7 @@
                 <div id="uploadPreviewInfo" style="font-size:0.9rem; color:var(--success); margin-top:10px;"></div>
             </div>
             <div class="field"><label>🔗 เพิ่มลิงก์รูปภาพ / Google Drive (คั่นด้วยบรรทัดใหม่)</label><textarea id="fImageLinks" rows="2"></textarea></div>
-            <div class="field"><label>🎬 เพิ่มลิงก์วิดีโอ / เสียงตัวอย่าง (Google Drive, YouTube, MP4, MP3 คั่นด้วยบรรทัดใหม่)</label><textarea id="fVideoLinks" rows="2"></textarea></div>
+            <div class="field"><label>🎬 เพิ่มลิงก์วิดีโอ / เสียงตัวอย่าง (Google Drive, YouTube, MP4, MP3, PDF คั่นด้วยบรรทัดใหม่ · ท้ายลิงก์ Drive ที่เป็น PDF ใส่ #pdf เพื่อให้การ์ดขึ้นไอคอนเอกสาร)</label><textarea id="fVideoLinks" rows="2"></textarea></div>
             <div class="error-msg" id="projectError"></div>
             <div class="modal-actions"><button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveProjectData()">บันทึกข้อมูล</button></div>
         </div>
@@ -1457,6 +1457,7 @@
                 document.body.classList.add('admin-on');
                 document.querySelectorAll('.admin-inline').forEach(el => el.style.display = 'inline-flex');
                 try { loadFeatured(); filterTable(); } catch(e){}
+                setTimeout(() => { try { checkBackupReminder(); } catch(e){} }, 800);
             });
         } else {
             if(errorEl) errorEl.textContent = '❌ DIVER ID หรือ SECURITY KEY ไม่ถูกต้อง';
@@ -1990,6 +1991,20 @@
     function saveData() { safeSetLS(STORAGE_KEY, JSON.stringify(rawData)); cloudSet('projects', rawData, 'โปรเจกต์'); }
     function saveEvalData() { safeSetLS(EVAL_KEY, JSON.stringify(evalData)); cloudSet('evaluations', evalData, 'ผลประเมิน'); }
 
+    // ---------- เตือน Backup ----------
+    const BACKUP_KEY = 'MasterPortfolio_LastBackupAt';
+    const BACKUP_REMIND_DAYS = 7;
+    function checkBackupReminder() {
+        try {
+            if (!isAdmin || !rawData || rawData.length === 0) return;
+            const last = Number(safeGetLS(BACKUP_KEY)) || 0;
+            if (!last) { toast('⚠️ เครื่องนี้ยังไม่เคย Backup ข้อมูล แนะนำกด 💾 Backup DB เก็บไว้', 'err'); return; }
+            const days = Math.floor((Date.now() - last) / 86400000);
+            if (days >= BACKUP_REMIND_DAYS) toast('⚠️ ไม่ได้ Backup มา ' + days + ' วันแล้ว แนะนำกด 💾 Backup DB', 'err');
+        } catch (e) { console.warn('backup reminder', e); }
+    }
+    window.checkBackupReminder = checkBackupReminder;
+
     function exportBackup() {
         const payload = { app: 'MasterPortfolio', exportedAt: new Date().toISOString(), projects: rawData, evaluations: evalData };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1999,6 +2014,7 @@
         a.href = url; a.download = `Portfolio_Backup_${stamp}.json`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+        safeSetLS(BACKUP_KEY, String(Date.now()));
     }
     window.exportBackup = exportBackup;
 
@@ -2566,6 +2582,7 @@
         if (id) {
             const preview = `https://drive.google.com/file/d/${id}/preview`;
             const iframe = `<iframe src="${preview}" title="${safeTitle}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%; height:100%; min-height:420px; border:0;"></iframe>`;
+            if (mode === 'card' && /#pdf$/i.test(link)) return `<div class="portfolio-media-placeholder">📄<br><span style="font-size:0.9rem">เอกสาร PDF จาก Google Drive</span></div>`;
             if (kind === 'video') {
                 if (mode === 'card') return `<img src="https://drive.google.com/thumbnail?id=${id}&sz=w640" alt="${safeTitle}" onerror="this.onerror=null; this.outerHTML='<div class=\\'portfolio-media-placeholder\\'>🎬<br><span style=\\'font-size:0.9rem\\'>วิดีโอ / เสียงจาก Google Drive</span></div>';">${playBadge}`;
                 return iframe;
@@ -2582,6 +2599,12 @@
         else if (link.includes('youtube.com/shorts/')) embedUrl = `https://www.youtube.com/embed/${link.split('shorts/')[1].split(/[?&]/)[0]}`;
         if (embedUrl) return `<iframe src="${embedUrl}" title="${safeTitle}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 
+        // ---------- PDF (ลิงก์ตรงที่ลงท้าย .pdf) ----------
+        if (/\.pdf(\?[^#]*)?(#.*)?$/i.test(link)) {
+            if (mode === 'card') return `<div class="portfolio-media-placeholder">📄<br><span style="font-size:0.9rem">เอกสาร PDF (คลิกเพื่อเปิดอ่าน)</span></div>`;
+            const safeLink = link.replace(/"/g, '&quot;');
+            return `<div style="width:100%; height:100%; min-height:460px; display:flex; flex-direction:column; background:#fff;"><iframe src="${safeLink}" title="${safeTitle}" style="flex:1; width:100%; min-height:420px; border:0;"></iframe><a href="${safeLink}" target="_blank" rel="noopener" style="padding:8px; text-align:center; font-size:0.85rem; background:#111; color:#fff; text-decoration:none;">📄 เปิดในแท็บใหม่ (ถ้าหน้าต่างด้านบนไม่แสดง)</a></div>`;
+        }
         // ---------- ไฟล์เสียงตรง ----------
         if (/\.(mp3|wav|m4a|aac|flac|oga)(\?.*)?$/i.test(link)) {
             if (mode === 'card') return `<div class="portfolio-media-placeholder">🎵<br><span style="font-size:0.9rem">ไฟล์เสียงตัวอย่าง (คลิกเพื่อฟัง)</span></div>`;
@@ -2623,6 +2646,7 @@
             let mediaHtml = (media.length > 0) ? getMediaHtml(media[0].url, p['ชื่อชิ้นงาน / โปรเจกต์'], media[0].kind, 'card') : `<div class="portfolio-media-placeholder">✨<br><span style="font-size:0.9rem">#${p['ลำดับ']} · ${esc(p['ประเภทย่อย'])}</span></div>`;
             let countBadge = links.length > 1 ? `<span style="position:absolute; bottom:14px; right:14px; z-index:2; background:rgba(0,0,0,0.8); padding:4px 10px; border-radius:8px; font-size:0.75rem; color:#fff; font-weight:600;">สื่อ ${links.length} รายการ</span>` : '';
             card.innerHTML = `<div class="portfolio-media"><span class="portfolio-badge ${tagClass}">${p['ประเภทหลัก']}</span>${mediaHtml}${countBadge}</div><div class="portfolio-content"><div><div style="font-size:0.85rem; color:var(--primary-2); margin-bottom:6px; font-weight:600;">${esc(p['ประเภทย่อย'])}</div><h3 class="portfolio-title">${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</h3></div><div class="portfolio-meta"><span>👤 ${esc(p['ผู้มอบหมาย'])}</span><span>#${p['ลำดับ']}</span></div></div>`;
+            card.querySelectorAll('img').forEach(im => { im.loading = 'lazy'; });
             grid.appendChild(card);
         });
     }
