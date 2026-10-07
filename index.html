@@ -529,6 +529,43 @@
     @media (max-width: 768px) { body { padding: 1.5vh 3vw; } .kpi-value { font-size: 2.1rem; } .view-switcher { top: 4px; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } .creature, .bubble { display:none; } }
 
+
+    /* ===== HERO VIDEO (วิดีโอหลักหน้าแรก) ===== */
+    .hero-video-wrap { position: relative; width: 100%; border-radius: 28px; overflow: hidden; margin-bottom: 24px; background: #000; border: 1px solid var(--primary-2); box-shadow: 0 0 60px rgba(56,189,248,0.22), 0 25px 60px rgba(0,0,0,0.5); animation: heroIn 0.9s ease both; }
+    .hero-video-stage { position: relative; width: 100%; aspect-ratio: 21 / 9; min-height: 260px; max-height: 72vh; background: #000; }
+    .hero-video-stage video, .hero-video-stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; background: #000; }
+    .hero-video-overlay { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.7) 100%); }
+    .hero-video-caption { position: absolute; left: 32px; right: 120px; bottom: 26px; pointer-events: none; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.8); }
+    .hero-eyebrow { font-size: 0.8rem; letter-spacing: 0.35em; font-weight: 700; color: var(--primary-2); margin-bottom: 6px; }
+    .hero-title { font-size: clamp(1.4rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.15; }
+    .hero-sound-btn { position: absolute; right: 22px; bottom: 22px; z-index: 3; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.55); color: #fff; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); transition: all .2s; }
+    .hero-sound-btn:hover { background: var(--primary-2); color: #000; }
+    .hero-video-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); padding: 20px; }
+    @keyframes heroIn { from { opacity: 0; transform: translateY(18px) scale(0.985); } to { opacity: 1; transform: none; } }
+    @media (max-width: 700px) { .hero-video-stage { aspect-ratio: 16 / 9; } .hero-video-caption { left: 16px; right: 16px; bottom: 64px; } .hero-sound-btn { right: 12px; bottom: 12px; } }
+
+    /* ===== HERO: GIF/Image/MP3 + Mixer ===== */
+    .hero-video-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hero-eq { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; background: radial-gradient(circle at 50% 60%, rgba(56,189,248,0.25), #05080f 70%); }
+    .hero-eq span { width: 10px; height: 40px; border-radius: 6px; background: var(--primary-2); animation: heroEq 1s ease-in-out infinite; transform-origin: bottom; }
+    .hero-eq span:nth-child(2n) { animation-duration: 0.7s; } .hero-eq span:nth-child(3n) { animation-duration: 1.3s; } .hero-eq span:nth-child(4n) { animation-delay: .2s; }
+    @keyframes heroEq { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(2.2); } }
+    .hero-mixer { position: absolute; top: 18px; right: 18px; z-index: 4; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .hero-mixer-toggle { padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.55); color: #fff; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); }
+    .hero-mixer-toggle:hover { background: var(--primary-2); color: #000; }
+    .hero-mixer-panel { width: min(320px, 80vw); padding: 12px; border-radius: 16px; background: rgba(5,8,15,0.82); border: 1px solid var(--line); backdrop-filter: blur(12px); color: #fff; }
+    .hero-mixer-head { display: flex; gap: 8px; margin-bottom: 8px; }
+    .hero-mixer-head button { flex: 1; padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #fff; font-family: inherit; font-size: 0.8rem; cursor: pointer; }
+    .hero-mixer-head button:hover { background: var(--primary-2); color: #000; }
+    .hero-mixer-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+    .hero-mixer-play { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; }
+    .hero-mixer-label { flex: 0 1 100px; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hero-mixer-row input[type=range] { flex: 1; min-width: 60px; }
+    .hero-aud-row { padding: 12px; margin-bottom: 10px; border: 1px dashed var(--primary-2); border-radius: 14px; background: var(--panel); }
+    .hero-aud-top { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .hero-aud-opts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+    .hero-aud-opts label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    @media (max-width: 700px) { .hero-mixer { top: 10px; right: 10px; } }
 </style>
 </head>
 <body>
@@ -579,6 +616,21 @@
 
         <!-- ================= VIEW 0: HOME (หน้าแรก) ================= -->
         <div id="viewHome" class="view-section active-view">
+            <!-- 0. HERO VIDEO -->
+            <div>
+                <button class="btn btn-primary admin-inline" onclick="openHeroVideoModal()" style="margin-bottom:10px;">🎬 ตั้งค่าวิดีโอหน้าแรก</button>
+            </div>
+            <div id="heroVideoWrap" class="hero-video-wrap" style="display:none;">
+                <div id="heroVideoStage" class="hero-video-stage"></div>
+                <div class="hero-video-overlay"></div>
+                <div id="heroVideoCaption" class="hero-video-caption"></div>
+                <button id="heroSoundBtn" class="hero-sound-btn" onclick="toggleHeroSound()" style="display:none;">🔇 เปิดเสียง</button>
+                <div id="heroMixer" class="hero-mixer" style="display:none;">
+                    <button id="heroMixerToggle" class="hero-mixer-toggle" onclick="toggleHeroMixer()">🎚️ เสียง</button>
+                    <div id="heroMixerPanel" class="hero-mixer-panel" style="display:none;"></div>
+                </div>
+            </div>
+
             <!-- 1. Header Card -->
             <div class="glass reveal" style="animation-delay:0.05s">
                 <div class="eyebrow"><span class="line"></span>PORTFOLIO & CREATIVE HUB</div>
@@ -1123,6 +1175,38 @@
         </div>
     </div>
 
+    <!-- HERO VIDEO MODAL -->
+    <div class="modal-overlay" id="heroVideoOverlay">
+        <div class="modal-box wide">
+            <button class="modal-close" onclick="closeHeroVideoModal()">✕</button>
+            <h2 style="margin-top:0;">🎬 ตั้งค่าวิดีโอหน้าแรก</h2>
+            <p class="sub" style="margin-bottom:18px;">วางลิงก์สื่อหลักได้ทั้ง MP4, GIF, รูปภาพ, MP3, YouTube หรือ Google Drive (ตั้งแชร์เป็น "ทุกคนที่มีลิงก์") แล้วเพิ่มเสียงเสริมซ้อนทับได้ด้านล่าง</p>
+            <div class="field"><label>ลิงก์สื่อหลัก (MP4 / GIF / รูปภาพ / MP3 / YouTube / Drive)</label><input type="text" id="heroUrl" placeholder="https://.../video.mp4  หรือ  .gif  หรือ  .jpg  หรือ  https://youtu.be/..."></div>
+            <div class="field-row">
+                <div class="field"><label>เสียงวิดีโอ</label>
+                    <select id="heroMuted">
+                        <option value="muted">🔇 ปิดเสียง (เล่นอัตโนมัติได้ทุกเบราว์เซอร์)</option>
+                        <option value="sound">🔊 เปิดเสียง (บางเบราว์เซอร์ต้องให้ผู้ชมแตะ 1 ครั้งก่อน)</option>
+                    </select>
+                </div>
+                <div class="field"><label>ข้อความบนวิดีโอ (ไม่ใส่ก็ได้)</label><input type="text" id="heroTitle" placeholder="เช่น Showreel 2026"></div>
+            </div>
+            <div style="margin:6px 0 10px; font-weight:700; color:var(--primary-2);">🎵 เสียงเสริม (เล่นซ้อนกันได้ สูงสุด 6 รายการ)</div>
+            <div id="heroAudioList"></div>
+            <button type="button" class="btn btn-ghost" onclick="addHeroAudioRow()" style="margin-bottom:14px;">＋ เพิ่มเสียง</button>
+            <div style="font-size:0.85rem; color:var(--muted); line-height:1.6;">
+                • ผู้ชมกดปุ่ม 🔊/🔇 ที่วิดีโอ และเปิดแผง 🎚️ เสียง เพื่อเล่น/หยุด/ปรับระดับเสียงแต่ละแทร็กเองได้เสมอ<br>
+                • เสียงเสริมที่ติ๊ก "เริ่มเล่นเอง" จะเริ่มเมื่อผู้ชมแตะหรือคลิกหน้าเว็บครั้งแรก (กฎของเบราว์เซอร์ เล่นเสียงทันทีไม่ได้)<br>
+                • ลิงก์ Drive: ระบบลองเล่นแบบปกติก่อน ถ้าไม่ได้จะสลับเป็นตัวเล่นของ Drive ซึ่งควบคุมเสียงไม่ได้ ไฟล์เสียงเสริมจาก Drive อาจเล่นไม่ได้ ควรใช้ลิงก์ไฟล์ตรงถ้าเป็นไปได้
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="removeHeroVideo()">🗑️ ลบวิดีโอ</button>
+                <button class="btn btn-ghost" onclick="closeHeroVideoModal()">ยกเลิก</button>
+                <button class="btn btn-success" onclick="saveHeroVideo()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 3. Add/Edit Featured Modal -->
     <div class="modal-overlay" id="manageFeatOverlay">
         <div class="modal-box wide">
@@ -1544,6 +1628,230 @@
     }
     
     function deleteCarousel(id) { if(confirm('ต้องการลบรูปภาพนี้ออกจากสไลด์?')) database.ref('homeCarousel/' + id).remove().then(() => loadCarousel()); }
+
+    // ================== HERO MEDIA (วิดีโอ / GIF / รูป / MP3 + เสียงเสริมซ้อนกันได้) ==================
+    let heroCfg = null; let heroGestureBound = false; let heroIsYT = ''; let heroTracks = [];
+    const HERO_IMG_RE = /\.(gif|png|jpe?g|webp|avif|svg)(\?[^#]*)?(#.*)?$/i;
+    const HERO_AUD_RE = /\.(mp3|wav|m4a|aac|flac|oga)(\?[^#]*)?(#.*)?$/i;
+    function heroYouTubeId(link) {
+        let m = link.match(/youtube\.com\/watch\?(?:.*&)?v=([\w-]{6,})/); if (m) return m[1];
+        m = link.match(/youtu\.be\/([\w-]{6,})/); if (m) return m[1];
+        m = link.match(/youtube\.com\/(?:shorts|embed)\/([\w-]{6,})/); if (m) return m[1];
+        return '';
+    }
+    function heroYouTubeSrc(id, muted) {
+        return 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=' + (muted ? 1 : 0) + '&loop=1&playlist=' + id + '&controls=0&modestbranding=1&rel=0&playsinline=1';
+    }
+    function heroHomeVisible() { const h = document.getElementById('viewHome'); return !!(h && h.classList.contains('active-view')); }
+    function heroUpdateBtn(muted) {
+        const btn = document.getElementById('heroSoundBtn'); if (!btn) return;
+        btn.style.display = 'block'; btn.textContent = muted ? '🔇 เปิดเสียง' : '🔊 ปิดเสียง';
+    }
+    function heroNormAudios(cfg) {
+        let a = cfg && cfg.audios; if (!a) return [];
+        if (!Array.isArray(a)) a = Object.values(a);
+        return a.filter(x => x && x.url).map(x => ({
+            url: String(x.url).trim(), label: x.label ? String(x.label) : '',
+            volume: x.volume == null ? 70 : Math.min(100, Math.max(0, Number(x.volume) || 0)),
+            loop: x.loop !== false, auto: x.auto !== false
+        }));
+    }
+    function heroAudioSrc(url) { const id = driveId(url); return id ? 'https://drive.google.com/uc?export=download&id=' + id : url; }
+    function loadHeroVideo() {
+        if (!database) return;
+        database.ref('homeHero').once('value').then(snap => { heroCfg = snap.val() || null; renderHeroVideo(); }).catch(e => console.warn('hero load', e));
+    }
+
+    // ---------- เสียงเสริม ----------
+    function heroStopTracks() {
+        heroTracks.forEach(t => { try { t.el.pause(); t.el.removeAttribute('src'); t.el.load(); } catch (e) {} });
+        heroTracks = [];
+    }
+    function heroPlayTrack(t) {
+        if (!t || t.failed) return;
+        const p = t.el.play();
+        if (p && p.catch) p.catch(() => { heroBindGesture(); });
+    }
+    function heroBuildTracks(cfg, mainAudioUrl) {
+        const list = heroNormAudios(cfg);
+        if (mainAudioUrl) list.unshift({ url: mainAudioUrl, label: cfg.title || 'เสียงหลัก', volume: 80, loop: true, auto: true });
+        list.forEach(c => {
+            const el = new Audio(); el.preload = 'auto'; el.loop = c.loop; el.volume = c.volume / 100;
+            const t = { cfg: c, el: el, failed: false, resume: false, userPaused: false, sync: null };
+            el.addEventListener('error', () => { t.failed = true; if (t.sync) t.sync(); });
+            el.addEventListener('play', () => { if (t.sync) t.sync(); });
+            el.addEventListener('pause', () => { if (t.sync) t.sync(); });
+            el.src = heroAudioSrc(c.url);
+            heroTracks.push(t);
+        });
+    }
+    function heroRenderMixer() {
+        const box = document.getElementById('heroMixer'); const panel = document.getElementById('heroMixerPanel');
+        if (!box || !panel) return;
+        panel.innerHTML = '';
+        if (heroTracks.length === 0) { box.style.display = 'none'; return; }
+        box.style.display = 'flex';
+        const head = document.createElement('div'); head.className = 'hero-mixer-head';
+        const bAll = document.createElement('button'); bAll.type = 'button'; bAll.textContent = '▶ เล่นทั้งหมด';
+        bAll.onclick = () => heroTracks.forEach(t => { t.userPaused = false; heroPlayTrack(t); });
+        const bStop = document.createElement('button'); bStop.type = 'button'; bStop.textContent = '⏸ หยุดทั้งหมด';
+        bStop.onclick = () => heroTracks.forEach(t => { t.userPaused = true; t.el.pause(); });
+        head.appendChild(bAll); head.appendChild(bStop); panel.appendChild(head);
+        heroTracks.forEach((t, i) => {
+            const row = document.createElement('div'); row.className = 'hero-mixer-row';
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'hero-mixer-play';
+            t.sync = () => { b.textContent = t.failed ? '⚠️' : (t.el.paused ? '▶' : '⏸'); b.title = t.failed ? 'โหลดเสียงไม่สำเร็จ ตรวจสอบลิงก์/สิทธิ์แชร์' : ''; };
+            b.onclick = () => { if (t.failed) return; if (t.el.paused) { t.userPaused = false; heroPlayTrack(t); } else { t.userPaused = true; t.el.pause(); } };
+            const lab = document.createElement('span'); lab.className = 'hero-mixer-label'; lab.textContent = t.cfg.label || ('เสียง ' + (i + 1));
+            const r = document.createElement('input'); r.type = 'range'; r.min = 0; r.max = 100; r.value = Math.round(t.el.volume * 100);
+            r.oninput = () => { t.el.volume = r.value / 100; };
+            row.appendChild(b); row.appendChild(lab); row.appendChild(r); panel.appendChild(row); t.sync();
+        });
+    }
+    function toggleHeroMixer() {
+        const panel = document.getElementById('heroMixerPanel'); if (!panel) return;
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+    function heroAutoStartTracks() {
+        if (!heroHomeVisible()) return;
+        heroTracks.forEach(t => { if (t.cfg.auto && t.el.paused && !t.userPaused && !t.failed) heroPlayTrack(t); });
+    }
+    function heroBindGesture() {
+        if (heroGestureBound) return; heroGestureBound = true;
+        const once = () => {
+            document.removeEventListener('pointerdown', once); document.removeEventListener('keydown', once); heroGestureBound = false;
+            const v = document.getElementById('heroVideo');
+            if (v && heroCfg && heroCfg.muted === false && v.muted) { v.muted = false; v.play().catch(() => {}); heroUpdateBtn(false); }
+            heroAutoStartTracks();
+        };
+        document.addEventListener('pointerdown', once); document.addEventListener('keydown', once);
+    }
+
+    // ---------- สื่อหลัก ----------
+    function heroShowIframe(stage, src, withSoundBtn, muted) {
+        stage.innerHTML = '';
+        const f = document.createElement('iframe'); f.id = 'heroFrame'; f.src = src; f.dataset.src = src;
+        f.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen'); f.setAttribute('allowfullscreen', ''); f.title = 'Hero Media';
+        stage.appendChild(f);
+        const btn = document.getElementById('heroSoundBtn');
+        if (withSoundBtn) heroUpdateBtn(muted); else if (btn) btn.style.display = 'none';
+    }
+    function heroShowVideo(stage, url, wantSound, onFail) {
+        stage.innerHTML = '';
+        const v = document.createElement('video'); v.id = 'heroVideo'; v.loop = true; v.playsInline = true; v.preload = 'auto';
+        v.setAttribute('playsinline', ''); v.style.background = '#000';
+        v.muted = !wantSound; v.src = url;
+        v.addEventListener('error', () => { if (onFail) onFail(); else stage.innerHTML = '<div class="hero-video-msg">โหลดวิดีโอไม่สำเร็จ ตรวจสอบลิงก์หรือสิทธิ์แชร์ของไฟล์</div>'; }, { once: true });
+        stage.appendChild(v);
+        const p = v.play();
+        if (p && p.catch) p.catch(() => { v.muted = true; v.play().catch(() => {}); heroUpdateBtn(true); heroBindGesture(); });
+        heroUpdateBtn(v.muted);
+    }
+    function heroShowImage(stage, url, title) {
+        stage.innerHTML = '';
+        const img = document.createElement('img'); img.alt = title || ''; img.src = url;
+        img.addEventListener('error', () => { stage.innerHTML = '<div class="hero-video-msg">โหลดรูป/GIF ไม่สำเร็จ ตรวจสอบลิงก์หรือสิทธิ์แชร์ของไฟล์</div>'; }, { once: true });
+        stage.appendChild(img);
+    }
+    function heroShowEqualizer(stage) {
+        stage.innerHTML = '<div class="hero-eq">' + '<span></span>'.repeat(9) + '</div>';
+    }
+    function renderHeroVideo() {
+        const wrap = document.getElementById('heroVideoWrap'); const stage = document.getElementById('heroVideoStage');
+        const cap = document.getElementById('heroVideoCaption'); const btn = document.getElementById('heroSoundBtn');
+        if (!wrap || !stage) return;
+        stage.innerHTML = ''; heroIsYT = ''; heroStopTracks();
+        if (btn) btn.style.display = 'none';
+        if (!heroCfg || !heroCfg.url) { wrap.style.display = 'none'; heroRenderMixer(); return; }
+        wrap.style.display = 'block';
+        const url = String(heroCfg.url).trim(); const wantSound = heroCfg.muted === false;
+        if (cap) cap.innerHTML = heroCfg.title ? '<div class="hero-eyebrow">SHOWREEL</div><div class="hero-title">' + esc(heroCfg.title) + '</div>' : '';
+        const yt = heroYouTubeId(url); const did = driveId(url); let mainAudio = '';
+        if (yt) { heroIsYT = yt; heroShowIframe(stage, heroYouTubeSrc(yt, !wantSound), true, !wantSound); }
+        else if (did) {
+            heroShowVideo(stage, 'https://drive.google.com/uc?export=download&id=' + did, wantSound,
+                () => heroShowIframe(stage, 'https://drive.google.com/file/d/' + did + '/preview', false, true));
+        }
+        else if (HERO_AUD_RE.test(url)) { mainAudio = url; heroShowEqualizer(stage); }
+        else if (HERO_IMG_RE.test(url)) heroShowImage(stage, url, heroCfg.title);
+        else heroShowVideo(stage, url, wantSound, null);
+        heroBuildTracks(heroCfg, mainAudio); heroRenderMixer();
+        if (heroTracks.length > 0) { heroAutoStartTracks(); if (heroTracks.some(t => t.cfg.auto)) heroBindGesture(); }
+        if (!heroHomeVisible()) heroVisibility(false);
+    }
+    function toggleHeroSound() {
+        const v = document.getElementById('heroVideo'); const f = document.getElementById('heroFrame');
+        if (v) { v.muted = !v.muted; if (!v.muted && v.paused) v.play().catch(() => {}); heroUpdateBtn(v.muted); return; }
+        if (f && heroIsYT) {
+            const wasMuted = /[?&]mute=1/.test(f.dataset.src || f.src); const src = heroYouTubeSrc(heroIsYT, !wasMuted);
+            f.dataset.src = src; f.src = src; heroUpdateBtn(!wasMuted);
+        }
+    }
+    // หยุดเล่น/เล่นต่อ เมื่อสลับหน้า (กันเสียงค้างตอนอยู่หน้าอื่น)
+    function heroVisibility(show) {
+        const v = document.getElementById('heroVideo'); const f = document.getElementById('heroFrame');
+        if (v) { if (show) v.play().catch(() => {}); else v.pause(); }
+        if (f) {
+            if (show) { if (f.dataset.src && f.getAttribute('src') === 'about:blank') f.src = f.dataset.src; }
+            else { if (!f.dataset.src) f.dataset.src = f.src; f.src = 'about:blank'; }
+        }
+        heroTracks.forEach(t => {
+            if (show) { if (t.resume) { t.resume = false; if (!t.userPaused) heroPlayTrack(t); } }
+            else if (!t.el.paused) { t.resume = true; t.el.pause(); }
+        });
+    }
+
+    // ---------- หน้าตั้งค่า (Admin) ----------
+    function addHeroAudioRow(a) {
+        const list = document.getElementById('heroAudioList'); if (!list) return;
+        if (list.children.length >= 6) { toast('เพิ่มเสียงได้สูงสุด 6 รายการ', 'warn'); return; }
+        a = a || { url: '', label: '', volume: 70, loop: true, auto: true };
+        const row = document.createElement('div'); row.className = 'hero-aud-row';
+        row.innerHTML = '<div class="hero-aud-top"><div class="field" style="margin:0; flex:3; min-width:200px;"><input type="text" class="ha-url" placeholder="ลิงก์ MP3 / ไฟล์เสียง"></div><div class="field" style="margin:0; flex:1.2; min-width:120px;"><input type="text" class="ha-label" placeholder="ชื่อเสียง เช่น เพลงประกอบ"></div></div>'
+            + '<div class="hero-aud-opts"><label>🔉 <input type="range" class="ha-vol" min="0" max="100"> <span class="ha-vol-n"></span>%</label><label><input type="checkbox" class="ha-loop"> วนซ้ำ</label><label><input type="checkbox" class="ha-auto"> เริ่มเล่นเองเมื่อผู้ชมแตะ</label><button type="button" class="btn btn-ghost ha-del">✕ ลบ</button></div>';
+        row.querySelector('.ha-url').value = a.url || ''; row.querySelector('.ha-label').value = a.label || '';
+        const vol = row.querySelector('.ha-vol'); const volN = row.querySelector('.ha-vol-n');
+        vol.value = a.volume == null ? 70 : a.volume; volN.textContent = vol.value; vol.oninput = () => { volN.textContent = vol.value; };
+        row.querySelector('.ha-loop').checked = a.loop !== false; row.querySelector('.ha-auto').checked = a.auto !== false;
+        row.querySelector('.ha-del').onclick = () => row.remove();
+        list.appendChild(row);
+    }
+    function openHeroVideoModal() {
+        if (!isAdmin) return;
+        document.getElementById('heroUrl').value = heroCfg && heroCfg.url ? heroCfg.url : '';
+        document.getElementById('heroMuted').value = heroCfg && heroCfg.muted === false ? 'sound' : 'muted';
+        document.getElementById('heroTitle').value = heroCfg && heroCfg.title ? heroCfg.title : '';
+        const list = document.getElementById('heroAudioList'); list.innerHTML = '';
+        heroNormAudios(heroCfg).forEach(a => addHeroAudioRow(a));
+        document.getElementById('heroVideoOverlay').classList.add('open');
+    }
+    function closeHeroVideoModal() { document.getElementById('heroVideoOverlay').classList.remove('open'); }
+    function saveHeroVideo() {
+        if (!isAdmin) return;
+        if (!database) { toast('ยังไม่ได้เชื่อมต่อ Firebase จึงบันทึกไม่ได้', 'err'); return; }
+        const url = document.getElementById('heroUrl').value.trim();
+        if (!/^https?:\/\//i.test(url)) { alert('กรุณาวางลิงก์สื่อหลักที่ขึ้นต้นด้วย http:// หรือ https://'); return; }
+        const audios = []; let bad = false;
+        document.querySelectorAll('#heroAudioList .hero-aud-row').forEach(row => {
+            const u = row.querySelector('.ha-url').value.trim(); if (!u) return;
+            if (!/^https?:\/\//i.test(u)) { bad = true; return; }
+            audios.push({ url: u, label: row.querySelector('.ha-label').value.trim(), volume: Number(row.querySelector('.ha-vol').value) || 0,
+                loop: row.querySelector('.ha-loop').checked, auto: row.querySelector('.ha-auto').checked });
+        });
+        if (bad) { alert('ลิงก์เสียงเสริมต้องขึ้นต้นด้วย http:// หรือ https:// (หรือเว้นว่างเพื่อไม่ใช้แถวนั้น)'); return; }
+        const payload = { url: url, muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(), audios: audios, updatedAt: Date.now() };
+        database.ref('homeHero').set(payload).then(() => {
+            heroCfg = payload; renderHeroVideo(); closeHeroVideoModal(); toast('บันทึกวิดีโอหน้าแรกแล้ว ✅', 'ok');
+        }).catch(err => toast('บันทึกไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') ตรวจสอบ Firebase Rules', 'err'));
+    }
+    function removeHeroVideo() {
+        if (!isAdmin || !database) return;
+        if (!confirm('ต้องการลบวิดีโอและเสียงเสริมของหน้าแรกทั้งหมดใช่หรือไม่?')) return;
+        database.ref('homeHero').remove().then(() => { heroCfg = null; renderHeroVideo(); closeHeroVideoModal(); toast('ลบสื่อหน้าแรกแล้ว', 'ok'); })
+            .catch(err => toast('ลบไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ')', 'err'));
+    }
+    window.openHeroVideoModal = openHeroVideoModal; window.closeHeroVideoModal = closeHeroVideoModal; window.saveHeroVideo = saveHeroVideo;
+    window.removeHeroVideo = removeHeroVideo; window.toggleHeroSound = toggleHeroSound; window.toggleHeroMixer = toggleHeroMixer; window.addHeroAudioRow = addHeroAudioRow;
 
     // ================== FEATURED LIST & LIGHTBOX ==================
     let featProjects = []; 
@@ -2096,6 +2404,7 @@
     function switchView(viewName) {
         // หน้าเฉพาะ Admin: ถ้าไม่ได้ล็อกอินให้กลับหน้าแรก
         if (!isAdmin && ['dashboard', 'monthlySummary', 'personalKPI'].includes(viewName)) viewName = 'home';
+        try { heroVisibility(viewName === 'home'); } catch (e) {}
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         
@@ -2799,6 +3108,7 @@
             });
             
             try { loadCarousel(); } catch(e){}
+            try { loadHeroVideo(); } catch(e){}
             try { loadFeatured(); } catch(e){}
         }
     };
