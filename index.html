@@ -556,10 +556,10 @@
         <div class="view-switcher reveal" style="animation-delay:0s">
             <div class="nav-tabs">
                 <button class="nav-tab active" onclick="switchView('home')">🏠 หน้าแรก</button>
-                <button class="nav-tab" onclick="switchView('dashboard')">📊 รายงานภาพรวม</button>
+                <button class="nav-tab admin-inline" onclick="switchView('dashboard')">📊 รายงานภาพรวม</button>
                 <button class="nav-tab" onclick="switchView('showcase')">🎬 แกลเลอรีผลงาน</button>
                 <button class="nav-tab" onclick="switchView('evaluation')">📝 แบบประเมิน (HRD)</button>
-                <button class="nav-tab" onclick="switchView('monthlySummary')">📅 สรุปรายเดือน</button>
+                <button class="nav-tab admin-inline" onclick="switchView('monthlySummary')">📅 สรุปรายเดือน</button>
                 <button class="nav-tab admin-inline" onclick="switchView('personalKPI')">⭐ ประเมิน KPI ส่วนตัว</button>
             </div>
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
@@ -2094,6 +2094,8 @@
     window.setTheme = setTheme; const savedTheme = safeGetLS('portfolio_theme') || 'dark';
 
     function switchView(viewName) {
+        // หน้าเฉพาะ Admin: ถ้าไม่ได้ล็อกอินให้กลับหน้าแรก
+        if (!isAdmin && ['dashboard', 'monthlySummary', 'personalKPI'].includes(viewName)) viewName = 'home';
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         
