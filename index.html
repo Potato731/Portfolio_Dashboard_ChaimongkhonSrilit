@@ -1192,7 +1192,7 @@
                 <div id="uploadPreviewInfo" style="font-size:0.9rem; color:var(--success); margin-top:10px;"></div>
             </div>
             <div class="field"><label>🔗 เพิ่มลิงก์รูปภาพ / Google Drive (คั่นด้วยบรรทัดใหม่)</label><textarea id="fImageLinks" rows="2"></textarea></div>
-            <div class="field"><label>🎬 เพิ่มลิงก์วิดีโอ (MP4, YouTube, WebM คั่นด้วยบรรทัดใหม่)</label><textarea id="fVideoLinks" rows="2"></textarea></div>
+            <div class="field"><label>🎬 เพิ่มลิงก์วิดีโอ / เสียงตัวอย่าง (Google Drive, YouTube, MP4, MP3 คั่นด้วยบรรทัดใหม่)</label><textarea id="fVideoLinks" rows="2"></textarea></div>
             <div class="error-msg" id="projectError"></div>
             <div class="modal-actions"><button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button><button class="btn btn-primary" onclick="saveProjectData()">บันทึกข้อมูล</button></div>
         </div>
@@ -1263,7 +1263,7 @@
     }
 
     let rawData = loadData(); let evalData = loadEvalData();
-    let isAdmin = false; let editingId = null; let currentLightboxId = null; let currentLightboxImages = []; let currentLightboxIndex = 0; let editingProjectImages = [];
+    let isAdmin = false; let editingId = null; let currentLightboxId = null; let currentLightboxImages = []; let currentLightboxMedia = []; let currentLightboxIndex = 0; let editingProjectImages = [];
     let kpiEvidenceFiles = []; // { name, type, data } - หลักฐาน KPI ที่แนบไว้
     let typeChart = null; let statusChart = null; let monthlyChart = null; let decisionChart = null; let radarChart = null; let monthFocusChart = null; let kpiRadarChart = null; let kpiBarChart = null;
     let isDefaultSet = false;
@@ -2539,28 +2539,65 @@
     }
     window.filterTable = filterTable;
 
-    function sanitizeLink(link) {
-        if (!link) return ''; 
+    // ดึง File ID จากลิงก์ Google Drive ทุกรูปแบบ (/file/d/ID, open?id=ID, uc?id=ID)
+    function driveId(link) {
+        if (!link || !/drive\.google\.com|docs\.google\.com/.test(link)) return '';
+        let m = link.match(/\/file\/d\/([\w-]+)/); if (m) return m[1];
+        m = link.match(/[?&]id=([\w-]+)/); if (m) return m[1];
+        return '';
+    }
+    function sanitizeLink(link, kind) {
+        if (!link) return '';
         link = link.trim();
-        // แปลงลิงก์ Google Drive
-        if (link.includes('drive.google.com')) { 
-            let fileId = ''; 
-            if (link.includes('/file/d/')) {
-                fileId = link.split('/file/d/')[1].split('/')[0]; 
-            } else if (link.includes('id=')) {
-                fileId = new URLSearchParams(link.split('?')[1]).get('id'); 
-            }
-            if (fileId) return `https://lh3.googleusercontent.com/d/${fileId}`; 
-        }
+        const id = driveId(link);
+        // ลิงก์ Drive: รูปภาพใช้ lh3 / วิดีโอ-เสียงใช้ไฟล์ดาวน์โหลดตรง (ใช้กับปุ่มโหลด)
+        if (id) return kind === 'video' ? `https://drive.google.com/uc?export=download&id=${id}` : `https://lh3.googleusercontent.com/d/${id}`;
         return link;
     }
+    // kind: 'image' | 'video' (เสียงรวมอยู่ใน video) , mode: 'card' | 'full'
+    function getMediaHtml(link, title, kind, mode) {
+        if (!link || !link.trim()) return '';
+        link = link.trim(); kind = kind || 'image'; mode = mode || 'full';
+        const safeTitle = esc(title || '');
+        const id = driveId(link);
+        const playBadge = '<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:1;"><span style="font-size:3rem; background:rgba(0,0,0,.55); border-radius:50%; width:72px; height:72px; display:flex; align-items:center; justify-content:center; color:#fff;">▶</span></div>';
 
-    function getMediaHtml(link, title) {
-        link = sanitizeLink(link); if (!link || link.trim() === '') return ''; let embedUrl = '';
-        if (link.includes('youtube.com/watch?v=')) embedUrl = `https://www.youtube.com/embed/${link.split('v=')[1].split('&')[0]}`; else if (link.includes('youtu.be/')) embedUrl = `https://www.youtube.com/embed/${link.split('youtu.be/')[1].split('?')[0]}`;
-        if (embedUrl) return `<iframe src="${embedUrl}" title="${title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-        else if (link.match(/\.(mp4|webm|ogg)$/i) || link.includes('video/mp4')) return `<video controls preload="metadata" style="background:#000; width:100%; height:100%;"><source src="${link}"></video>`;
-        else return `<img src="${link}" alt="${title}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'portfolio-media-placeholder\\'>🖼️<br><span style=\\'font-size:1rem\\'>โหลดรูป/สื่อไม่สำเร็จ</span></div>';">`;
+        // ---------- Google Drive ----------
+        if (id) {
+            const preview = `https://drive.google.com/file/d/${id}/preview`;
+            const iframe = `<iframe src="${preview}" title="${safeTitle}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%; height:100%; min-height:420px; border:0;"></iframe>`;
+            if (kind === 'video') {
+                if (mode === 'card') return `<img src="https://drive.google.com/thumbnail?id=${id}&sz=w640" alt="${safeTitle}" onerror="this.onerror=null; this.outerHTML='<div class=\\'portfolio-media-placeholder\\'>🎬<br><span style=\\'font-size:0.9rem\\'>วิดีโอ / เสียงจาก Google Drive</span></div>';">${playBadge}`;
+                return iframe;
+            }
+            // รูปภาพ: ลองโหลดเป็นรูป ถ้าไม่ใช่รูป (เช่นเผลอวางวิดีโอ/เสียงในช่องรูป) ให้ตกไปใช้ตัวเล่นของ Drive
+            if (mode === 'card') return `<img src="https://lh3.googleusercontent.com/d/${id}" alt="${safeTitle}" onerror="this.onerror=null; this.outerHTML='<div class=\\'portfolio-media-placeholder\\'>🎬<br><span style=\\'font-size:0.9rem\\'>สื่อจาก Google Drive</span></div>';">`;
+            return `<img src="https://lh3.googleusercontent.com/d/${id}" alt="${safeTitle}" onerror="this.onerror=null; this.outerHTML=this.dataset.fb;" data-fb="${iframe.replace(/"/g, '&quot;')}">`;
+        }
+
+        // ---------- YouTube ----------
+        let embedUrl = '';
+        if (link.includes('youtube.com/watch?v=')) embedUrl = `https://www.youtube.com/embed/${link.split('v=')[1].split('&')[0]}`;
+        else if (link.includes('youtu.be/')) embedUrl = `https://www.youtube.com/embed/${link.split('youtu.be/')[1].split('?')[0]}`;
+        else if (link.includes('youtube.com/shorts/')) embedUrl = `https://www.youtube.com/embed/${link.split('shorts/')[1].split(/[?&]/)[0]}`;
+        if (embedUrl) return `<iframe src="${embedUrl}" title="${safeTitle}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+
+        // ---------- ไฟล์เสียงตรง ----------
+        if (/\.(mp3|wav|m4a|aac|flac|oga)(\?.*)?$/i.test(link)) {
+            if (mode === 'card') return `<div class="portfolio-media-placeholder">🎵<br><span style="font-size:0.9rem">ไฟล์เสียงตัวอย่าง (คลิกเพื่อฟัง)</span></div>`;
+            return `<div style="width:100%; padding:30px; text-align:center;"><div style="font-size:4rem;">🎵</div><audio controls preload="metadata" style="width:100%; max-width:560px; margin-top:12px;"><source src="${link}"></audio></div>`;
+        }
+        // ---------- ไฟล์วิดีโอตรง ----------
+        if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(link) || link.includes('video/mp4')) return `<video controls preload="metadata" style="background:#000; width:100%; height:100%;"><source src="${link}"></video>`;
+        // ---------- รูปภาพทั่วไป ----------
+        return `<img src="${link}" alt="${safeTitle}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'portfolio-media-placeholder\\'>🖼️<br><span style=\\'font-size:1rem\\'>โหลดรูป/สื่อไม่สำเร็จ</span></div>';">`;
+    }
+    // รวมสื่อของโปรเจกต์พร้อมระบุชนิด (image/video)
+    function getProjectMedia(p) {
+        return [
+            ...(p.imageLinks || []).map(u => ({ url: u, kind: 'image' })),
+            ...(p.videoLinks || []).map(u => ({ url: u, kind: 'video' }))
+        ].filter(m => m.url && m.url.trim());
     }
 
     function renderShowcase() {
@@ -2582,8 +2619,8 @@
         filtered.forEach((p, idx) => {
             const card = document.createElement('div'); card.className = 'portfolio-card reveal'; card.style.animationDelay = (Math.min(idx, 15) * 0.04) + 's'; card.onclick = () => openLightbox(p['ลำดับ']);
             let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
-            const links = [...(p.imageLinks || []), ...(p.videoLinks || [])];
-            let mediaHtml = (links.length > 0 && links[0].trim() !== '') ? getMediaHtml(links[0], p['ชื่อชิ้นงาน / โปรเจกต์']) : `<div class="portfolio-media-placeholder">✨<br><span style="font-size:0.9rem">#${p['ลำดับ']} · ${esc(p['ประเภทย่อย'])}</span></div>`;
+            const media = getProjectMedia(p); const links = media.map(m => m.url);
+            let mediaHtml = (media.length > 0) ? getMediaHtml(media[0].url, p['ชื่อชิ้นงาน / โปรเจกต์'], media[0].kind, 'card') : `<div class="portfolio-media-placeholder">✨<br><span style="font-size:0.9rem">#${p['ลำดับ']} · ${esc(p['ประเภทย่อย'])}</span></div>`;
             let countBadge = links.length > 1 ? `<span style="position:absolute; bottom:14px; right:14px; z-index:2; background:rgba(0,0,0,0.8); padding:4px 10px; border-radius:8px; font-size:0.75rem; color:#fff; font-weight:600;">สื่อ ${links.length} รายการ</span>` : '';
             card.innerHTML = `<div class="portfolio-media"><span class="portfolio-badge ${tagClass}">${p['ประเภทหลัก']}</span>${mediaHtml}${countBadge}</div><div class="portfolio-content"><div><div style="font-size:0.85rem; color:var(--primary-2); margin-bottom:6px; font-weight:600;">${esc(p['ประเภทย่อย'])}</div><h3 class="portfolio-title">${esc(p['ชื่อชิ้นงาน / โปรเจกต์'])}</h3></div><div class="portfolio-meta"><span>👤 ${esc(p['ผู้มอบหมาย'])}</span><span>#${p['ลำดับ']}</span></div></div>`;
             grid.appendChild(card);
@@ -2593,7 +2630,7 @@
 
     function openLightbox(id) {
         const p = rawData.find(x => String(x['ลำดับ']) === String(id)); if (!p) return;
-        currentLightboxId = p['ลำดับ']; currentLightboxImages = [...(p.imageLinks || []), ...(p.videoLinks || [])]; currentLightboxIndex = 0;
+        currentLightboxId = p['ลำดับ']; currentLightboxMedia = getProjectMedia(p); currentLightboxImages = currentLightboxMedia.map(m => m.url); currentLightboxIndex = 0;
         let tagClass = p['ประเภทหลัก'] === 'Video' ? 'tag-video' : (p['ประเภทหลัก'] === 'Photography' ? 'tag-photo' : 'tag-artwork');
         document.getElementById('lbCategory').innerHTML = `<span class="${tagClass}" style="padding:4px 10px; margin-right:8px; border-radius:8px;">${p['ประเภทหลัก']}</span>`;
         document.getElementById('lbTitle').textContent = p['ชื่อชิ้นงาน / โปรเจกต์']; 
@@ -2615,8 +2652,8 @@
         const container = document.getElementById('lbMediaContainer'); const prevBtn = document.getElementById('lbPrevBtn'); const nextBtn = document.getElementById('lbNextBtn'); const counter = document.getElementById('lbCounter'); const dlBtn = document.getElementById('lbDownloadBtn');
         if (currentLightboxImages.length === 0 || currentLightboxImages[0].trim() === '') { container.innerHTML = `<div class="portfolio-media-placeholder" style="width:100%; height:100%; min-height:400px;">🖼️<br><span style="font-size:1.2rem;">ไม่มีรูปภาพ/วิดีโอตัวอย่าง</span></div>`; if(prevBtn) prevBtn.style.display = 'none'; if(nextBtn) nextBtn.style.display = 'none'; if(counter) counter.style.display = 'none'; if(dlBtn) dlBtn.style.display = 'none'; return; }
         if (currentLightboxImages.length > 1) { if(prevBtn) prevBtn.style.display = 'flex'; if(nextBtn) nextBtn.style.display = 'flex'; if(counter) { counter.style.display = 'block'; counter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`; } } else { if(prevBtn) prevBtn.style.display = 'none'; if(nextBtn) nextBtn.style.display = 'none'; if(counter) counter.style.display = 'none'; }
-        if(dlBtn) { dlBtn.style.display = 'inline-flex'; let link = sanitizeLink(currentLightboxImages[currentLightboxIndex]); if(link.includes('youtube.com/embed/')) link = link.replace('embed/', 'watch?v='); dlBtn.href = link; }
-        container.innerHTML = getMediaHtml(currentLightboxImages[currentLightboxIndex], 'Project Media');
+        if(dlBtn) { dlBtn.style.display = 'inline-flex'; const _m = currentLightboxMedia[currentLightboxIndex] || {url:'', kind:'image'}; let link = sanitizeLink(_m.url, _m.kind); if(link.includes('youtube.com/embed/')) link = link.replace('embed/', 'watch?v='); dlBtn.href = link; }
+        const _cm = currentLightboxMedia[currentLightboxIndex]; container.innerHTML = getMediaHtml(_cm.url, 'Project Media', _cm.kind, 'full');
     }
     function prevLightboxImage(e) { if(e) e.stopPropagation(); if (currentLightboxImages.length > 1) { currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length; updateLightboxSlide(); } }
     function nextLightboxImage(e) { if(e) e.stopPropagation(); if (currentLightboxImages.length > 1) { currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length; updateLightboxSlide(); } }
