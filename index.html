@@ -1185,8 +1185,13 @@
         <div class="modal-box wide">
             <button class="modal-close" onclick="closeHeroVideoModal()">✕</button>
             <h2 style="margin-top:0;">🎬 ตั้งค่าวิดีโอหน้าแรก</h2>
-            <p class="sub" style="margin-bottom:18px;">วางลิงก์สื่อหลักได้ทั้ง MP4, GIF, รูปภาพ, MP3, YouTube หรือ Google Drive (ตั้งแชร์เป็น "ทุกคนที่มีลิงก์") แล้วเพิ่มเสียงเสริมซ้อนทับได้ด้านล่าง</p>
-            <div class="field"><label>ลิงก์สื่อหลัก (MP4 / GIF / รูปภาพ / MP3 / YouTube / Drive)</label><input type="text" id="heroUrl" placeholder="https://.../video.mp4  หรือ  .gif  หรือ  .jpg  หรือ  https://youtu.be/..."></div>
+            <p class="sub" style="margin-bottom:18px;">เลือกไฟล์วิดีโอ MP4, GIF, รูปภาพ หรือ MP3 จากเครื่องได้โดยตรง แล้วเพิ่มเพลงพื้นหลังซ้อนทับได้ด้านล่าง</p>
+            <div class="field"><label>สื่อหลัก (วิดีโอ MP4 / GIF / รูปภาพ / MP3)</label>
+                <div class="ha-filebar"><button type="button" class="btn btn-primary" id="heroMediaPick">📁 เลือกไฟล์จากเครื่อง</button><input type="file" id="heroMediaFile" accept="video/*,image/*,audio/*,.mp4,.webm,.mov,.m4v,.gif,.mp3" style="display:none;"><span id="heroMediaInfo"></span></div>
+                <div id="heroUploadStatus" style="margin:6px 0 10px; font-size:0.9rem; color:var(--primary-2);"></div>
+                <label>หรือใช้ลิงก์แทน (YouTube / Google Drive / ไฟล์ที่ใหญ่เกินกำหนด)</label>
+                <input type="text" id="heroUrl" placeholder="https://youtu.be/...">
+            </div>
             <div class="field-row">
                 <div class="field"><label>เสียงวิดีโอ</label>
                     <select id="heroMuted">
@@ -1208,6 +1213,7 @@
             <div id="heroAudioList"></div>
             <button type="button" class="btn btn-ghost" onclick="addHeroAudioRow()" style="margin-bottom:14px;">＋ เพิ่มเสียง</button>
             <div style="font-size:0.85rem; color:var(--muted); line-height:1.6;">
+                • สื่อหลักอัปโหลดได้ไม่เกิน 20 MB ต่อไฟล์ แนะนำวิดีโอ 720p ยาว 10–20 วินาที ผู้ชมที่เข้ามาครั้งแรกต้องรอโหลดไฟล์จนครบก่อนเล่น (ครั้งต่อไปใช้แคชในเครื่อง) ถ้าอยากใช้วิดีโอยาวหรือใหญ่กว่านี้ ให้ใช้ลิงก์ YouTube<br>
                 • เลือกไฟล์เพลงจากเครื่องได้โดยตรง (ไม่เกิน 5 MB ต่อไฟล์ รวมไม่เกิน 15 MB) แนะนำ MP3 แบบ 128kbps เพลง 3 นาทีจะประมาณ 3 MB<br>
                 • เพลงที่เพิ่มไว้จะเล่นต่อเนื่องเป็นเพลงพื้นหลัง แม้ผู้ชมเปลี่ยนไปหน้าอื่น ผู้ชมกดปุ่ม 🎵 มุมซ้ายล่างเพื่อเล่น/หยุด/ปรับระดับเสียงได้เสมอ<br>
                 • เสียงเสริมที่ติ๊ก "เริ่มเล่นเอง" จะเริ่มเมื่อผู้ชมแตะหรือคลิกหน้าเว็บครั้งแรก (กฎของเบราว์เซอร์ เล่นเสียงทันทีไม่ได้)<br>
@@ -1714,6 +1720,52 @@
             });
         });
     }
+    // ---------- สื่อหลักที่อัปโหลด (แบ่งก้อนเก็บใน Firebase + แคช IndexedDB) ----------
+    const HERO_MAX_MEDIA = 20 * 1024 * 1024; const HERO_CHUNK = 1000000;
+    let heroMediaPick = null; let heroMediaKeep = null; let heroRenderToken = 0; let heroSaving = false;
+    function heroGuessMime(name) {
+        const e = (String(name).split('.').pop() || '').toLowerCase();
+        return ({ mp4: 'video/mp4', m4v: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', gif: 'image/gif', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml', mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', aac: 'audio/aac', flac: 'audio/flac', oga: 'audio/ogg' })[e] || '';
+    }
+    function heroKindOf(f) {
+        const t = f.type || heroGuessMime(f.name);
+        if (/^video\//.test(t)) return 'video'; if (/^image\//.test(t)) return 'image'; if (/^audio\//.test(t)) return 'audio';
+        return '';
+    }
+    function heroB64ToBytes(b) { const bin = atob(b); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+    function heroUploadMedia(id, m, onProgress) {
+        const d = m.dataUrl; const b64 = d.slice(d.indexOf(',') + 1); const n = Math.ceil(b64.length / HERO_CHUNK);
+        const base = 'homeHeroMedia/' + id; let p = 0; let done = 0;
+        const run = () => {
+            if (p >= n) return Promise.resolve(); const i = p++;
+            return database.ref(base + '/c/k' + i).set(b64.slice(i * HERO_CHUNK, (i + 1) * HERO_CHUNK)).then(() => { done++; if (onProgress) onProgress(Math.round(done * 100 / n)); return run(); });
+        };
+        return Promise.all([run(), run(), run()]).then(() => database.ref(base + '/meta').set({ name: m.name, size: m.size, type: m.type, kind: m.kind, ver: m.ver, n: n }));
+    }
+    function heroLoadMedia(cfg, onProgress) {
+        const id = cfg.mediaId; const ver = Number(cfg.mediaVer) || 0; const key = 'm_' + id;
+        const mem = heroBlobMem[key]; if (mem && mem.ver === ver) return Promise.resolve(mem);
+        return heroIdbGet(key).then(rec => {
+            if (rec && rec.ver === ver && rec.blob) { const o = { ver: ver, url: URL.createObjectURL(rec.blob) }; heroBlobMem[key] = o; return o; }
+            if (!database) throw new Error('no database');
+            return database.ref('homeHeroMedia/' + id + '/meta').once('value').then(sn => {
+                const meta = sn.val(); if (!meta || !meta.n) throw new Error('missing media');
+                const parts = new Array(meta.n); let p = 0; let done = 0;
+                const run = () => {
+                    if (p >= meta.n) return Promise.resolve(); const i = p++;
+                    return database.ref('homeHeroMedia/' + id + '/c/k' + i).once('value').then(s2 => {
+                        const v = s2.val(); if (typeof v !== 'string') throw new Error('missing chunk ' + i);
+                        parts[i] = heroB64ToBytes(v); done++; if (onProgress) onProgress(Math.round(done * 100 / meta.n)); return run();
+                    });
+                };
+                return Promise.all([run(), run(), run()]).then(() => {
+                    const blob = new Blob(parts, { type: meta.type || heroGuessMime(meta.name || '') || 'application/octet-stream' });
+                    heroIdbPut(key, { ver: ver, blob: blob });
+                    const o = { ver: ver, url: URL.createObjectURL(blob) }; heroBlobMem[key] = o; return o;
+                });
+            });
+        });
+    }
     function heroAudioSrc(url) { const id = driveId(url); return id ? 'https://drive.google.com/uc?export=download&id=' + id : url; }
     function loadHeroVideo() {
         if (!database) return;
@@ -1730,25 +1782,27 @@
         const p = t.el.play();
         if (p && p.catch) p.catch(() => { heroBindGesture(); });
     }
+    function heroAddTrack(c) {
+        const el = new Audio(); el.preload = 'auto'; el.loop = c.loop; el.volume = c.volume / 100;
+        const t = { cfg: c, el: el, failed: false, loading: false, resume: false, userPaused: false, sync: null };
+        el.addEventListener('error', () => { if (el.getAttribute('src')) { t.failed = true; if (t.sync) t.sync(); } });
+        el.addEventListener('play', () => { if (t.sync) t.sync(); });
+        el.addEventListener('pause', () => { if (t.sync) t.sync(); });
+        heroTracks.push(t);
+        if (c.fileId) {
+            t.loading = true;
+            heroLoadFile(c).then(u => {
+                if (heroTracks.indexOf(t) < 0) return;
+                el.src = u; t.loading = false; if (t.sync) t.sync();
+                if (t.cfg.auto && !t.userPaused) heroPlayTrack(t);
+            }).catch(e => { console.warn('hero audio load', e); t.loading = false; t.failed = true; if (t.sync) t.sync(); });
+        } else { el.src = heroAudioSrc(c.url); }
+        return t;
+    }
     function heroBuildTracks(cfg, mainAudioUrl) {
         const list = heroNormAudios(cfg);
         if (mainAudioUrl) list.unshift({ url: mainAudioUrl, fileId: '', label: cfg.title || 'เสียงหลัก', volume: 80, loop: true, auto: true });
-        list.forEach(c => {
-            const el = new Audio(); el.preload = 'auto'; el.loop = c.loop; el.volume = c.volume / 100;
-            const t = { cfg: c, el: el, failed: false, loading: false, resume: false, userPaused: false, sync: null };
-            el.addEventListener('error', () => { if (el.getAttribute('src')) { t.failed = true; if (t.sync) t.sync(); } });
-            el.addEventListener('play', () => { if (t.sync) t.sync(); });
-            el.addEventListener('pause', () => { if (t.sync) t.sync(); });
-            heroTracks.push(t);
-            if (c.fileId) {
-                t.loading = true;
-                heroLoadFile(c).then(u => {
-                    if (heroTracks.indexOf(t) < 0) return;
-                    el.src = u; t.loading = false; if (t.sync) t.sync();
-                    if (t.cfg.auto && !t.userPaused) heroPlayTrack(t);
-                }).catch(e => { console.warn('hero audio load', e); t.loading = false; t.failed = true; if (t.sync) t.sync(); });
-            } else { el.src = heroAudioSrc(c.url); }
-        });
+        list.forEach(c => heroAddTrack(c));
     }
     function heroRenderMixer() {
         const box = document.getElementById('heroMixer'); const panel = document.getElementById('heroMixerPanel');
@@ -1824,21 +1878,41 @@
         const wrap = document.getElementById('heroVideoWrap'); const stage = document.getElementById('heroVideoStage');
         const cap = document.getElementById('heroVideoCaption'); const btn = document.getElementById('heroSoundBtn');
         if (!wrap || !stage) return;
+        const token = ++heroRenderToken;
         stage.innerHTML = ''; heroIsYT = ''; heroStopTracks();
         if (btn) btn.style.display = 'none';
-        if (!heroCfg || !heroCfg.url) { wrap.style.display = 'none'; heroRenderMixer(); return; }
+        if (!heroCfg || (!heroCfg.url && !heroCfg.mediaId)) { wrap.style.display = 'none'; heroRenderMixer(); return; }
         wrap.style.display = 'block';
-        const url = String(heroCfg.url).trim(); const wantSound = heroCfg.muted === false;
+        const url = heroCfg.url ? String(heroCfg.url).trim() : ''; const wantSound = heroCfg.muted === false;
         if (cap) cap.innerHTML = heroCaptionHtml(heroCfg);
-        const yt = heroYouTubeId(url); const did = driveId(url); let mainAudio = '';
-        if (yt) { heroIsYT = yt; heroShowIframe(stage, heroYouTubeSrc(yt, !wantSound), true, !wantSound); }
-        else if (did) {
-            heroShowVideo(stage, 'https://drive.google.com/uc?export=download&id=' + did, wantSound,
-                () => heroShowIframe(stage, 'https://drive.google.com/file/d/' + did + '/preview', false, true));
+        let mainAudio = '';
+        if (!url && heroCfg.mediaId) {
+            stage.innerHTML = '<div class="hero-video-msg" id="heroLoadMsg">⏳ กำลังโหลดสื่อ 0%</div>';
+            heroLoadMedia(heroCfg, pct => { if (token !== heroRenderToken) return; const e = document.getElementById('heroLoadMsg'); if (e) e.textContent = '⏳ กำลังโหลดสื่อ ' + pct + '%'; })
+                .then(o => {
+                    if (token !== heroRenderToken) return;
+                    const kind = heroCfg.mediaKind;
+                    if (kind === 'video') heroShowVideo(stage, o.url, wantSound, null);
+                    else if (kind === 'image') heroShowImage(stage, o.url, heroCfg.title);
+                    else {
+                        heroShowEqualizer(stage);
+                        heroAddTrack({ url: o.url, fileId: '', label: heroCfg.title || heroCfg.mediaName || 'เพลงหลัก', volume: 80, loop: true, auto: true });
+                        heroRenderMixer(); heroAutoStartTracks(); heroBindGesture();
+                    }
+                    if (!heroHomeVisible()) heroVisibility(false);
+                })
+                .catch(e => { console.warn('hero media load', e); if (token === heroRenderToken) stage.innerHTML = '<div class="hero-video-msg">โหลดสื่อไม่สำเร็จ (ไฟล์อาจถูกลบหรือเน็ตมีปัญหา) ลองรีเฟรชหน้าเว็บ</div>'; });
+        } else {
+            const yt = heroYouTubeId(url); const did = driveId(url);
+            if (yt) { heroIsYT = yt; heroShowIframe(stage, heroYouTubeSrc(yt, !wantSound), true, !wantSound); }
+            else if (did) {
+                heroShowVideo(stage, 'https://drive.google.com/uc?export=download&id=' + did, wantSound,
+                    () => heroShowIframe(stage, 'https://drive.google.com/file/d/' + did + '/preview', false, true));
+            }
+            else if (HERO_AUD_RE.test(url)) { mainAudio = url; heroShowEqualizer(stage); }
+            else if (HERO_IMG_RE.test(url)) heroShowImage(stage, url, heroCfg.title);
+            else heroShowVideo(stage, url, wantSound, null);
         }
-        else if (HERO_AUD_RE.test(url)) { mainAudio = url; heroShowEqualizer(stage); }
-        else if (HERO_IMG_RE.test(url)) heroShowImage(stage, url, heroCfg.title);
-        else heroShowVideo(stage, url, wantSound, null);
         heroBuildTracks(heroCfg, mainAudio); heroRenderMixer();
         if (heroTracks.length > 0) { heroAutoStartTracks(); if (heroTracks.some(t => t.cfg.auto)) heroBindGesture(); }
         if (!heroHomeVisible()) heroVisibility(false);
@@ -1899,8 +1973,38 @@
         });
         list.appendChild(row);
     }
+    function heroBindMediaPicker() {
+        const pick = document.getElementById('heroMediaPick'); const inp = document.getElementById('heroMediaFile');
+        const info = document.getElementById('heroMediaInfo'); const urlIn = document.getElementById('heroUrl');
+        const mb = n => (n / 1048576).toFixed(1) + ' MB';
+        pick.onclick = () => inp.click();
+        urlIn.oninput = () => { if (urlIn.value.trim()) { heroMediaPick = null; heroMediaKeep = null; info.textContent = ''; } };
+        inp.onchange = () => {
+            const f = inp.files && inp.files[0]; if (!f) return;
+            const kind = heroKindOf(f);
+            if (!kind) { alert('รองรับเฉพาะไฟล์วิดีโอ (MP4 / WebM / MOV), รูปภาพ / GIF หรือเสียง MP3'); inp.value = ''; return; }
+            if (f.size > HERO_MAX_MEDIA) { alert('ไฟล์ใหญ่เกิน 20 MB (ไฟล์นี้ ' + mb(f.size) + ')\nแนะนำบีบอัดวิดีโอเป็น 720p ความยาวไม่เกิน 15–20 วินาที หรือใช้ลิงก์ YouTube แทน'); inp.value = ''; return; }
+            info.textContent = '⏳ กำลังอ่านไฟล์...';
+            const rd = new FileReader();
+            rd.onload = () => {
+                heroMediaPick = { name: f.name, size: f.size, type: f.type || heroGuessMime(f.name), kind: kind, dataUrl: rd.result, file: f };
+                heroMediaKeep = null; urlIn.value = '';
+                info.textContent = '📎 ' + f.name + ' (' + mb(f.size) + ') — จะอัปโหลดเมื่อกดบันทึก';
+            };
+            rd.onerror = () => { info.textContent = '⚠️ อ่านไฟล์ไม่สำเร็จ'; };
+            rd.readAsDataURL(f);
+        };
+    }
     function openHeroVideoModal() {
         if (!isAdmin) return;
+        heroBindMediaPicker();
+        heroMediaPick = null; heroMediaKeep = null;
+        const info = document.getElementById('heroMediaInfo'); info.textContent = '';
+        document.getElementById('heroUploadStatus').textContent = '';
+        if (heroCfg && heroCfg.mediaId && !heroCfg.url) {
+            heroMediaKeep = { id: heroCfg.mediaId, kind: heroCfg.mediaKind || '', name: heroCfg.mediaName || '', size: Number(heroCfg.mediaSize) || 0, ver: Number(heroCfg.mediaVer) || 0 };
+            info.textContent = '📎 ' + (heroMediaKeep.name || 'ไฟล์สื่อหลัก') + (heroMediaKeep.size ? ' (' + (heroMediaKeep.size / 1048576).toFixed(1) + ' MB)' : '') + ' — บันทึกไว้แล้ว';
+        }
         document.getElementById('heroUrl').value = heroCfg && heroCfg.url ? heroCfg.url : '';
         document.getElementById('heroMuted').value = heroCfg && heroCfg.muted === false ? 'sound' : 'muted';
         document.getElementById('heroTitle').value = heroCfg && heroCfg.title ? heroCfg.title : '';
@@ -1912,10 +2016,11 @@
     }
     function closeHeroVideoModal() { document.getElementById('heroVideoOverlay').classList.remove('open'); }
     function saveHeroVideo() {
-        if (!isAdmin) return;
+        if (!isAdmin || heroSaving) return;
         if (!database) { toast('ยังไม่ได้เชื่อมต่อ Firebase จึงบันทึกไม่ได้', 'err'); return; }
-        const url = document.getElementById('heroUrl').value.trim();
-        if (!/^https?:\/\//i.test(url)) { alert('กรุณาวางลิงก์สื่อหลักที่ขึ้นต้นด้วย http:// หรือ https://'); return; }
+        const urlIn = document.getElementById('heroUrl').value.trim();
+        if (!urlIn && !heroMediaPick && !heroMediaKeep) { alert('กรุณาเลือกไฟล์วิดีโอ/รูป/MP3 จากเครื่อง หรือวางลิงก์สื่อหลัก'); return; }
+        if (urlIn && !/^https?:\/\//i.test(urlIn)) { alert('ลิงก์สื่อหลักต้องขึ้นต้นด้วย http:// หรือ https://'); return; }
         const picked = []; let bad = false; let total = 0;
         document.querySelectorAll('#heroAudioList .hero-aud-row').forEach(row => {
             const u = row.querySelector('.ha-url').value.trim(); const hasFile = !!(row._newFile || row._fileId);
@@ -1937,22 +2042,39 @@
             } else if (row._fileId) { item.fileId = row._fileId; item.fileName = row._fileName; item.size = row._size || 0; item.ver = row._ver || 0; keepIds[item.fileId] = true; }
             audios.push(item);
         });
-        const payload = { url: url, muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(),
-            scroll: document.getElementById('heroScroll').value !== 'static', speed: document.getElementById('heroSpeed').value, audios: audios, updatedAt: ver };
-        if (uploads.length) toast('กำลังอัปโหลดเพลง กรุณารอสักครู่...', 'ok');
-        const oldAudios = heroNormAudios(heroCfg);
-        return Promise.all(uploads).then(() => database.ref('homeHero').set(payload)).then(() => {
+        let mf = { url: urlIn, mediaId: '', mediaKind: '', mediaName: '', mediaSize: 0, mediaVer: 0 }; let mainUpload = null;
+        if (!urlIn) {
+            if (heroMediaPick) {
+                const id = 'm' + ver.toString(36) + Math.random().toString(36).slice(2, 6); const pk = heroMediaPick;
+                mf = { url: '', mediaId: id, mediaKind: pk.kind, mediaName: pk.name, mediaSize: pk.size, mediaVer: ver };
+                mainUpload = { id: id, pk: pk, m: { name: pk.name, size: pk.size, type: pk.type || '', kind: pk.kind, ver: ver, dataUrl: pk.dataUrl } };
+            } else { mf = { url: '', mediaId: heroMediaKeep.id, mediaKind: heroMediaKeep.kind, mediaName: heroMediaKeep.name, mediaSize: heroMediaKeep.size, mediaVer: heroMediaKeep.ver }; }
+        }
+        const payload = Object.assign({ muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(),
+            scroll: document.getElementById('heroScroll').value !== 'static', speed: document.getElementById('heroSpeed').value, audios: audios, updatedAt: ver }, mf);
+        const setStatus = t => { const e = document.getElementById('heroUploadStatus'); if (e) e.textContent = t; };
+        const oldCfg = heroCfg; const oldAudios = heroNormAudios(heroCfg);
+        heroSaving = true; setStatus('⏫ กำลังอัปโหลด กรุณาอย่าปิดหน้านี้...');
+        const first = mainUpload ? heroUploadMedia(mainUpload.id, mainUpload.m, p => setStatus('⏫ กำลังอัปโหลดสื่อหลัก ' + p + '%')) : Promise.resolve();
+        return first.then(() => Promise.all(uploads)).then(() => database.ref('homeHero').set(payload)).then(() => {
             warm.forEach(w => { try { const blob = heroDataUrlToBlob(w.dataUrl); heroBlobMem[w.id] = { ver: w.ver, url: URL.createObjectURL(blob) }; heroIdbPut(w.id, { ver: w.ver, blob: blob }); } catch (e) {} });
+            if (mainUpload) { try { const blob = mainUpload.pk.file; heroBlobMem['m_' + mainUpload.id] = { ver: ver, url: URL.createObjectURL(blob) }; heroIdbPut('m_' + mainUpload.id, { ver: ver, blob: blob }); } catch (e) {} }
             oldAudios.forEach(a => { if (a.fileId && !keepIds[a.fileId]) database.ref('homeHeroAudio/' + a.fileId).remove().catch(() => {}); });
-            heroCfg = payload; renderHeroVideo(); closeHeroVideoModal(); toast('บันทึกแล้ว ✅ เพลงเริ่มเล่นทันที', 'ok');
-        }).catch(err => toast('บันทึกไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') ตรวจสอบ Firebase Rules และขนาดไฟล์', 'err'));
+            if (oldCfg && oldCfg.mediaId && oldCfg.mediaId !== payload.mediaId) database.ref('homeHeroMedia/' + oldCfg.mediaId).remove().catch(() => {});
+            heroSaving = false; setStatus(''); heroCfg = payload; renderHeroVideo(); closeHeroVideoModal(); toast('บันทึกแล้ว ✅ เริ่มเล่นทันที', 'ok');
+        }).catch(err => {
+            heroSaving = false; setStatus('');
+            if (mainUpload) database.ref('homeHeroMedia/' + mainUpload.id).remove().catch(() => {});
+            toast('บันทึกไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') ตรวจสอบ Firebase Rules และขนาดไฟล์', 'err');
+        });
     }
     function removeHeroVideo() {
         if (!isAdmin || !database) return;
         if (!confirm('ต้องการลบวิดีโอและเพลงทั้งหมดของหน้าแรกใช่หรือไม่?')) return;
-        const old = heroNormAudios(heroCfg);
+        const old = heroNormAudios(heroCfg); const oldMedia = heroCfg && heroCfg.mediaId;
         database.ref('homeHero').remove().then(() => {
             old.forEach(a => { if (a.fileId) database.ref('homeHeroAudio/' + a.fileId).remove().catch(() => {}); });
+            if (oldMedia) database.ref('homeHeroMedia/' + oldMedia).remove().catch(() => {});
             heroCfg = null; renderHeroVideo(); closeHeroVideoModal(); toast('ลบสื่อหน้าแรกแล้ว', 'ok');
         }).catch(err => toast('ลบไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ')', 'err'));
     }
