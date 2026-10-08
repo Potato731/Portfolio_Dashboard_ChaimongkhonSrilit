@@ -573,6 +573,8 @@
     .hero-marquee-track span { white-space: pre; font-size: clamp(1.4rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.25; }
     @keyframes heroMarq { from { transform: translateX(-50%); } to { transform: translateX(0); } }
     @media (prefers-reduced-motion: reduce) { .hero-marquee-track { animation: none; } .hero-marquee-track span:nth-child(2) { display: none; } }
+
+    .ha-filebar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.85rem; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -1206,6 +1208,7 @@
             <div id="heroAudioList"></div>
             <button type="button" class="btn btn-ghost" onclick="addHeroAudioRow()" style="margin-bottom:14px;">＋ เพิ่มเสียง</button>
             <div style="font-size:0.85rem; color:var(--muted); line-height:1.6;">
+                • เลือกไฟล์เพลงจากเครื่องได้โดยตรง (ไม่เกิน 5 MB ต่อไฟล์ รวมไม่เกิน 15 MB) แนะนำ MP3 แบบ 128kbps เพลง 3 นาทีจะประมาณ 3 MB<br>
                 • เพลงที่เพิ่มไว้จะเล่นต่อเนื่องเป็นเพลงพื้นหลัง แม้ผู้ชมเปลี่ยนไปหน้าอื่น ผู้ชมกดปุ่ม 🎵 มุมซ้ายล่างเพื่อเล่น/หยุด/ปรับระดับเสียงได้เสมอ<br>
                 • เสียงเสริมที่ติ๊ก "เริ่มเล่นเอง" จะเริ่มเมื่อผู้ชมแตะหรือคลิกหน้าเว็บครั้งแรก (กฎของเบราว์เซอร์ เล่นเสียงทันทีไม่ได้)<br>
                 • ลิงก์ Drive: ระบบลองเล่นแบบปกติก่อน ถ้าไม่ได้จะสลับเป็นตัวเล่นของ Drive ซึ่งควบคุมเสียงไม่ได้ ไฟล์เสียงเสริมจาก Drive อาจเล่นไม่ได้ ควรใช้ลิงก์ไฟล์ตรงถ้าเป็นไปได้
@@ -1661,8 +1664,9 @@
     function heroNormAudios(cfg) {
         let a = cfg && cfg.audios; if (!a) return [];
         if (!Array.isArray(a)) a = Object.values(a);
-        return a.filter(x => x && x.url).map(x => ({
-            url: String(x.url).trim(), label: x.label ? String(x.label) : '',
+        return a.filter(x => x && (x.url || x.fileId)).map(x => ({
+            url: x.url ? String(x.url).trim() : '', fileId: x.fileId ? String(x.fileId) : '', fileName: x.fileName ? String(x.fileName) : '',
+            size: Number(x.size) || 0, ver: Number(x.ver) || 0, label: x.label ? String(x.label) : '',
             volume: x.volume == null ? 70 : Math.min(100, Math.max(0, Number(x.volume) || 0)),
             loop: x.loop !== false, auto: x.auto !== false
         }));
@@ -1678,6 +1682,38 @@
         const dur = Math.max(10, Math.round((raw.length + 7) * n * 0.32 * mult));
         return '<div class="hero-eyebrow">SHOWREEL</div><div class="hero-marquee"><div class="hero-marquee-track" style="animation-duration:' + dur + 's;"><span>' + half + '</span><span>' + half + '</span></div></div>';
     }
+    // ---------- ไฟล์เพลงที่อัปโหลด (เก็บใน Firebase node แยก + แคชในเบราว์เซอร์) ----------
+    const HERO_MAX_FILE = 5 * 1024 * 1024; const HERO_MAX_TOTAL = 15 * 1024 * 1024; const heroBlobMem = {};
+    function heroDataUrlToBlob(d) {
+        const i = d.indexOf(','); let mime = d.slice(5, i).split(';')[0]; if (!/^audio\//.test(mime)) mime = 'audio/mpeg';
+        const bin = atob(d.slice(i + 1)); const u8 = new Uint8Array(bin.length);
+        for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+        return new Blob([u8], { type: mime });
+    }
+    function heroIdb() {
+        return new Promise((res, rej) => {
+            try { const r = indexedDB.open('MasterPortfolioAudio', 1); r.onupgradeneeded = () => r.result.createObjectStore('audio'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+            catch (e) { rej(e); }
+        });
+    }
+    function heroIdbGet(id) {
+        return heroIdb().then(db => new Promise(res => { const q = db.transaction('audio').objectStore('audio').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); })).catch(() => null);
+    }
+    function heroIdbPut(id, val) {
+        return heroIdb().then(db => new Promise(res => { const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(val, id); tx.oncomplete = () => res(true); tx.onerror = () => res(false); })).catch(() => false);
+    }
+    function heroLoadFile(c) {
+        const m = heroBlobMem[c.fileId]; if (m && m.ver === c.ver) return Promise.resolve(m.url);
+        return heroIdbGet(c.fileId).then(rec => {
+            if (rec && rec.ver === c.ver && rec.blob) { const u = URL.createObjectURL(rec.blob); heroBlobMem[c.fileId] = { ver: c.ver, url: u }; return u; }
+            if (!database) throw new Error('no database');
+            return database.ref('homeHeroAudio/' + c.fileId).once('value').then(snap => {
+                const v = snap.val(); if (!v || !v.dataUrl) throw new Error('missing audio');
+                const blob = heroDataUrlToBlob(v.dataUrl); heroIdbPut(c.fileId, { ver: c.ver, blob: blob });
+                const u = URL.createObjectURL(blob); heroBlobMem[c.fileId] = { ver: c.ver, url: u }; return u;
+            });
+        });
+    }
     function heroAudioSrc(url) { const id = driveId(url); return id ? 'https://drive.google.com/uc?export=download&id=' + id : url; }
     function loadHeroVideo() {
         if (!database) return;
@@ -1690,21 +1726,28 @@
         heroTracks = [];
     }
     function heroPlayTrack(t) {
-        if (!t || t.failed) return;
+        if (!t || t.failed || t.loading) return;
         const p = t.el.play();
         if (p && p.catch) p.catch(() => { heroBindGesture(); });
     }
     function heroBuildTracks(cfg, mainAudioUrl) {
         const list = heroNormAudios(cfg);
-        if (mainAudioUrl) list.unshift({ url: mainAudioUrl, label: cfg.title || 'เสียงหลัก', volume: 80, loop: true, auto: true });
+        if (mainAudioUrl) list.unshift({ url: mainAudioUrl, fileId: '', label: cfg.title || 'เสียงหลัก', volume: 80, loop: true, auto: true });
         list.forEach(c => {
             const el = new Audio(); el.preload = 'auto'; el.loop = c.loop; el.volume = c.volume / 100;
-            const t = { cfg: c, el: el, failed: false, resume: false, userPaused: false, sync: null };
-            el.addEventListener('error', () => { t.failed = true; if (t.sync) t.sync(); });
+            const t = { cfg: c, el: el, failed: false, loading: false, resume: false, userPaused: false, sync: null };
+            el.addEventListener('error', () => { if (el.getAttribute('src')) { t.failed = true; if (t.sync) t.sync(); } });
             el.addEventListener('play', () => { if (t.sync) t.sync(); });
             el.addEventListener('pause', () => { if (t.sync) t.sync(); });
-            el.src = heroAudioSrc(c.url);
             heroTracks.push(t);
+            if (c.fileId) {
+                t.loading = true;
+                heroLoadFile(c).then(u => {
+                    if (heroTracks.indexOf(t) < 0) return;
+                    el.src = u; t.loading = false; if (t.sync) t.sync();
+                    if (t.cfg.auto && !t.userPaused) heroPlayTrack(t);
+                }).catch(e => { console.warn('hero audio load', e); t.loading = false; t.failed = true; if (t.sync) t.sync(); });
+            } else { el.src = heroAudioSrc(c.url); }
         });
     }
     function heroRenderMixer() {
@@ -1722,8 +1765,8 @@
         heroTracks.forEach((t, i) => {
             const row = document.createElement('div'); row.className = 'hero-mixer-row';
             const b = document.createElement('button'); b.type = 'button'; b.className = 'hero-mixer-play';
-            t.sync = () => { b.textContent = t.failed ? '⚠️' : (t.el.paused ? '▶' : '⏸'); b.title = t.failed ? 'โหลดเสียงไม่สำเร็จ ตรวจสอบลิงก์/สิทธิ์แชร์' : ''; };
-            b.onclick = () => { if (t.failed) return; if (t.el.paused) { t.userPaused = false; heroPlayTrack(t); } else { t.userPaused = true; t.el.pause(); } };
+            t.sync = () => { b.textContent = t.failed ? '⚠️' : (t.loading ? '⏳' : (t.el.paused ? '▶' : '⏸')); b.title = t.failed ? 'โหลดเสียงไม่สำเร็จ ตรวจสอบลิงก์/ไฟล์' : (t.loading ? 'กำลังโหลดเพลง...' : ''); };
+            b.onclick = () => { if (t.failed || t.loading) return; if (t.el.paused) { t.userPaused = false; heroPlayTrack(t); } else { t.userPaused = true; t.el.pause(); } };
             const lab = document.createElement('span'); lab.className = 'hero-mixer-label'; lab.textContent = t.cfg.label || ('เสียง ' + (i + 1));
             const r = document.createElement('input'); r.type = 'range'; r.min = 0; r.max = 100; r.value = Math.round(t.el.volume * 100);
             r.oninput = () => { t.el.volume = r.value / 100; };
@@ -1735,7 +1778,7 @@
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
     function heroAutoStartTracks() {
-        heroTracks.forEach(t => { if (t.cfg.auto && t.el.paused && !t.userPaused && !t.failed) heroPlayTrack(t); });
+        heroTracks.forEach(t => { if (t.cfg.auto && t.el.paused && !t.userPaused && !t.failed && !t.loading) heroPlayTrack(t); });
     }
     function heroBindGesture() {
         if (heroGestureBound) return; heroGestureBound = true;
@@ -1823,15 +1866,37 @@
     function addHeroAudioRow(a) {
         const list = document.getElementById('heroAudioList'); if (!list) return;
         if (list.children.length >= 6) { toast('เพิ่มเสียงได้สูงสุด 6 รายการ', 'warn'); return; }
-        a = a || { url: '', label: '', volume: 70, loop: true, auto: true };
+        a = a || { url: '', fileId: '', fileName: '', label: '', volume: 70, loop: true, auto: true };
         const row = document.createElement('div'); row.className = 'hero-aud-row';
-        row.innerHTML = '<div class="hero-aud-top"><div class="field" style="margin:0; flex:3; min-width:200px;"><input type="text" class="ha-url" placeholder="ลิงก์ MP3 / ไฟล์เสียง"></div><div class="field" style="margin:0; flex:1.2; min-width:120px;"><input type="text" class="ha-label" placeholder="ชื่อเสียง เช่น เพลงประกอบ"></div></div>'
+        row.innerHTML = '<div class="ha-filebar"><button type="button" class="btn btn-primary ha-pick">📁 เลือกไฟล์เพลงจากเครื่อง</button><input type="file" class="ha-file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg,.flac" style="display:none;"><span class="ha-fileinfo"></span></div>'
+            + '<div class="hero-aud-top"><div class="field" style="margin:0; flex:3; min-width:200px;"><input type="text" class="ha-url" placeholder="หรือวางลิงก์ MP3 / ไฟล์เสียง"></div><div class="field" style="margin:0; flex:1.2; min-width:120px;"><input type="text" class="ha-label" placeholder="ชื่อเพลง"></div></div>'
             + '<div class="hero-aud-opts"><label>🔉 <input type="range" class="ha-vol" min="0" max="100"> <span class="ha-vol-n"></span>%</label><label><input type="checkbox" class="ha-loop"> วนซ้ำ</label><label><input type="checkbox" class="ha-auto"> เริ่มเล่นเองเมื่อผู้ชมแตะ</label><button type="button" class="btn btn-ghost ha-del">✕ ลบ</button></div>';
-        row.querySelector('.ha-url').value = a.url || ''; row.querySelector('.ha-label').value = a.label || '';
+        const urlIn = row.querySelector('.ha-url'); const labIn = row.querySelector('.ha-label'); const info = row.querySelector('.ha-fileinfo');
+        const fileIn = row.querySelector('.ha-file'); const pick = row.querySelector('.ha-pick');
+        row._newFile = null; row._fileId = a.fileId || ''; row._fileName = a.fileName || ''; row._size = a.size || 0; row._ver = a.ver || 0;
+        const mb = n => (n / 1048576).toFixed(1) + ' MB';
+        if (row._fileId) info.textContent = '📎 ' + (row._fileName || 'ไฟล์เพลง') + (row._size ? ' (' + mb(row._size) + ')' : '') + ' — บันทึกไว้แล้ว';
+        urlIn.value = a.url || ''; labIn.value = a.label || '';
         const vol = row.querySelector('.ha-vol'); const volN = row.querySelector('.ha-vol-n');
         vol.value = a.volume == null ? 70 : a.volume; volN.textContent = vol.value; vol.oninput = () => { volN.textContent = vol.value; };
         row.querySelector('.ha-loop').checked = a.loop !== false; row.querySelector('.ha-auto').checked = a.auto !== false;
         row.querySelector('.ha-del').onclick = () => row.remove();
+        pick.onclick = () => fileIn.click();
+        urlIn.addEventListener('input', () => { if (urlIn.value.trim()) { row._newFile = null; row._fileId = ''; row._size = 0; info.textContent = ''; } });
+        fileIn.addEventListener('change', () => {
+            const f = fileIn.files && fileIn.files[0]; if (!f) return;
+            if (!(/^audio\//.test(f.type) || /\.(mp3|m4a|wav|aac|ogg|oga|flac)$/i.test(f.name))) { alert('กรุณาเลือกไฟล์เสียง เช่น .mp3'); fileIn.value = ''; return; }
+            if (f.size > HERO_MAX_FILE) { alert('ไฟล์ใหญ่เกิน 5 MB (ไฟล์นี้ ' + mb(f.size) + ')\nแนะนำบีบอัดเป็น MP3 128kbps ก่อน เพลง 3 นาทีจะประมาณ 3 MB'); fileIn.value = ''; return; }
+            info.textContent = '⏳ กำลังอ่านไฟล์...';
+            const rd = new FileReader();
+            rd.onload = () => {
+                row._newFile = { name: f.name, size: f.size, dataUrl: rd.result }; row._fileId = ''; row._size = f.size;
+                urlIn.value = ''; if (!labIn.value.trim()) labIn.value = f.name.replace(/\.[^.]+$/, '');
+                info.textContent = '📎 ' + f.name + ' (' + mb(f.size) + ') — จะอัปโหลดเมื่อกดบันทึก';
+            };
+            rd.onerror = () => { info.textContent = '⚠️ อ่านไฟล์ไม่สำเร็จ'; };
+            rd.readAsDataURL(f);
+        });
         list.appendChild(row);
     }
     function openHeroVideoModal() {
@@ -1851,24 +1916,45 @@
         if (!database) { toast('ยังไม่ได้เชื่อมต่อ Firebase จึงบันทึกไม่ได้', 'err'); return; }
         const url = document.getElementById('heroUrl').value.trim();
         if (!/^https?:\/\//i.test(url)) { alert('กรุณาวางลิงก์สื่อหลักที่ขึ้นต้นด้วย http:// หรือ https://'); return; }
-        const audios = []; let bad = false;
+        const picked = []; let bad = false; let total = 0;
         document.querySelectorAll('#heroAudioList .hero-aud-row').forEach(row => {
-            const u = row.querySelector('.ha-url').value.trim(); if (!u) return;
-            if (!/^https?:\/\//i.test(u)) { bad = true; return; }
-            audios.push({ url: u, label: row.querySelector('.ha-label').value.trim(), volume: Number(row.querySelector('.ha-vol').value) || 0,
-                loop: row.querySelector('.ha-loop').checked, auto: row.querySelector('.ha-auto').checked });
+            const u = row.querySelector('.ha-url').value.trim(); const hasFile = !!(row._newFile || row._fileId);
+            if (!u && !hasFile) return;
+            if (!hasFile && !/^https?:\/\//i.test(u)) { bad = true; return; }
+            total += row._newFile ? row._newFile.size : (row._size || 0); picked.push({ row: row, u: u, hasFile: hasFile });
         });
-        if (bad) { alert('ลิงก์เสียงเสริมต้องขึ้นต้นด้วย http:// หรือ https:// (หรือเว้นว่างเพื่อไม่ใช้แถวนั้น)'); return; }
-        const payload = { url: url, muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(), scroll: document.getElementById('heroScroll').value !== 'static', speed: document.getElementById('heroSpeed').value, audios: audios, updatedAt: Date.now() };
-        database.ref('homeHero').set(payload).then(() => {
-            heroCfg = payload; renderHeroVideo(); closeHeroVideoModal(); toast('บันทึกวิดีโอหน้าแรกแล้ว ✅', 'ok');
-        }).catch(err => toast('บันทึกไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') ตรวจสอบ Firebase Rules', 'err'));
+        if (bad) { alert('ลิงก์เสียงต้องขึ้นต้นด้วย http:// หรือ https:// (หรือเลือกไฟล์ / เว้นว่างเพื่อไม่ใช้แถวนั้น)'); return; }
+        if (total > HERO_MAX_TOTAL) { alert('ไฟล์เพลงรวมกันเกิน 15 MB กรุณาลดจำนวนหรือขนาดไฟล์'); return; }
+        const ver = Date.now(); const uploads = []; const audios = []; const keepIds = {}; const warm = [];
+        picked.forEach((p, idx) => {
+            const row = p.row; const item = { url: p.hasFile ? '' : p.u, fileId: '', fileName: '', size: 0, ver: 0,
+                label: row.querySelector('.ha-label').value.trim(), volume: Number(row.querySelector('.ha-vol').value) || 0,
+                loop: row.querySelector('.ha-loop').checked, auto: row.querySelector('.ha-auto').checked };
+            if (row._newFile) {
+                const nf = row._newFile; const id = 'a' + ver.toString(36) + idx + Math.random().toString(36).slice(2, 6);
+                item.fileId = id; item.fileName = nf.name; item.size = nf.size; item.ver = ver; keepIds[id] = true;
+                uploads.push(database.ref('homeHeroAudio/' + id).set({ name: nf.name, size: nf.size, ver: ver, dataUrl: nf.dataUrl })); warm.push({ id: id, ver: ver, dataUrl: nf.dataUrl });
+            } else if (row._fileId) { item.fileId = row._fileId; item.fileName = row._fileName; item.size = row._size || 0; item.ver = row._ver || 0; keepIds[item.fileId] = true; }
+            audios.push(item);
+        });
+        const payload = { url: url, muted: document.getElementById('heroMuted').value !== 'sound', title: document.getElementById('heroTitle').value.trim(),
+            scroll: document.getElementById('heroScroll').value !== 'static', speed: document.getElementById('heroSpeed').value, audios: audios, updatedAt: ver };
+        if (uploads.length) toast('กำลังอัปโหลดเพลง กรุณารอสักครู่...', 'ok');
+        const oldAudios = heroNormAudios(heroCfg);
+        return Promise.all(uploads).then(() => database.ref('homeHero').set(payload)).then(() => {
+            warm.forEach(w => { try { const blob = heroDataUrlToBlob(w.dataUrl); heroBlobMem[w.id] = { ver: w.ver, url: URL.createObjectURL(blob) }; heroIdbPut(w.id, { ver: w.ver, blob: blob }); } catch (e) {} });
+            oldAudios.forEach(a => { if (a.fileId && !keepIds[a.fileId]) database.ref('homeHeroAudio/' + a.fileId).remove().catch(() => {}); });
+            heroCfg = payload; renderHeroVideo(); closeHeroVideoModal(); toast('บันทึกแล้ว ✅ เพลงเริ่มเล่นทันที', 'ok');
+        }).catch(err => toast('บันทึกไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ') ตรวจสอบ Firebase Rules และขนาดไฟล์', 'err'));
     }
     function removeHeroVideo() {
         if (!isAdmin || !database) return;
-        if (!confirm('ต้องการลบวิดีโอและเสียงเสริมของหน้าแรกทั้งหมดใช่หรือไม่?')) return;
-        database.ref('homeHero').remove().then(() => { heroCfg = null; renderHeroVideo(); closeHeroVideoModal(); toast('ลบสื่อหน้าแรกแล้ว', 'ok'); })
-            .catch(err => toast('ลบไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ')', 'err'));
+        if (!confirm('ต้องการลบวิดีโอและเพลงทั้งหมดของหน้าแรกใช่หรือไม่?')) return;
+        const old = heroNormAudios(heroCfg);
+        database.ref('homeHero').remove().then(() => {
+            old.forEach(a => { if (a.fileId) database.ref('homeHeroAudio/' + a.fileId).remove().catch(() => {}); });
+            heroCfg = null; renderHeroVideo(); closeHeroVideoModal(); toast('ลบสื่อหน้าแรกแล้ว', 'ok');
+        }).catch(err => toast('ลบไม่สำเร็จ (' + ((err && (err.code || err.message)) || 'unknown') + ')', 'err'));
     }
     window.openHeroVideoModal = openHeroVideoModal; window.closeHeroVideoModal = closeHeroVideoModal; window.saveHeroVideo = saveHeroVideo;
     window.removeHeroVideo = removeHeroVideo; window.toggleHeroSound = toggleHeroSound; window.toggleHeroMixer = toggleHeroMixer; window.addHeroAudioRow = addHeroAudioRow;
